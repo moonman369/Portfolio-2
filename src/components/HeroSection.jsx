@@ -1,5 +1,11 @@
 import { ArrowDown } from "lucide-react";
 import React from "react";
+import {
+  HERO_SECTION_DESCRIPTION,
+  HERO_SECTION_FNAME,
+  HERO_SECTION_GREETING,
+  HERO_SECTION_LNAME,
+} from "../context/constants";
 
 const HeroSection = () => {
   return (
@@ -10,23 +16,21 @@ const HeroSection = () => {
       <div className="container max-w-4xl mx-auto text-center z-10">
         <div className="space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            <span className="opacity-0 animate-fade-in">Hi, I'm</span>
+            <span className="opacity-0 animate-fade-in">
+              {HERO_SECTION_GREETING}
+            </span>
             <span className="text-primary opacity-0 animate-fade-in-delay-1">
               {" "}
-              Ayan
+              {HERO_SECTION_FNAME}
             </span>
             <span className="text-gradient ml-2 opacity-0 animate-fade-in-delay-2">
               {" "}
-              Maiti
+              {HERO_SECTION_LNAME}
             </span>
           </h1>
 
           <p className="text-md md:text-md text-muted-foreground max-w-2xl mx-auto opacity-0 animate-fade-in-delay-4">
-            I am Ayan Maiti. I am currently working as a System Engineer in Tata
-            Consultancy Services Limited. I have worked as a Blockchain/Web3
-            Developer Intern at W3Dev Private Limited for four(4) months. I have
-            an in-depth understanding of blockchain development, its related
-            concepts, and fullstack web development
+            {HERO_SECTION_DESCRIPTION}
           </p>
 
           <div className="opacity-0 animate-fade-in-delay-4 pt-4">
