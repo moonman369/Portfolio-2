@@ -7,6 +7,8 @@ const CHAT_ENDPOINT =
     ? `${import.meta.env.VITE_PORTFOLIO_API_HOSTNAME}${import.meta.env.VITE_PORTFOLIO_API_MOONMIND_CHAT_ENDPOINT}`
     : null;
 
+const CHAT_PASSWORD = import.meta.env.VITE_PORTFOLIO_API_MOONMIND_CHAT_PASSWORD;
+
 export const MOONMIND_WELCOME = {
   role: "assistant",
   content:
@@ -49,13 +51,21 @@ export const MoonmindProvider = ({ children }) => {
     try {
       const res = await fetch(CHAT_ENDPOINT, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          history: nextMessages
-            .filter((m) => m !== MOONMIND_WELCOME)
-            .map(({ role, content }) => ({ role, content })),
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          password: CHAT_PASSWORD,
+        },
+        body: {
+          prompt: text,
+          sessionId: "12313123",
+          metadata: {},
+        },
+        // body: JSON.stringify({
+        //   message: text,
+        //   history: nextMessages
+        //     .filter((m) => m !== MOONMIND_WELCOME)
+        //     .map(({ role, content }) => ({ role, content })),
+        // }),
       });
 
       if (!res.ok) throw new Error(`Moonmind API ${res.status}`);
