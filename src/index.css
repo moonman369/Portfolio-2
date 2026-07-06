@@ -1,182 +1,283 @@
 @import "tailwindcss";
 
 @theme {
-  --color-border: hsl(var(--border));
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+    --color-border: hsl(var(--border));
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
 
-  --color-card: hsl(var(--card));
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
 
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-pulse-subtle: pulse-subtle 4s ease-in-out infinite;
-  --animate-fade-in: fade-in 0.7s ease-out forwards;
-  --animate-fade-in-delay-1: fade-in 0.7s ease-out 0.2s forwards;
-  --animate-fade-in-delay-2: fade-in 0.7s ease-out 0.4s forwards;
-  --animate-fade-in-delay-3: fade-in 0.7s ease-out 0.6s forwards;
-  --animate-fade-in-delay-4: fade-in 0.7s ease-out 0.8s forwards;
-  --animate-meteor: meteor 5s linear infinite;
-  --animate-gradient: gradient-move 20s ease-in-out infinite;
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
 
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
+
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
+
+    --animate-float: float 6s ease-in-out infinite;
+    --animate-grow: grow 1.5s ease-out forwards;
+    --animate-moonmind-glow: moonmind-glow 2s ease-in-out infinite;
+    --animate-pulse-subtle: pulse-subtle 4s ease-in-out infinite;
+    --animate-fade-in: fade-in 0.7s ease-out forwards;
+    --animate-fade-in-delay-1: fade-in 0.7s ease-out 0.2s forwards;
+    --animate-fade-in-delay-2: fade-in 0.7s ease-out 0.4s forwards;
+    --animate-fade-in-delay-3: fade-in 0.7s ease-out 0.6s forwards;
+    --animate-fade-in-delay-4: fade-in 0.7s ease-out 0.8s forwards;
+    --animate-meteor: meteor 5s linear infinite;
+    --animate-gradient: gradient-move 10s ease-in-out infinite;
+
+    @keyframes float {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
     }
-    50% {
-      transform: translateY(-10px);
+    @keyframes pulse-subtle {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
     }
-  }
-  @keyframes pulse-subtle {
-    0%,
-    100% {
-      opacity: 1;
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-    50% {
-      opacity: 0.8;
+    @keyframes meteor {
+        0% {
+            transform: rotate(215deg) translateX(0);
+            opacity: 1;
+        }
+        70% {
+            opacity: 1;
+        }
+        100% {
+            transform: rotate(215deg) translateX(-500px);
+            opacity: 0;
+        }
     }
-  }
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
+    @keyframes gradient-move {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+    @keyframes grow {
+        from {
+            transform: scaleX(0);
+        }
+        to {
+            transform: scaleX(1);
+        }
     }
-  }
-  @keyframes meteor {
-    0% {
-      transform: rotate(215deg) translateX(0);
-      opacity: 1;
+    @keyframes moonmind-glow {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 hsl(var(--glow) / 0.5);
+        }
+        50% {
+            box-shadow: 0 0 22px 4px hsl(var(--glow) / 0.8);
+        }
     }
-    70% {
-      opacity: 1;
-    }
-    100% {
-      transform: rotate(215deg) translateX(-500px);
-      opacity: 0;
-    }
-  }
-  @keyframes gradient-move {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
 }
 
 @layer base {
-  :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    :root {
+        --background: 210 40% 98%;
+        --foreground: 222 47% 11%;
 
-    --card: 0 0% 100%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
 
-    --primary: 250 47% 60%;
-    --primary-foreground: 210 40% 98%;
+        --primary: 187 88% 33%;
+        --primary-foreground: 210 40% 98%;
 
-    --border: 214 32% 91%;
-  }
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222 47% 11%;
 
-  .dark {
-    --background: 222 47% 4%;
-    --foreground: 213 31% 91%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 16% 47%;
 
-    --card: 222 47% 8%;
+        --accent: 187 60% 92%;
+        --accent-foreground: 187 88% 22%;
 
-    --primary: 250 65% 65%;
-    --primary-foreground: 213 31% 91%;
+        --gradient-end: 199 89% 48%;
 
-    --border: 217 33% 20%;
-  }
+        /* Shared hover/attention glow — light blue (used site-wide). */
+        --glow: 208 100% 60%;
 
-  * {
-    @apply border-border;
-  }
+        --border: 214 32% 91%;
+    }
 
-  html {
-    @apply scroll-smooth;
-  }
+    .dark {
+        --background: 222 47% 4%;
+        --foreground: 213 31% 91%;
 
-  body {
-    @apply bg-background text-foreground transition-colors duration-300;
-    font-feature-settings:
-      "rlig" 1,
-      "calt" 1;
-  }
+        --card: 222 47% 8%;
+        --card-foreground: 213 31% 91%;
+
+        --primary: 204 90% 44%;
+        --primary-foreground: 213 31% 96%;
+
+        --secondary: 217 33% 17%;
+        --secondary-foreground: 213 31% 91%;
+
+        --muted: 217 33% 17%;
+        --muted-foreground: 215 20% 65%;
+
+        --accent: 190 60% 20%;
+        --accent-foreground: 213 31% 91%;
+
+        --gradient-end: 174 76% 36%;
+
+        --border: 217 33% 20%;
+    }
+
+    * {
+        @apply border-border;
+    }
+
+    html {
+        @apply scroll-smooth;
+    }
+
+    /* Tailwind v4 no longer defaults interactive elements to a pointer. */
+    button:not(:disabled),
+    [role="button"]:not(:disabled),
+    a[href],
+    label[for],
+    summary,
+    select {
+        cursor: pointer;
+    }
+
+    body {
+        @apply bg-background text-foreground transition-colors duration-300;
+        font-feature-settings:
+            "rlig" 1,
+            "calt" 1;
+    }
 }
 
 @utility container {
-  margin-inline: auto;
-  padding-inline: 2rem;
+    margin-inline: auto;
+    padding-inline: 2rem;
 
-  @media (width >= 640px) {
-    max-width: 640px;
-  }
-  @media (width >= 768px) {
-    max-width: 768px;
-  }
-  @media (width >= 1024px) {
-    max-width: 1024px;
-  }
-  @media (width >= 1280px) {
-    max-width: 1280px;
-  }
-  @media (width >= 1400px) {
-    max-width: 1400px;
-  }
+    @media (width >= 640px) {
+        max-width: 640px;
+    }
+    @media (width >= 768px) {
+        max-width: 768px;
+    }
+    @media (width >= 1024px) {
+        max-width: 1024px;
+    }
+    @media (width >= 1280px) {
+        max-width: 1280px;
+    }
+    @media (width >= 1400px) {
+        max-width: 1400px;
+    }
 }
 
 @utility text-glow {
-  @apply relative;
-  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+    @apply relative;
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+}
+
+@utility text-gradient {
+    @apply bg-clip-text;
+    background-image: linear-gradient(
+        to right,
+        hsl(var(--primary)),
+        hsl(var(--gradient-end))
+    );
+    color: transparent;
 }
 
 @utility card-hover {
-  @apply transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg;
+    @apply transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg;
+}
+
+@utility glass {
+    background-color: hsl(var(--card) / 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: 0 8px 32px hsl(var(--foreground) / 0.08);
+}
+
+@utility bg-gradient-primary {
+    background-image: linear-gradient(
+        to right,
+        hsl(var(--primary)),
+        hsl(var(--gradient-end))
+    );
+}
+
+/* Standard button hover glow (light blue). Use as `hover:btn-glow`. */
+@utility btn-glow {
+    box-shadow: 0 0 18px 2px hsl(var(--glow) / 0.65);
 }
 
 @utility gradient-border {
-  @apply relative rounded-md;
-  background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
-  background-clip: padding-box;
-  border: 1px solid transparent;
+    @apply relative rounded-md;
+    background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
+    background-clip: padding-box;
+    border: 1px solid transparent;
 }
 
 @utility cosmic-button {
-  @apply px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium 
-         transition-all duration-300 hover:shadow-[0_0_10px_rgba(139,92,246,0.5)]
+    @apply px-6 py-2 rounded-full text-primary-foreground font-medium
+         transition-all duration-300 hover:shadow-[0_0_18px_hsl(var(--glow)/0.65)]
          hover:scale-105 active:scale-95;
+    background-image: linear-gradient(
+        to right,
+        hsl(var(--primary)),
+        hsl(var(--gradient-end))
+    );
 }
 
 @utility star {
-  @apply absolute rounded-full bg-white;
-  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.4);
+    @apply absolute rounded-full bg-white;
+    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.4);
 }
 
 @utility meteor {
-  @apply absolute bg-linear-to-r from-white via-white to-transparent rounded-full;
-  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.3);
+    @apply absolute bg-linear-to-r from-white via-white to-transparent rounded-full;
+    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.3);
 }
 
 @utility animated-gradient-light {
-  background: linear-gradient(-45deg, #cae6fc, #ebd7fc, #fcd7f4);
-  background-size: 400% 400%;
-  animation: var(--animate-gradient);
+    background: linear-gradient(-45deg, #c2ebfc, #eafcbd, #fce8c2);
+    background-size: 180% 180%;
+    animation: var(--animate-gradient);
 }
-
 #root {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0;
-  text-align: center;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    text-align: center;
 }
