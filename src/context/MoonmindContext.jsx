@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 // Chat generation endpoint: hostname + Moonmind chat path.
 const CHAT_ENDPOINT =
@@ -9,18 +9,81 @@ const CHAT_ENDPOINT =
 
 const CHAT_PASSWORD = import.meta.env.VITE_PORTFOLIO_API_MOONMIND_CHAT_PASSWORD;
 
+const STORAGE_KEY = "portfolio_chat_messages";
+const SESSION_STORAGE_KEY = "portfolio_chat_session_id";
+
 export const MOONMIND_WELCOME = {
   role: "assistant",
   content:
     "Hi! I'm Moonmind 🌙 — Ayan's AI portfolio assistant. Ask me anything about his skills, projects, or experience.",
 };
 
+const generateSessionId = () =>
+  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+// Unescape literal "\n" / "\r\n" / "\t" the API may send in the summary.
+const normalizeMarkdownText = (value = "") =>
+  value
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, "\t");
+
+// Pull the reply out of the API response ({ status, data: { summary } }).
+const renderMessageText = (data) => {
+  if (data?.status === "success" && typeof data?.data?.summary === "string") {
+    const summary = normalizeMarkdownText(data.data.summary).trim();
+    if (summary) {
+      return summary;
+    }
+  }
+  return "I could not generate a response just now.";
+};
+
+const loadStoredMessages = () => {
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) && parsed.length ? parsed : null;
+  } catch (storageError) {
+    console.log(storageError);
+    return null;
+  }
+};
+
 const MoonmindContext = createContext();
 
 export const MoonmindProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([MOONMIND_WELCOME]);
+  const [messages, setMessages] = useState(
+    () => loadStoredMessages() ?? [MOONMIND_WELCOME],
+  );
   const [loading, setLoading] = useState(false);
+  const [sessionId] = useState(() => {
+    try {
+      return sessionStorage.getItem(SESSION_STORAGE_KEY) || generateSessionId();
+    } catch (storageError) {
+      console.log(storageError);
+      return generateSessionId();
+    }
+  });
+
+  // Persist the conversation + session id across reloads.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch (storageError) {
+      console.log(storageError);
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    } catch (storageError) {
+      console.log(storageError);
+    }
+  }, [sessionId]);
 
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
@@ -30,9 +93,7 @@ export const MoonmindProvider = ({ children }) => {
     const text = (rawText ?? "").trim();
     if (!text || loading) return;
 
-    const userMsg = { role: "user", content: text };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
 
     if (!CHAT_ENDPOINT) {
@@ -49,45 +110,25 @@ export const MoonmindProvider = ({ children }) => {
     }
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (CHAT_PASSWORD) headers.password = CHAT_PASSWORD;
+
       const res = await fetch(CHAT_ENDPOINT, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          password: CHAT_PASSWORD,
-        },
-        body: {
+        headers,
+        body: JSON.stringify({
           prompt: text,
-          sessionId: "12313123",
+          sessionId,
           metadata: {},
-        },
-        // body: JSON.stringify({
-        //   message: text,
-        //   history: nextMessages
-        //     .filter((m) => m !== MOONMIND_WELCOME)
-        //     .map(({ role, content }) => ({ role, content })),
-        // }),
+        }),
       });
 
       if (!res.ok) throw new Error(`Moonmind API ${res.status}`);
 
-      const contentType = res.headers.get("content-type") || "";
-      let reply;
-      if (contentType.includes("application/json")) {
-        const data = await res.json();
-        reply =
-          data?.response ??
-          data?.reply ??
-          data?.message ??
-          data?.answer ??
-          data?.text ??
-          (typeof data === "string" ? data : JSON.stringify(data));
-      } else {
-        reply = await res.text();
-      }
-
+      const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: reply || "…" },
+        { role: "assistant", content: renderMessageText(data) },
       ]);
     } catch (err) {
       console.error("Moonmind chat failed:", err);
@@ -96,7 +137,7 @@ export const MoonmindProvider = ({ children }) => {
         {
           role: "assistant",
           content:
-            "Sorry, I couldn't reach the server right now. Please try again in a moment.",
+            "Sorry, something went wrong while preparing your response. Please try again.",
         },
       ]);
     } finally {

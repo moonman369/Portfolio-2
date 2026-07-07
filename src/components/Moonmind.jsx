@@ -1,12 +1,19 @@
 import { Maximize2, X } from "lucide-react";
 import { BiBrain } from "react-icons/bi";
-import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { useMoonmind } from "../context/MoonmindContext";
 import MoonmindChat from "./MoonmindChat";
 
 const Moonmind = () => {
   const { isOpen, open, close } = useMoonmind();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const expand = () =>
+    navigate("/moonmind", {
+      state: { from: `${location.pathname}${location.hash}`, internal: true },
+    });
 
   return (
     <>
@@ -46,14 +53,14 @@ const Moonmind = () => {
                 Ayan's portfolio assistant
               </p>
             </div>
-            <Link
-              to="/moonmind"
+            <button
+              onClick={expand}
               aria-label="Expand to full page"
               title="Expand"
               className="p-1 rounded-full hover:bg-black/15 transition-colors"
             >
               <Maximize2 size={18} />
-            </Link>
+            </button>
             <button
               onClick={close}
               aria-label="Close Moonmind"

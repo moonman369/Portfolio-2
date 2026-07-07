@@ -5,23 +5,74 @@ import { useToast } from "../context/ToastContext";
 import { CONTACT_INFO } from "../context/constants";
 import SocialLinks from "./SocialLinks";
 
+// Web3Forms delivers submissions to the email tied to this access key.
+const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+
 const ContactSection = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const name = formData.get("name");
+    const email = formData.get("email");
+    const message = formData.get("message");
+
     setIsSubmitting(true);
 
-    // No backend yet — simulate a send and confirm to the user.
-    setTimeout(() => {
+    if (!WEB3FORMS_ACCESS_KEY) {
       toast({
-        title: "Message sent!",
-        description: "Thanks for reaching out. I'll get back to you soon.",
+        title: "Email not configured",
+        description:
+          "Set VITE_WEB3FORMS_ACCESS_KEY in your .env to enable the contact form.",
+        variant: "destructive",
       });
       setIsSubmitting(false);
-      e.target.reset();
-    }, 1000);
+      return;
+    }
+
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          name,
+          email,
+          message,
+          subject: `New portfolio message from ${name}`,
+          from_name: "Ayan's Portfolio",
+          replyto: email,
+          botcheck: formData.get("botcheck"),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast({
+          title: "Message sent!",
+          description: "Thanks for reaching out. I'll get back to you soon.",
+        });
+        form.reset();
+      } else {
+        throw new Error(data.message || "Submission failed");
+      }
+    } catch (err) {
+      console.error("Contact form failed:", err);
+      toast({
+        title: "Couldn't send message",
+        description: "Something went wrong. Please try again or email directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -101,12 +152,22 @@ const ContactSection = () => {
           </div>
 
           {/* Contact form */}
-          <div className="bg-card p-8 rounded-lg shadow-xs">
+          <div className="p-8 rounded-lg bg-card/25 backdrop-blur-md border border-border/50 shadow-lg">
             <h3 className="text-2xl font-semibold mb-6 text-left">
               Send a Message
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Honeypot spam trap — must stay empty */}
+              <input
+                type="checkbox"
+                name="botcheck"
+                tabIndex={-1}
+                autoComplete="off"
+                className="hidden"
+                aria-hidden="true"
+              />
+
               <div className="text-left">
                 <label
                   htmlFor="name"

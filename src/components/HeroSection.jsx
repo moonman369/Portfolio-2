@@ -1,4 +1,4 @@
-import { ArrowDown, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { BiBrain } from "react-icons/bi";
 import {
   HERO_SECTION_DESCRIPTION,
@@ -50,7 +50,7 @@ const HeroSection = () => {
 
             <button
               onClick={openMoonmind}
-              className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-primary/60 bg-primary/5 text-primary font-medium hover:bg-primary/15 transition-colors animate-moonmind-glow"
+              className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-primary/60 bg-primary/10 backdrop-blur text-primary font-medium hover:bg-primary/20 transition-colors animate-moonmind-glow"
             >
               <BiBrain className="text-lg" /> Moonmind AI
             </button>
@@ -58,11 +58,6 @@ const HeroSection = () => {
 
           <SocialLinks className="justify-center opacity-0 animate-fade-in-delay-4 pt-2" />
         </div>
-      </div>
-
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-0.5 flex flex-col items-center animate-bounce cursor-pointer">
-        <span className="text-sm text-muted-foreground mb-2">Scroll</span>
-        <ArrowDown className="h-5 w-5 text-primary" />
       </div>
     </section>
   );

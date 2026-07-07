@@ -147,7 +147,8 @@ const CircularProgress = ({ percentage }) => {
         cy="70"
         r={radius}
         strokeWidth="8"
-        className="fill-none stroke-secondary"
+        fill="none"
+        stroke="hsl(var(--track))"
       />
       <circle
         cx="70"
@@ -187,7 +188,10 @@ const DifficultyBar = ({ label, solved, total, color }) => {
           {solved} / {total}
         </span>
       </div>
-      <div className="w-full bg-secondary/60 h-2 rounded-full overflow-hidden">
+      <div
+        className="w-full h-2 rounded-full overflow-hidden"
+        style={{ backgroundColor: "hsl(var(--track) / 0.6)" }}
+      >
         <div
           className="h-2 rounded-full transition-all duration-1000 ease-out"
           style={{ width: `${pct}%`, backgroundColor: color }}
