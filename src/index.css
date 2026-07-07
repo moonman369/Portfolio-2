@@ -23,6 +23,8 @@
     --animate-float: float 6s ease-in-out infinite;
     --animate-grow: grow 1.5s ease-out forwards;
     --animate-moonmind-glow: moonmind-glow 2s ease-in-out infinite;
+    --animate-blink: blink 1.1s ease-in-out infinite;
+    --animate-char-in: char-in 0.22s ease-out;
     --animate-pulse-subtle: pulse-subtle 4s ease-in-out infinite;
     --animate-fade-in: fade-in 0.7s ease-out forwards;
     --animate-fade-in-delay-1: fade-in 0.7s ease-out 0.2s forwards;
@@ -99,6 +101,25 @@
         }
         50% {
             box-shadow: 0 0 22px 4px hsl(var(--glow) / 0.8);
+        }
+    }
+    @keyframes blink {
+        0%,
+        100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0;
+        }
+    }
+    @keyframes char-in {
+        from {
+            opacity: 0;
+            filter: blur(4px);
+        }
+        to {
+            opacity: 1;
+            filter: blur(0);
         }
     }
 }
@@ -368,4 +389,11 @@
 }
 .chat-markdown strong {
     font-weight: 600;
+}
+
+/* Smaller overall type on mobile so text reads better. */
+@media (max-width: 640px) {
+    html {
+        font-size: 87.5%;
+    }
 }

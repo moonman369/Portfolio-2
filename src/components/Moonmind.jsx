@@ -17,14 +17,14 @@ const Moonmind = () => {
 
   return (
     <>
-      {/* Floating bot button (bottom-right) — shown when the chat is closed */}
+      {/* Floating bot button (desktop only) — shown when the chat is closed */}
       {!isOpen && (
         <button
           onClick={open}
           aria-label="Open Moonmind AI"
           title="Moonmind AI"
           className={cn(
-            "fixed z-50 right-5 bottom-24 sm:bottom-6 sm:right-6",
+            "max-sm:hidden fixed z-50 bottom-6 right-6",
             "p-4 rounded-full bg-gradient-primary text-primary-foreground",
             "shadow-lg animate-moonmind-glow",
           )}
@@ -37,7 +37,8 @@ const Moonmind = () => {
       {isOpen && (
         <div
           className={cn(
-            "fixed z-[60] flex flex-col overflow-hidden rounded-2xl glass shadow-2xl animate-fade-in",
+            "fixed z-[60] flex flex-col overflow-hidden rounded-2xl shadow-2xl animate-fade-in",
+            "bg-background/95 backdrop-blur-xl border border-border/60",
             "inset-x-4 bottom-24 top-20",
             "sm:inset-auto sm:top-auto sm:bottom-6 sm:right-6 sm:w-96 sm:h-[600px] sm:max-h-[80vh]",
           )}
@@ -71,7 +72,7 @@ const Moonmind = () => {
             </button>
           </div>
 
-          <MoonmindChat className="flex-1" />
+          <MoonmindChat className="flex-1 min-h-0" />
         </div>
       )}
     </>

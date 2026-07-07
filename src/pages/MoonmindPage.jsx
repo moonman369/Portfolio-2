@@ -21,13 +21,13 @@ const MoonmindPage = () => {
   };
 
   return (
-    <div className="min-h-screen text-foreground relative flex flex-col overflow-hidden">
+    <div className="h-[100dvh] text-foreground relative flex flex-col overflow-hidden">
       {/* Same background as the site */}
       {isDarkMode ? <StarBackground /> : <LightModeBackground />}
 
-      <div className="relative z-10 flex-1 flex flex-col w-full max-w-3xl mx-auto p-4 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center gap-3 py-4">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto p-4">
+        {/* Header (fixed) */}
+        <div className="flex items-center gap-3 py-4 shrink-0">
           <BiBrain className="text-3xl text-primary shrink-0" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold">
@@ -47,9 +47,9 @@ const MoonmindPage = () => {
           </button>
         </div>
 
-        {/* Glassy chat container */}
-        <div className="flex-1 min-h-0 mb-4 glass rounded-2xl overflow-hidden flex flex-col">
-          <MoonmindChat className="flex-1" />
+        {/* Chat container — only the messages scroll; header + input stay put */}
+        <div className="flex-1 min-h-0 mb-4 rounded-2xl overflow-hidden flex flex-col bg-background/80 backdrop-blur-xl border border-border/50 shadow-lg">
+          <MoonmindChat className="flex-1 min-h-0" />
         </div>
       </div>
     </div>

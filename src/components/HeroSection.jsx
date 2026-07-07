@@ -2,13 +2,13 @@ import { Download } from "lucide-react";
 import { BiBrain } from "react-icons/bi";
 import {
   HERO_SECTION_DESCRIPTION,
-  HERO_SECTION_FNAME,
   HERO_SECTION_GREETING,
-  HERO_SECTION_LNAME,
+  HERO_SECTION_ROLES,
   RESUME_URL,
 } from "../context/constants";
 import { useMoonmind } from "../context/MoonmindContext";
 import SocialLinks from "./SocialLinks";
+import Typewriter from "./Typewriter";
 
 const HeroSection = () => {
   const { open: openMoonmind } = useMoonmind();
@@ -20,18 +20,15 @@ const HeroSection = () => {
     >
       <div className="container max-w-4xl mx-auto text-center z-10">
         <div className="space-y-6">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight min-h-[2.4em] sm:min-h-0">
             <span className="opacity-0 animate-fade-in">
-              {HERO_SECTION_GREETING}
+              {HERO_SECTION_GREETING}{" "}
             </span>
-            <span className="text-gradient opacity-0 animate-fade-in-delay-1">
-              {" "}
-              {HERO_SECTION_FNAME}
-            </span>
-            <span className="text-gradient ml-2 opacity-0 animate-fade-in-delay-2">
-              {" "}
-              {HERO_SECTION_LNAME}
-            </span>
+            <Typewriter
+              words={HERO_SECTION_ROLES}
+              loop={false}
+              className="text-gradient"
+            />
           </h1>
 
           <p className="text-md md:text-md text-muted-foreground max-w-2xl mx-auto opacity-0 animate-fade-in-delay-4">
