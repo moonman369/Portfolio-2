@@ -30,7 +30,7 @@ const SkillsSection = () => {
                 "px-5 py-2 rounded-full transition-all duration-300 capitalize hover:btn-glow",
                 activeCategory === category
                   ? "bg-primary text-primary-foreground"
-                  : "bg-card text-foreground/80 hover:bg-primary/10",
+                  : "bg-card/60 backdrop-blur-sm text-foreground/80 hover:bg-primary/10",
               )}
             >
               {SKILL_CATEGORY_LABELS[category]}

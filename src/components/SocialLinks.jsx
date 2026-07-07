@@ -29,7 +29,7 @@ const SocialLinks = ({ className, itemClassName, size = 20 }) => {
               ? {}
               : { target: "_blank", rel: "noopener noreferrer" })}
             className={cn(
-              "p-3 rounded-full bg-primary/10 text-primary transition-all",
+              "p-3 rounded-full bg-primary/15 backdrop-blur-sm text-primary transition-all",
               "hover:bg-primary hover:text-primary-foreground hover:btn-glow",
               itemClassName,
             )}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
 import { useMoonmind } from "../context/MoonmindContext";
 
@@ -43,7 +45,10 @@ const MoonmindChat = ({ className }) => {
   return (
     <div className={cn("flex flex-col min-h-0", className)}>
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4"
+      >
         {messages.map((m, i) => (
           <div
             key={i}
@@ -54,13 +59,30 @@ const MoonmindChat = ({ className }) => {
           >
             <div
               className={cn(
-                "max-w-[80%] px-3.5 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words",
+                "max-w-[80%] px-3.5 py-2 rounded-2xl text-sm break-words",
                 m.role === "user"
-                  ? "bg-gradient-primary text-primary-foreground rounded-br-sm"
+                  ? "bg-gradient-primary text-primary-foreground rounded-br-sm whitespace-pre-wrap"
                   : "bg-card/70 text-foreground border border-border/50 rounded-bl-sm",
               )}
             >
-              {m.content}
+              {m.role === "assistant" ? (
+                <div className="chat-markdown">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: ({ node: _node, children, ...props }) => (
+                        <a {...props} target="_blank" rel="noopener noreferrer">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {m.content || ""}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                m.content
+              )}
             </div>
           </div>
         ))}
@@ -78,8 +100,8 @@ const MoonmindChat = ({ className }) => {
         )}
       </div>
 
-      {/* Input */}
-      <div className="p-3 border-t border-border/50 flex items-end gap-2">
+      {/* Input (fixed) */}
+      <div className="shrink-0 p-3 border-t border-border/50 flex items-end gap-2">
         <textarea
           ref={inputRef}
           value={input}

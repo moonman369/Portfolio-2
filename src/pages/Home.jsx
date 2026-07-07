@@ -10,6 +10,7 @@ import ProjectSection from "../components/ProjectSection";
 import ContactSection from "../components/ContactSection";
 import Footer from "../components/Footer";
 import Moonmind from "../components/Moonmind";
+import ScrollToTop from "../components/ScrollToTop";
 
 export const Home = () => {
   const { isDarkMode } = useTheme();
@@ -40,6 +41,9 @@ export const Home = () => {
 
       {/* Footer */}
       <Footer />
+
+      {/* Scroll-to-top button */}
+      <ScrollToTop />
 
       {/* Moonmind AI chatbot (portal-less overlay) */}
       <Moonmind />

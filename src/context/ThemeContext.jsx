@@ -4,12 +4,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Default to dark; only use light if the user explicitly chose it before.
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Init from localStorage once
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
-    const dark = storedTheme === "dark";
+    const dark = storedTheme ? storedTheme === "dark" : true;
     setIsDarkMode(dark);
     document.documentElement.classList.toggle("dark", dark);
   }, []);

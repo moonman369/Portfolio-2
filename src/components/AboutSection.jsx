@@ -40,7 +40,7 @@ const AboutSection = () => {
                 href={RESUME_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-6 py-2 rounded-full border border-primary text-primary hover:bg-primary/10 transition-all duration-300 hover:btn-glow"
+                className="px-6 py-2 rounded-full border border-primary bg-primary/10 backdrop-blur-sm text-primary hover:bg-primary/20 transition-all duration-300 hover:btn-glow"
               >
                 Download Résumé
               </a>
