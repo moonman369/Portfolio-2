@@ -5,11 +5,11 @@ import { cn } from "../lib/utils";
 const Typewriter = ({
   words,
   loop = true,
-  typingSpeed = 85,
-  typingJitter = 45,
-  deletingSpeed = 40,
-  deletingJitter = 18,
-  pauseAfterType = 1600,
+  typingSpeed = 62,
+  typingJitter = 55,
+  deletingSpeed = 30,
+  deletingJitter = 22,
+  pauseAfterType = 1500,
   pauseAfterDelete = 450,
   className,
 }) => {
@@ -68,22 +68,9 @@ const Typewriter = ({
     pauseAfterDelete,
   ]);
 
-  const head = text.slice(0, -1);
-  const lastChar = text.slice(-1);
-
   return (
     <span className="inline-flex items-baseline">
-      <span className={className}>
-        {head}
-        {lastChar && (
-          <span
-            key={text.length}
-            className={phase === "typing" ? "animate-char-in" : undefined}
-          >
-            {lastChar}
-          </span>
-        )}
-      </span>
+      <span className={className}>{text}</span>
       {!done && (
         <span
           aria-hidden="true"
