@@ -18,9 +18,9 @@ const ProjectSection = () => {
           {PROJECTS.map((project) => (
             <div
               key={project.id}
-              className="group glass rounded-lg overflow-hidden card-hover"
+              className="group glass rounded-lg card-hover"
             >
-              <div className="h-48 overflow-hidden">
+              <div className="h-48 overflow-hidden rounded-t-lg">
                 {project.image ? (
                   <img
                     src={project.image}
