@@ -56,15 +56,6 @@ export const ABOUT_SECTION_CARDS = [
 ];
 
 export const SKILLS_SECTION_PROP = [
-  { category: "frontend", name: "HTML5", level: "85.5" },
-  { category: "frontend", name: "CSS3", level: "76" },
-  { category: "frontend", name: "JavaScript", level: "95.6" },
-  { category: "frontend", name: "TypeScript", level: "90.2" },
-  { category: "frontend", name: "ReactJS", level: "95.4" },
-  { category: "frontend", name: "NextJS", level: "93.8" },
-  { category: "frontend", name: "Vite", level: "91.3" },
-  { category: "frontend", name: "TailwindCSS", level: "90.5" },
-  { category: "frontend", name: "Redux", level: "80.4" },
   { category: "backend", name: "Java", level: "98.9" },
   { category: "backend", name: "SpringBoot", level: "98.4" },
   { category: "backend", name: "Python", level: "97.6" },
@@ -92,6 +83,15 @@ export const SKILLS_SECTION_PROP = [
     name: "MCP (Model Context Protocol)",
     level: "80.4",
   },
+  { category: "frontend", name: "HTML5", level: "85.5" },
+  { category: "frontend", name: "CSS3", level: "76" },
+  { category: "frontend", name: "JavaScript", level: "95.6" },
+  { category: "frontend", name: "TypeScript", level: "90.2" },
+  { category: "frontend", name: "ReactJS", level: "95.4" },
+  { category: "frontend", name: "NextJS", level: "93.8" },
+  { category: "frontend", name: "Vite", level: "91.3" },
+  { category: "frontend", name: "TailwindCSS", level: "90.5" },
+  { category: "frontend", name: "Redux", level: "80.4" },
   { category: "cloud-web3", name: "Azure Integration Services", level: "97.3" },
   { category: "cloud-web3", name: "Azure Functions", level: "98" },
   { category: "cloud-web3", name: "Azure Kubernetes Service", level: "80" },
@@ -104,9 +104,9 @@ export const SKILLS_SECTION_PROP = [
 // Human-friendly labels for the skill category filter.
 export const SKILL_CATEGORY_LABELS = {
   all: "All",
-  frontend: "Frontend",
   backend: "Backend",
   "gen-ai-ml": "GenAI / ML",
+  frontend: "Frontend",
   "cloud-web3": "Cloud / Web3",
 };
 
@@ -151,7 +151,7 @@ export const PROJECTS = [
     image: yegpt,
     title: "YeGPT - GPT-4 based Kanye West Chatbot",
     github: "https://github.com/moonman369/YeGPT",
-    demo: "https://yegpt-0.vercel.app/",
+    demo: "https://yegpt.vercel.app/",
   },
   {
     id: 6,
