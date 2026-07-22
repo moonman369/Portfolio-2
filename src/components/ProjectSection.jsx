@@ -1,5 +1,9 @@
 import { ArrowRight, ExternalLink, Github } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PROJECTS, GITHUB_URL } from "../context/constants";
+
+const linkClass =
+  "inline-flex items-center gap-1.5 text-sm text-foreground/80 hover:text-primary transition-colors duration-300";
 
 const ProjectSection = () => {
   return (
@@ -43,22 +47,31 @@ const ProjectSection = () => {
                 </h3>
 
                 <div className="mt-auto flex items-center gap-4">
-                  {project.demo && (
-                    <a
-                      href={project.demo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-foreground/80 hover:text-primary transition-colors duration-300"
-                    >
-                      <ExternalLink size={16} /> Live Demo
-                    </a>
-                  )}
+                  {project.demo &&
+                    (project.demo.startsWith("/") ? (
+                      <Link
+                        to={project.demo}
+                        state={{ internal: true }}
+                        className={linkClass}
+                      >
+                        <ExternalLink size={16} /> Live Demo
+                      </Link>
+                    ) : (
+                      <a
+                        href={project.demo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={linkClass}
+                      >
+                        <ExternalLink size={16} /> Live Demo
+                      </a>
+                    ))}
                   {project.github && (
                     <a
                       href={project.github}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-foreground/80 hover:text-primary transition-colors duration-300"
+                      className={linkClass}
                     >
                       <Github size={16} /> Code
                     </a>

@@ -116,7 +116,8 @@ export const PROJECTS = [
     image: moonmind,
     title: "Moonmind AI: AI Powered Professional Portfolio Assistant",
     github: "https://github.com/moonman369/Portfolio-Stats-API",
-    demo: "https://moonman.in",
+    // Internal route — opens the in-app Moonmind chat page.
+    demo: "/moonmind",
   },
   {
     id: 1,
