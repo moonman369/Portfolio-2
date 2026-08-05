@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Award,
   Cpu,
-  Database,
   ExternalLink,
   FolderGit2,
   GitCommit,
@@ -15,6 +14,9 @@ import * as Si from "react-icons/si";
 import * as Vsc from "react-icons/vsc";
 import * as Md from "react-icons/md";
 import { CERTIFICATES, GITHUB_USERNAME } from "../context/constants";
+import { RiClaudeFill } from "react-icons/ri";
+import { GrOracle } from "react-icons/gr";
+import { BsClaude } from "react-icons/bs";
 
 // ---- Config (Vite env vars; unset => that fetch is skipped) ----
 const HOSTNAME = import.meta.env.VITE_PORTFOLIO_API_HOSTNAME;
@@ -101,7 +103,8 @@ const fetchGeolocation = async () => {
 
 // Resolve a brand icon by key, falling back to a generic award icon.
 const CERT_ICONS = {
-  oracle: Database, // Oracle brand icon removed from react-icons v5
+  claude: RiClaudeFill,
+  oracle: GrOracle, // Oracle brand icon removed from react-icons v5
   tcs: Si.SiTcs,
   coursera: Si.SiCoursera,
   ibm: Cpu, // IBM brand icon removed from react-icons v5
@@ -114,9 +117,10 @@ const CERT_ICONS = {
 
 // Brand colors for certificate icons (from the legacy stats.css).
 const CERT_COLORS = {
+  claude: "#DE7356",
   oracle: "#f80000",
-  ibm: "#0f62fe",
-  tcs: "#f58220",
+  ibm: "#d3e0f5",
+  tcs: "#5bbed3",
   coursera: "#16a34a",
   azure: "rgb(0, 127, 255)",
   intern: "rgb(231, 85, 117)",

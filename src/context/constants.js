@@ -237,6 +237,11 @@ export const SOCIAL_LINKS = [
 // resolved in StatsSection.jsx; `url` opens in a new tab.
 export const CERTIFICATES = [
   {
+    icon: "claude",
+    title: "Claude Certified Developer",
+    url: "https://drive.google.com/file/d/14w6_9ETaFyosMltrd30Ed6IhOvthBbiX/view?usp=sharing",
+  },
+  {
     icon: "oracle",
     title: "OCI – Gen AI Professional",
     url: "https://drive.google.com/file/d/1s3i9218hfue91ELClDyhXQqNdj2c7YNG/view?usp=sharing",
