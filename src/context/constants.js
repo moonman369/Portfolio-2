@@ -6,10 +6,10 @@ import apixi from "../assets/Capture.PNG";
 import yegpt from "../assets/yegpt.png";
 import tweetverse from "../assets/tweetverse.png";
 import meshnode from "../assets/meshnode.png";
-import avaxgods from "../assets/avaxgods.png";
 import defund from "../assets/defund2.png";
 import selfdrvcar from "../assets/selfdrvcar.png";
 import lyriks from "../assets/lyriks.png";
+import recogno from "../assets/recogno.png";
 
 export const HERO_SECTION_GREETING = "Hi, I'm";
 export const HERO_SECTION_FNAME = "Ayan";
@@ -113,6 +113,14 @@ export const SKILL_CATEGORY_LABELS = {
 export const PROJECTS = [
   {
     id: 0,
+    image: recogno,
+    title: "Recogno: AI Powered DSA Pattern Recognition and Spaced Repetition Engine",
+    github: "https://github.com/moonman369/recogno-ui",
+    // Internal route — opens the in-app Moonmind chat page.
+    demo: "https://recogno.moonman.in/",
+  },
+  {
+    id: 1,
     image: moonmind,
     title: "Moonmind AI: AI Powered Professional Portfolio Assistant",
     github: "https://github.com/moonman369/Portfolio-Stats-API",
@@ -120,42 +128,42 @@ export const PROJECTS = [
     demo: "/moonmind",
   },
   {
-    id: 1,
+    id: 2,
     image: codesage,
     title: "CodeSage: AI powered code navigator (Under development)",
     github: "https://github.com/moonman369/CodeSage-Service",
     demo: "https://www.linkedin.com/search/results/content/?fromMember=%5B%22ACoAADo_V9gBWpUhotMGBIKss3IypOU4FPK0Q3E%22%5D&keywords=%23codesage&origin=FACETED_SEARCH&sid=3%3B)&sortBy=%22date_posted%22",
   },
   {
-    id: 2,
+    id: 3,
     image: blinkmart,
     title: "BlinkMart - Fully Functional Quick Commerce Platform",
     github: "https://github.com/moonman369/BlinkMart-Client",
     demo: "https://blinkmart.projects.moonman.in",
   },
   {
-    id: 3,
+    id: 4,
     image: pingbot,
     title: "Ping-Bot-v0: Golang based AI Discord Chat Bot",
     github: "https://github.com/moonman369/Go-Discord-Bot",
     demo: "https://top.gg/bot/1134185454502170694",
   },
   {
-    id: 4,
+    id: 5,
     image: apixi,
     title: "Apixi: AI Image generator and Sharing platform (uses Dall-E)",
     github: "https://github.com/moonman369/ApixiClient",
     demo: "https://apixi.vercel.app/",
   },
   {
-    id: 5,
+    id: 6,
     image: yegpt,
     title: "YeGPT - GPT-4 based Kanye West Chatbot",
     github: "https://github.com/moonman369/YeGPT",
     demo: "https://yegpt.vercel.app/",
   },
   {
-    id: 6,
+    id: 7,
     image: tweetverse,
     title:
       "TweetVerse - A Decentralized Twitter Clone with Web2.0 authorization support.",
@@ -163,19 +171,12 @@ export const PROJECTS = [
     demo: "https://tweetverse.vercel.app/",
   },
   {
-    id: 7,
+    id: 8,
     image: meshnode,
     title:
       "MeshNode - Decentralized Q&A Platform (Chainlink Hackathon Project)",
     github: "https://github.com/moonman369/MeshNode",
     demo: "https://mesh-node.vercel.app/",
-  },
-  {
-    id: 8,
-    image: avaxgods,
-    title: "AVAX Gods - NFT Card Game",
-    github: "https://github.com/moonman369/AVAX-Gods-Frontend",
-    demo: "https://avaxgodsonline.netlify.app/",
   },
   {
     id: 9,
