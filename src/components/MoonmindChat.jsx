@@ -1,9 +1,50 @@
 import { useEffect, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { FileText, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
 import { useMoonmind } from "../context/MoonmindContext";
+import MoonmindSteps from "./MoonmindSteps";
+
+const TypingDots = () => (
+  <span className="flex gap-1 py-1">
+    <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.3s]" />
+    <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.15s]" />
+    <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce" />
+  </span>
+);
+
+// Retrieved portfolio documents behind an answer. Routes that don't retrieve
+// return an empty list, in which case nothing renders.
+const MoonmindSources = ({ documents = [] }) => {
+  if (!documents.length) return null;
+
+  return (
+    <details className="mt-2 rounded-xl border border-border/50 bg-background/40 text-xs">
+      <summary className="px-2.5 py-1.5 cursor-pointer select-none text-muted-foreground">
+        Sources · {documents.length}
+      </summary>
+      <ul className="px-2.5 pb-2 space-y-1">
+        {documents.map((doc, i) => (
+          <li
+            key={doc.id ?? i}
+            className="flex items-start gap-1.5 text-muted-foreground"
+          >
+            <FileText size={11} className="shrink-0 mt-0.5" />
+            <span className="break-words">
+              {doc.title || doc.id || "Untitled document"}
+              {doc.category && (
+                <span className="ml-1.5 text-muted-foreground/60">
+                  {doc.category}
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+};
 
 // Shared conversation body (message list + input). Reused by the floating
 // panel and the full-page view so they share one conversation via context.
@@ -49,55 +90,66 @@ const MoonmindChat = ({ className }) => {
         ref={scrollRef}
         className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4"
       >
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={cn(
-              "flex",
-              m.role === "user" ? "justify-end" : "justify-start",
-            )}
-          >
+        {messages.map((m, i) => {
+          const isRunning = m.status === "running";
+          return (
             <div
+              key={m.id ?? i}
               className={cn(
-                "max-w-[80%] px-3.5 py-2 rounded-2xl text-sm break-words",
-                m.role === "user"
-                  ? "bg-gradient-primary text-primary-foreground rounded-br-sm whitespace-pre-wrap"
-                  : "bg-card/70 text-foreground border border-border/50 rounded-bl-sm",
+                "flex",
+                m.role === "user" ? "justify-end" : "justify-start",
               )}
             >
-              {m.role === "assistant" ? (
-                <div className="chat-markdown">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      a: ({ node: _node, children, ...props }) => (
-                        <a {...props} target="_blank" rel="noopener noreferrer">
-                          {children}
-                        </a>
-                      ),
-                    }}
-                  >
-                    {m.content || ""}
-                  </ReactMarkdown>
-                </div>
-              ) : (
-                m.content
-              )}
-            </div>
-          </div>
-        ))}
+              <div
+                className={cn(
+                  "max-w-[80%] px-3.5 py-2 rounded-2xl text-sm break-words",
+                  m.role === "user"
+                    ? "bg-gradient-primary text-primary-foreground rounded-br-sm whitespace-pre-wrap"
+                    : "bg-card/70 text-foreground border border-border/50 rounded-bl-sm",
+                )}
+              >
+                {m.role === "assistant" ? (
+                  <>
+                    {/* Live agent trace — additive, and absent if the feed
+                        never arrives, leaving the plain loading state. */}
+                    <MoonmindSteps
+                      steps={m.steps}
+                      isRunning={isRunning}
+                      className={m.content ? "mb-2" : ""}
+                    />
 
-        {loading && (
-          <div className="flex justify-start">
-            <div className="px-3.5 py-3 rounded-2xl bg-card/70 border border-border/50 rounded-bl-sm">
-              <span className="flex gap-1">
-                <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce" />
-              </span>
+                    {m.content ? (
+                      <div className="chat-markdown">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ node: _node, children, ...props }) => (
+                              <a
+                                {...props}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {children}
+                              </a>
+                            ),
+                          }}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      isRunning && !m.steps?.length && <TypingDots />
+                    )}
+
+                    <MoonmindSources documents={m.documents} />
+                  </>
+                ) : (
+                  m.content
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })}
       </div>
 
       {/* Input (fixed) */}
