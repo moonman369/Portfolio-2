@@ -27,9 +27,10 @@ export const MOONMIND_BASE_URL =
 
 export const isMoonmindConfigured = Boolean(MOONMIND_BASE_URL);
 
-// Poll cadence: ~900ms x 150 attempts ≈ the server's own 120s hard cap.
+// Poll cadence, and the wall-clock deadline measured from the moment the run
+// was started — the server closes runs at 120s, so we give up just after.
 export const POLL_INTERVAL_MS = 900;
-export const MAX_POLLS = 150;
+export const RUN_DEADLINE_MS = 130_000;
 const MAX_CONSECUTIVE_FAILURES = 5;
 const BACKOFF_MS = [1000, 2000, 4000, 8000];
 
@@ -130,12 +131,22 @@ export const fetchRun = ({ runId, since = 0, signal }) =>
 
 // Poll a run to completion, handing every snapshot to `onSnapshot` as it
 // arrives. Resolves with the final snapshot; rejects on abort, on a fatal API
-// error, or once the poll cap is reached.
-export const pollRunUntilDone = async ({ runId, signal, onSnapshot }) => {
+// error, or once the deadline passes. Polls are strictly sequential, so a new
+// request is never sent while the previous one is still in flight, and time
+// spent in backoff counts against the same deadline.
+export const pollRunUntilDone = async ({
+  runId,
+  signal,
+  onSnapshot,
+  deadlineAt,
+}) => {
+  const deadline = Number.isFinite(deadlineAt)
+    ? deadlineAt
+    : Date.now() + RUN_DEADLINE_MS;
   let since = 0;
   let failures = 0;
 
-  for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
+  while (Date.now() < deadline) {
     try {
       const snapshot = await fetchRun({ runId, since, signal });
       failures = 0;

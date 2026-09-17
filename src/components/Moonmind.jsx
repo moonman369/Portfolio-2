@@ -1,4 +1,4 @@
-import { Maximize2, X } from "lucide-react";
+import { Maximize2, RotateCcw, X } from "lucide-react";
 import { BiBrain } from "react-icons/bi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
@@ -7,7 +7,7 @@ import { useMoonmind } from "../context/MoonmindContext";
 import MoonmindChat from "./MoonmindChat";
 
 const Moonmind = () => {
-  const { isOpen, open, close } = useMoonmind();
+  const { isOpen, open, close, refreshChat, refreshPending } = useMoonmind();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,6 +61,15 @@ const Moonmind = () => {
             </div>
 
             <div className="flex items-center gap-0.5 shrink-0">
+              <button
+                onClick={refreshChat}
+                disabled={refreshPending}
+                aria-label="Refresh chat"
+                title="Refresh chat"
+                className={headerActionClass}
+              >
+                <RotateCcw size={15} />
+              </button>
               <button
                 onClick={expand}
                 aria-label="Expand to full page"

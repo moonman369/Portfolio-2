@@ -1,8 +1,9 @@
-import { Minimize2 } from "lucide-react";
+import { Minimize2, RotateCcw } from "lucide-react";
 import { BiBrain } from "react-icons/bi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
+import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
 import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
@@ -10,6 +11,7 @@ import MoonmindChat from "../components/MoonmindChat";
 
 const MoonmindPage = () => {
   const { isDarkMode } = useTheme();
+  const { refreshChat, refreshPending } = useMoonmind();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,6 +45,15 @@ const MoonmindPage = () => {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={refreshChat}
+              disabled={refreshPending}
+              aria-label="Refresh chat"
+              title="Refresh chat"
+              className={headerActionClass}
+            >
+              <RotateCcw size={16} />
+            </button>
             <button
               onClick={minimize}
               aria-label="Minimize to portfolio"

@@ -72,10 +72,18 @@ const markdownComponents = {
 // Shared conversation body (message list + input). Reused by the floating
 // panel and the full-page view so they share one conversation via context.
 const MoonmindChat = ({ className }) => {
-  const { messages, loading, sendMessage } = useMoonmind();
+  const {
+    messages,
+    loading,
+    sendMessage,
+    refreshPending,
+    cancelRefresh,
+    confirmRefresh,
+  } = useMoonmind();
   const [input, setInput] = useState("");
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const cancelRef = useRef(null);
   // Only auto-scroll while the reader is at the bottom; never yank the view
   // away from someone scrolled up reading.
   const stickyRef = useRef(true);
@@ -109,6 +117,24 @@ const MoonmindChat = ({ className }) => {
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, MAX_INPUT_HEIGHT)}px`;
   }, [input]);
+
+  // Context callbacks are new objects on every render; keep the latest in a ref
+  // so the listener below is bound once per open, not once per poll.
+  const cancelRefreshRef = useRef(cancelRefresh);
+  useEffect(() => {
+    cancelRefreshRef.current = cancelRefresh;
+  });
+
+  // Move focus into the confirmation as it opens, and let Escape dismiss it.
+  useEffect(() => {
+    if (!refreshPending) return undefined;
+    cancelRef.current?.focus();
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") cancelRefreshRef.current();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [refreshPending]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -184,6 +210,42 @@ const MoonmindChat = ({ className }) => {
           );
         })}
       </div>
+
+      {/* Refresh confirmation — inline, never window.confirm */}
+      {refreshPending && (
+        <div
+          role="alertdialog"
+          aria-label="Start a new chat"
+          className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 flex flex-wrap items-center gap-2"
+        >
+          <p className="flex-1 min-w-[10rem] text-xs text-muted-foreground">
+            Start a new chat? This clears the current conversation.
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              ref={cancelRef}
+              onClick={cancelRefresh}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs border border-border",
+                "hover:bg-muted/60 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+              )}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmRefresh}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs bg-gradient-primary text-primary-foreground",
+                "transition-all hover:btn-glow",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+              )}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Input (fixed) */}
       <div className="shrink-0 border-t border-border/50 p-3">
