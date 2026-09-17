@@ -386,3 +386,83 @@
         font-size: 87.5%;
     }
 }
+
+/* ---- MoonMind chat (scoped: .mm-* and .mm-chat descendants) ---- */
+
+/* Collapsible step list: animates height without measuring it in JS. */
+.mm-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+        grid-template-rows 200ms ease,
+        opacity 200ms ease;
+}
+.mm-collapse[data-open] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+.mm-collapse > * {
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Smooth follow-scroll for the message list (reduced motion turns it off). */
+.mm-chat-scroll {
+    scroll-behavior: smooth;
+}
+
+.mm-chevron {
+    transition: transform 200ms ease;
+}
+.mm-chevron-open {
+    transform: rotate(90deg);
+}
+
+.mm-shimmer {
+    background: linear-gradient(
+        90deg,
+        hsl(var(--muted-foreground)) 0%,
+        hsl(var(--foreground)) 50%,
+        hsl(var(--muted-foreground)) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: mm-shimmer 1.6s linear infinite;
+}
+
+@keyframes mm-shimmer {
+    from {
+        background-position: 200% 0;
+    }
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mm-collapse,
+    .mm-chevron {
+        transition: none;
+    }
+    .mm-shimmer {
+        background: none;
+        -webkit-background-clip: border-box;
+        background-clip: border-box;
+        color: hsl(var(--muted-foreground));
+        animation: none;
+    }
+    /* Scoped to the chat only — nothing else on the site is affected. */
+    .mm-chat .animate-spin,
+    .mm-chat .animate-bounce,
+    .mm-chat .animate-fade-in,
+    .mm-launcher {
+        animation: none;
+    }
+    .mm-chat-scroll,
+    .mm-chat * {
+        scroll-behavior: auto;
+    }
+}

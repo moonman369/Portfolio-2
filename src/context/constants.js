@@ -24,14 +24,14 @@ export const HERO_SECTION_ROLES = [
   "Ayan Maiti",
 ];
 export const HERO_SECTION_DESCRIPTION =
-  "I am Ayan Maiti, currently working as a System Engineer at Tata Consultancy Services Limited. I specialize in Azure-based systems, microservices, and API integrations, with hands-on experience in the retail domain. Alongside my professional work, I actively build skills in artificial intelligence and adjacent technologies, with a growing focus on intelligent, data-driven systems.";
+  "I am Ayan Maiti, currently working as a Senior Software Engineer at EY GDS, where I work as an AI Engineer building agentic orchestration solutions using Microsoft Agent Framework, Azure AI Foundry, and Azure AI services. I specialize in cloud-based systems, AI engineering, and intelligent, data-driven applications, with a strong foundation in microservices and API integrations from my previous experience at Tata Consultancy Services. Alongside my professional work, I actively build skills in artificial intelligence and adjacent technologies, with a growing focus on intelligent, data-driven systems.";
 
 export const ABOUT_SECTION_HEADING =
   "Passionate Backend Developer & AI Engineer";
 
 export const ABOUT_SECTION_PARAGRAPHS = [
-  "I'm a System Engineer at Tata Consultancy Services, where I design and ship Azure-based integration systems, microservices, and APIs for large-scale retail clients. I enjoy turning complex business requirements into reliable, maintainable services.",
-  "Outside of my day job I'm deeply invested in AI engineering — building with LLMs, RAG pipelines, and agentic systems. I'm always exploring how intelligent, data-driven tooling can make software more useful, and I love learning new corners of the stack along the way.",
+  "I'm a Senior Software Engineer at EY GDS, currently working as an AI Engineer focused on building agentic orchestration solutions using Microsoft Agent Framework, Azure AI Foundry, and Azure AI services. I enjoy turning complex business requirements into intelligent, scalable, and maintainable systems.",
+  "Outside of my day job, I'm deeply invested in AI engineering, exploring LLMs, RAG pipelines, agentic systems, and intelligent orchestration. Previously, I worked as a System Engineer at Tata Consultancy Services, where I built Azure-based integration systems, microservices, and APIs for large-scale retail clients. That experience continues to shape how I approach building reliable AI-powered software.",
 ];
 
 export const ABOUT_SECTION_CARDS = [
@@ -45,7 +45,7 @@ export const ABOUT_SECTION_CARDS = [
     icon: "cpu",
     title: "AI Engineering",
     description:
-      "Building with LLMs, RAG, vector databases, and agentic workflows to create intelligent, data-driven systems.",
+      "Building with LLMs, RAG, vector databases, and agentic frameworks to create intelligent, data-driven systems.",
   },
   {
     icon: "briefcase",
@@ -70,6 +70,26 @@ export const SKILLS_SECTION_PROP = [
     category: "gen-ai-ml",
     name: "RAG (Retrieval-Augmented Generation)",
     level: "80.3",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Agentic Orchestration",
+    level: "85.6",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Microsoft Agent Framework",
+    level: "79.98",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Azure Foundry",
+    level: "87.32",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Agentic Graph Workflows",
+    level: "88.28",
   },
   {
     category: "gen-ai-ml",
