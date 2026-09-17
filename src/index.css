@@ -407,6 +407,11 @@
     min-height: 0;
 }
 
+/* Smooth follow-scroll for the message list (reduced motion turns it off). */
+.mm-chat-scroll {
+    scroll-behavior: smooth;
+}
+
 .mm-chevron {
     transition: transform 200ms ease;
 }
@@ -452,9 +457,11 @@
     /* Scoped to the chat only — nothing else on the site is affected. */
     .mm-chat .animate-spin,
     .mm-chat .animate-bounce,
-    .mm-chat .animate-fade-in {
+    .mm-chat .animate-fade-in,
+    .mm-launcher {
         animation: none;
     }
+    .mm-chat-scroll,
     .mm-chat * {
         scroll-behavior: auto;
     }

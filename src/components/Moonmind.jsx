@@ -2,6 +2,7 @@ import { Maximize2, X } from "lucide-react";
 import { BiBrain } from "react-icons/bi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
+import { headerActionClass } from "../lib/moonmindUi";
 import { useMoonmind } from "../context/MoonmindContext";
 import MoonmindChat from "./MoonmindChat";
 
@@ -21,12 +22,14 @@ const Moonmind = () => {
       {!isOpen && (
         <button
           onClick={open}
-          aria-label="Open Moonmind AI"
+          aria-label="Open Moonmind chat"
+          aria-expanded={isOpen}
           title="Moonmind AI"
           className={cn(
-            "max-sm:hidden fixed z-50 bottom-6 right-6",
+            "mm-launcher max-sm:hidden fixed z-50 bottom-6 right-6",
             "p-4 rounded-full bg-gradient-primary text-primary-foreground",
             "shadow-lg animate-moonmind-glow",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
           )}
         >
           <BiBrain className="text-2xl" />
@@ -37,8 +40,8 @@ const Moonmind = () => {
       {isOpen && (
         <div
           className={cn(
-            "fixed z-[60] flex flex-col overflow-hidden rounded-2xl shadow-2xl animate-fade-in",
-            "bg-background/95 backdrop-blur-xl border border-border/60",
+            "fixed z-[60] flex flex-col overflow-hidden rounded-2xl animate-fade-in",
+            "bg-background/95 backdrop-blur-xl border border-border/60 shadow-xl",
             "inset-x-4 bottom-24 top-20",
             "sm:inset-auto sm:top-auto sm:bottom-6 sm:right-6 sm:w-96 sm:h-[600px] sm:max-h-[80vh]",
           )}
@@ -46,30 +49,35 @@ const Moonmind = () => {
           aria-label="Moonmind AI assistant"
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-primary text-primary-foreground">
-            <BiBrain className="text-2xl shrink-0" />
+          <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-border/60 bg-card/40">
+            <span className="grid place-items-center w-8 h-8 shrink-0 rounded-full bg-gradient-primary text-primary-foreground">
+              <BiBrain className="text-lg" />
+            </span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold leading-tight">Moonmind AI</p>
-              <p className="text-xs opacity-80 leading-tight">
+              <p className="font-semibold text-sm leading-tight">Moonmind AI</p>
+              <p className="text-xs text-muted-foreground leading-tight truncate">
                 Ayan's portfolio assistant
               </p>
             </div>
-            <button
-              onClick={expand}
-              aria-label="Expand to full page"
-              title="Expand"
-              className="p-1 rounded-full hover:bg-black/15 transition-colors"
-            >
-              <Maximize2 size={18} />
-            </button>
-            <button
-              onClick={close}
-              aria-label="Close Moonmind"
-              title="Close"
-              className="p-1 rounded-full hover:bg-black/15 transition-colors"
-            >
-              <X size={20} />
-            </button>
+
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button
+                onClick={expand}
+                aria-label="Expand to full page"
+                title="Expand"
+                className={headerActionClass}
+              >
+                <Maximize2 size={16} />
+              </button>
+              <button
+                onClick={close}
+                aria-label="Close Moonmind"
+                title="Close"
+                className={headerActionClass}
+              >
+                <X size={17} />
+              </button>
+            </div>
           </div>
 
           <MoonmindChat className="flex-1 min-h-0" />
