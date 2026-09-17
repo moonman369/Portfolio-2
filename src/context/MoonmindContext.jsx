@@ -47,20 +47,24 @@ const loadStoredMessages = () => {
 };
 
 // Keep the stored conversation small: in-flight placeholders are useless after
-// a reload, and document bodies would blow the sessionStorage quota.
-const toStoredMessage = ({ documents, ...message }) => ({
-  ...message,
-  ...(documents?.length
-    ? {
-        documents: documents.map(({ id, title, category, tags }) => ({
-          id,
-          title,
-          category,
-          tags,
-        })),
-      }
-    : null),
-});
+// a reload, and document bodies would blow the sessionStorage quota. `live`
+// marks a message produced by a run in this tab and is deliberately dropped,
+// so a restored message with no saved steps shows no steps panel.
+const toStoredMessage = (message) => {
+  const stored = { ...message };
+  delete stored.live;
+  if (stored.documents?.length) {
+    stored.documents = stored.documents.map(({ id, title, category, tags }) => ({
+      id,
+      title,
+      category,
+      tags,
+    }));
+  } else {
+    delete stored.documents;
+  }
+  return stored;
+};
 
 const MoonmindContext = createContext();
 
@@ -126,6 +130,7 @@ export const MoonmindProvider = ({ children }) => {
         role: "assistant",
         content: "",
         status: "running",
+        live: true,
         steps: [],
       },
     ]);

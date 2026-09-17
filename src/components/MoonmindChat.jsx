@@ -110,13 +110,18 @@ const MoonmindChat = ({ className }) => {
               >
                 {m.role === "assistant" ? (
                   <>
-                    {/* Live agent trace — additive, and absent if the feed
-                        never arrives, leaving the plain loading state. */}
-                    <MoonmindSteps
-                      steps={m.steps}
-                      isRunning={isRunning}
-                      className={m.content ? "mb-2" : ""}
-                    />
+                    {/* Thinking steps: shown for every message produced by a
+                        run in this tab, and for restored messages that still
+                        carry steps. Keyed by runId so state can never carry
+                        over into a new conversation. */}
+                    {(m.live || m.steps?.length > 0) && (
+                      <MoonmindSteps
+                        key={m.runId ?? m.id}
+                        steps={m.steps}
+                        isRunning={isRunning}
+                        className={m.content ? "mb-2" : ""}
+                      />
+                    )}
 
                     {m.content ? (
                       <div className="chat-markdown">
@@ -138,7 +143,7 @@ const MoonmindChat = ({ className }) => {
                         </ReactMarkdown>
                       </div>
                     ) : (
-                      isRunning && !m.steps?.length && <TypingDots />
+                      isRunning && !m.live && <TypingDots />
                     )}
 
                     <MoonmindSources documents={m.documents} />
