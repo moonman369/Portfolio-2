@@ -257,7 +257,7 @@ const MoonmindChat = ({ className }) => {
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder="Ask Moonmind anything…"
-            className="flex-1 resize-none bg-transparent px-1.5 py-1 text-sm leading-relaxed focus:outline-hidden placeholder:text-muted-foreground/70"
+            className="mm-chat-input flex-1 resize-none bg-transparent px-1.5 py-1 text-sm leading-relaxed focus:outline-hidden placeholder:text-muted-foreground/70"
           />
           <button
             onClick={handleSend}
