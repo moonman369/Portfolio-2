@@ -73,18 +73,24 @@ export const SKILLS_SECTION_PROP = [
   },
   {
     category: "gen-ai-ml",
-    name: "Agentic Orchestration",
-    level: "85.6",
-  },
-  {
-    category: "gen-ai-ml",
     name: "Microsoft Agent Framework",
     level: "79.98",
   },
   {
+    // Renamed from Azure AI Foundry — both names kept so it stays findable.
     category: "gen-ai-ml",
-    name: "Azure Foundry",
+    name: "Microsoft Foundry (Azure AI Foundry)",
     level: "87.32",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "LangGraph",
+    level: "82.4",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Agentic Orchestration",
+    level: "85.6",
   },
   {
     category: "gen-ai-ml",
