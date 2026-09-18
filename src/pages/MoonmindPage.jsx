@@ -16,12 +16,15 @@ const MoonmindPage = () => {
   const location = useLocation();
 
   // Return to wherever the chat was expanded from (preserving scroll/section).
+  // A direct load or a reload of /moonmind carries no internal state and has
+  // no entry of ours to go back to, so it falls through to home rather than
+  // stepping out of the site.
   const minimize = () => {
     if (location.state?.internal) {
       navigate(-1);
-    } else {
-      navigate(location.state?.from || "/");
+      return;
     }
+    navigate(location.state?.from || "/");
   };
 
   return (

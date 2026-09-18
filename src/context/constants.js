@@ -56,15 +56,6 @@ export const ABOUT_SECTION_CARDS = [
 ];
 
 export const SKILLS_SECTION_PROP = [
-  { category: "backend", name: "Java", level: "98.9" },
-  { category: "backend", name: "SpringBoot", level: "98.4" },
-  { category: "backend", name: "Python", level: "97.6" },
-  { category: "backend", name: "NodeJS", level: "98.5" },
-  { category: "backend", name: "SQL", level: "68.4" },
-  { category: "backend", name: "MongoDB", level: "88.8" },
-  { category: "backend", name: "ExpressJS", level: "96.4" },
-  { category: "backend", name: "Mulesoft", level: "60.2" },
-  { category: "backend", name: ".NET", level: "98.9" },
   { category: "gen-ai-ml", name: "Prompt Engineering", level: "95.6" },
   {
     category: "gen-ai-ml",
@@ -73,18 +64,24 @@ export const SKILLS_SECTION_PROP = [
   },
   {
     category: "gen-ai-ml",
-    name: "Agentic Orchestration",
-    level: "85.6",
-  },
-  {
-    category: "gen-ai-ml",
     name: "Microsoft Agent Framework",
     level: "79.98",
   },
   {
+    // Renamed from Azure AI Foundry — both names kept so it stays findable.
     category: "gen-ai-ml",
-    name: "Azure Foundry",
+    name: "Microsoft Foundry (Azure AI Foundry)",
     level: "87.32",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "LangGraph",
+    level: "82.4",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Agentic Orchestration",
+    level: "85.6",
   },
   {
     category: "gen-ai-ml",
@@ -103,6 +100,15 @@ export const SKILLS_SECTION_PROP = [
     name: "MCP (Model Context Protocol)",
     level: "80.4",
   },
+  { category: "backend", name: "Java", level: "98.9" },
+  { category: "backend", name: "SpringBoot", level: "98.4" },
+  { category: "backend", name: "Python", level: "97.6" },
+  { category: "backend", name: "NodeJS", level: "98.5" },
+  { category: "backend", name: "SQL", level: "68.4" },
+  { category: "backend", name: "MongoDB", level: "88.8" },
+  { category: "backend", name: "ExpressJS", level: "96.4" },
+  { category: "backend", name: "Mulesoft", level: "60.2" },
+  { category: "backend", name: ".NET", level: "98.9" },
   { category: "frontend", name: "HTML5", level: "85.5" },
   { category: "frontend", name: "CSS3", level: "76" },
   { category: "frontend", name: "JavaScript", level: "95.6" },
@@ -124,8 +130,8 @@ export const SKILLS_SECTION_PROP = [
 // Human-friendly labels for the skill category filter.
 export const SKILL_CATEGORY_LABELS = {
   all: "All",
-  backend: "Backend",
   "gen-ai-ml": "GenAI / ML",
+  backend: "Backend",
   frontend: "Frontend",
   "cloud-web3": "Cloud / Web3",
 };
