@@ -1,4 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { cn } from "../lib/utils";
+import { useInView } from "../hooks/useInView";
+import { useCountUp } from "../hooks/useCountUp";
+import {
+  useFinePointer,
+  usePrefersReducedMotion,
+} from "../hooks/usePrefersReducedMotion";
 import {
   Award,
   Cpu,
@@ -38,6 +45,21 @@ const LEETCODE_PROFILE_URL = "https://leetcode.com/u/moonman369/";
 const GITHUB_PROFILE_URL = "https://github.com/moonman369";
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// ---- Animation config ----
+// Hovering a stat replays its count-up. Off: hover stays decorative.
+const HOVER_REPLAYS_COUNT = false;
+// Re-animate when the section scrolls back into view. Off: animate once.
+const REPLAY_ON_REENTER = false;
+
+const COUNT_DURATION_MS = 1200; // every number except the rank
+const RANK_DURATION_MS = 900; // the rank settles a little quicker
+const RANK_QUANTIZE = 500; // rank ticks in 500s — try 100 or 1000
+const RING_DURATION_MS = 900; // keep in step with .stats-ring-progress
+const BAR_STAGGER_MS = 120; // Easy, then Medium, then Hard
+const CARD_STAGGER_MS = 80; // GitHub rows cascade in DOM order
+const HOVER_REST_MS = 200; // the pointer must settle before a replay
+const HOVER_COOLDOWN_MS = 2000; // and the stat must have been still this long
 
 // ---- localStorage cache (replaces the legacy 30-day cookies) ----
 const readCache = (key) => {
@@ -138,14 +160,127 @@ const GITHUB_COLORS = {
   stars: "rgb(235, 196, 25)",
 };
 
-const CircularProgress = ({ percentage }) => {
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.max(0, Math.min(100, percentage || 0));
-  const offset = circumference - (clamped / 100) * circumference;
+// Delays a trigger so a group of elements cascades instead of firing at once.
+const useStaggeredActive = (active, delayMs = 0) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const timer = setTimeout(() => setReady(true), delayMs);
+    return () => {
+      clearTimeout(timer);
+      setReady(false);
+    };
+  }, [active, delayMs]);
+
+  return active && ready;
+};
+
+// The gated hover-replay path. Shipped off; flipping HOVER_REPLAYS_COUNT makes
+// a deliberate rest over one stat replay that stat, and nothing else.
+const useHoverReplay = ({ doneAtRef, onReplay }) => {
+  const finePointer = useFinePointer();
+  const reducedMotion = usePrefersReducedMotion();
+  const timerRef = useRef(0);
+
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  if (!HOVER_REPLAYS_COUNT || !finePointer || reducedMotion) return {};
+
+  return {
+    onPointerEnter: () => {
+      // Only once the entry animation has finished.
+      if (!doneAtRef.current) return;
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        if (Date.now() - doneAtRef.current >= HOVER_COOLDOWN_MS) onReplay();
+      }, HOVER_REST_MS);
+    },
+    // Leaving early cancels the pending replay.
+    onPointerLeave: () => clearTimeout(timerRef.current),
+  };
+};
+
+// One counting number. Renders today's plain value until its data is in and
+// the trigger fires, and is hidden from screen readers — `srLabel` carries the
+// real figure instead, once, with no live region.
+const AnimatedNumber = ({
+  value,
+  active,
+  duration = COUNT_DURATION_MS,
+  quantize = 1,
+  className,
+  srLabel,
+}) => {
+  const [replayKey, setReplayKey] = useState(0);
+  const display = useCountUp(value, { active, duration, quantize, replayKey });
+
+  // When the count finished, so hover knows whether a replay is allowed.
+  const doneAtRef = useRef(null);
+  useEffect(() => {
+    const settled = display !== null && display === value;
+    doneAtRef.current = settled ? (doneAtRef.current ?? Date.now()) : null;
+  }, [display, value]);
+
+  const hover = useHoverReplay({
+    doneAtRef,
+    onReplay: () => setReplayKey((key) => key + 1),
+  });
+
+  const fallback = Number.isFinite(value) ? value : 0;
+  const shown = display ?? fallback;
 
   return (
-    <svg width="140" height="140" viewBox="0 0 140 140" className="shrink-0">
+    <>
+      <span
+        aria-hidden="true"
+        className={cn("stats-number", className)}
+        // Hold the final width from the start so counting cannot shift layout.
+        style={{ minWidth: `${String(fallback).length}ch` }}
+        {...hover}
+      >
+        {shown}
+      </span>
+      {srLabel != null && <span className="sr-only">{srLabel}</span>}
+    </>
+  );
+};
+
+const CircularProgress = ({ percentage, solved, total, active }) => {
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  const reducedMotion = usePrefersReducedMotion();
+  const hasValue = Number.isFinite(percentage);
+  const clamped = Math.max(0, Math.min(100, percentage || 0));
+
+  // Empty unless the ring has been triggered. This has to be the *initial*
+  // render, not something an effect applies afterwards, or the ring flashes
+  // full for a frame before animating.
+  const filled = active || reducedMotion;
+  const offset = filled
+    ? circumference - (clamped / 100) * circumference
+    : circumference;
+
+  // The percentage counts in tenths so the hook can stay integer-only.
+  const tenths = useCountUp(hasValue ? Math.round(clamped * 10) : null, {
+    active,
+    duration: RING_DURATION_MS,
+  });
+  const shown = ((tenths ?? 0) / 10).toFixed(1);
+
+  const label = hasValue
+    ? `Solved ${solved} of ${total} problems, ${clamped.toFixed(1)} percent`
+    : "Problems solved, not available yet";
+
+  return (
+    <svg
+      width="140"
+      height="140"
+      viewBox="0 0 140 140"
+      className="shrink-0"
+      role="img"
+      aria-label={label}
+    >
       <circle
         cx="70"
         cy="70"
@@ -154,17 +289,25 @@ const CircularProgress = ({ percentage }) => {
         fill="none"
         stroke="hsl(var(--track))"
       />
+      {/* Hover decoration only — see the .stats-* block in index.css. */}
+      <circle
+        cx="70"
+        cy="70"
+        r={radius}
+        strokeWidth="8"
+        fill="none"
+        className="stats-ring-sweep stroke-primary"
+      />
       <circle
         cx="70"
         cy="70"
         r={radius}
         strokeWidth="8"
         strokeLinecap="round"
-        className="fill-none stroke-primary"
+        className="stats-ring-progress fill-none stroke-primary"
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         transform="rotate(-90 70 70)"
-        style={{ transition: "stroke-dashoffset 1s ease-out" }}
       />
       <text
         x="70"
@@ -173,15 +316,22 @@ const CircularProgress = ({ percentage }) => {
         dominantBaseline="central"
         className="fill-foreground font-semibold"
         fontSize="20"
+        aria-hidden="true"
+        style={{ fontVariantNumeric: "tabular-nums" }}
       >
-        {clamped.toFixed(1)}%
+        {shown}%
       </text>
     </svg>
   );
 };
 
-const DifficultyBar = ({ label, solved, total, color }) => {
-  const pct = total ? (solved / total) * 100 : 0;
+const DifficultyBar = ({ label, solved, total, color, active, delay }) => {
+  const started = useStaggeredActive(active, delay);
+  const reducedMotion = usePrefersReducedMotion();
+  const hasValue = Number.isFinite(solved) && Number.isFinite(total);
+  const pct = hasValue && total ? (solved / total) * 100 : 0;
+  const filled = started || reducedMotion;
+
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
@@ -189,7 +339,12 @@ const DifficultyBar = ({ label, solved, total, color }) => {
           {label}
         </span>
         <span className="text-muted-foreground">
-          {solved} / {total}
+          {/* Only the solved half counts; the total is shown straight away. */}
+          <AnimatedNumber value={solved} active={started} />
+          <span aria-hidden="true"> / {total ?? 0}</span>
+          <span className="sr-only">
+            {solved ?? 0} of {total ?? 0} solved
+          </span>
         </span>
       </div>
       <div
@@ -197,11 +352,34 @@ const DifficultyBar = ({ label, solved, total, color }) => {
         style={{ backgroundColor: "hsl(var(--track) / 0.6)" }}
       >
         <div
-          className="h-2 rounded-full transition-all duration-1000 ease-out"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          className="stats-bar-fill h-2 rounded-full"
+          style={{
+            width: `${filled ? pct : 0}%`,
+            backgroundColor: color,
+          }}
         />
       </div>
     </div>
+  );
+};
+
+const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => {
+  const started = useStaggeredActive(active, delay);
+
+  return (
+    <li className="flex items-center gap-3">
+      <Icon className="h-5 w-5 shrink-0" style={{ color }} />
+      <p className="text-sm">
+        {label}:{" "}
+        <span className="font-semibold text-primary">
+          <AnimatedNumber
+            value={value}
+            active={started}
+            srLabel={String(value ?? 0)}
+          />
+        </span>
+      </p>
+    </li>
   );
 };
 
@@ -235,33 +413,51 @@ const StatsSection = () => {
     fetchGeolocation();
   }, []);
 
-  const solved = leetcodeStats?.totalSolved ?? 0;
-  const totalQuestions = leetcodeStats?.totalQuestions ?? 0;
-  const solvedPct = totalQuestions ? (solved * 100) / totalQuestions : 0;
+  // Animate once both things are true: the card is on screen and its data has
+  // actually arrived. Whichever happens last is the trigger, so a cold load
+  // that resolves while the section is already visible still animates.
+  const [leetcodeRef, leetcodeInView] = useInView({
+    once: !REPLAY_ON_REENTER,
+  });
+  const [githubRef, githubInView] = useInView({ once: !REPLAY_ON_REENTER });
+
+  // Deliberately un-defaulted: a missing field must stay undefined so a
+  // loading or failed card renders its plain zero and never counts.
+  const solved = leetcodeStats?.totalSolved;
+  const totalQuestions = leetcodeStats?.totalQuestions;
+  const ranking = leetcodeStats?.ranking;
+  const leetcodeActive = leetcodeInView && Number.isFinite(solved);
+  const solvedPct =
+    Number.isFinite(solved) && totalQuestions
+      ? (solved * 100) / totalQuestions
+      : null;
+
+  const githubActive =
+    githubInView && Number.isFinite(gitHubStats?.totalRepos);
 
   const githubItems = [
     {
       icon: FolderGit2,
       label: "Total Repositories",
-      value: gitHubStats?.totalRepos ?? 0,
+      value: gitHubStats?.totalRepos,
       color: GITHUB_COLORS.repos,
     },
     {
       icon: GitCommit,
       label: "Total Commits",
-      value: gitHubStats?.totalCommits ?? 0,
+      value: gitHubStats?.totalCommits,
       color: GITHUB_COLORS.commits,
     },
     {
       icon: GitPullRequest,
       label: "Total Pull Requests",
-      value: gitHubStats?.totalPRs ?? 0,
+      value: gitHubStats?.totalPRs,
       color: GITHUB_COLORS.prs,
     },
     {
       icon: Star,
       label: "Total Stars",
-      value: gitHubStats?.totalStars ?? 0,
+      value: gitHubStats?.totalStars,
       color: GITHUB_COLORS.stars,
     },
   ];
@@ -279,10 +475,11 @@ const StatsSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* LeetCode */}
           <a
+            ref={leetcodeRef}
             href={LEETCODE_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="glass rounded-lg p-6 card-hover text-left block"
+            className="stats-card glass rounded-lg p-6 card-hover text-left block"
           >
             <div className="flex items-center gap-3 mb-6">
               {Si.SiLeetcode && (
@@ -292,16 +489,33 @@ const StatsSection = () => {
             </div>
 
             <div className="flex items-center gap-6 mb-6">
-              <CircularProgress percentage={solvedPct} />
+              <CircularProgress
+                percentage={solvedPct}
+                solved={solved}
+                total={totalQuestions}
+                active={leetcodeActive}
+              />
               <div className="space-y-2">
                 <div>
                   <p className="text-sm text-muted-foreground">Solved</p>
-                  <p className="text-2xl font-bold text-primary">{solved}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    <AnimatedNumber
+                      value={solved}
+                      active={leetcodeActive}
+                      srLabel={String(solved ?? 0)}
+                    />
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Rank</p>
                   <p className="text-lg font-semibold">
-                    {leetcodeStats?.ranking ?? 0}
+                    <AnimatedNumber
+                      value={ranking}
+                      active={leetcodeActive}
+                      duration={RANK_DURATION_MS}
+                      quantize={RANK_QUANTIZE}
+                      srLabel={String(ranking ?? 0)}
+                    />
                   </p>
                 </div>
               </div>
@@ -310,31 +524,38 @@ const StatsSection = () => {
             <div className="space-y-4">
               <DifficultyBar
                 label="Easy"
-                solved={leetcodeStats?.easySolved ?? 0}
-                total={leetcodeStats?.totalEasy ?? 0}
+                solved={leetcodeStats?.easySolved}
+                total={leetcodeStats?.totalEasy}
                 color="#22c55e"
+                active={leetcodeActive}
+                delay={0}
               />
               <DifficultyBar
                 label="Medium"
-                solved={leetcodeStats?.mediumSolved ?? 0}
-                total={leetcodeStats?.totalMedium ?? 0}
+                solved={leetcodeStats?.mediumSolved}
+                total={leetcodeStats?.totalMedium}
                 color="#f59e0b"
+                active={leetcodeActive}
+                delay={BAR_STAGGER_MS}
               />
               <DifficultyBar
                 label="Hard"
-                solved={leetcodeStats?.hardSolved ?? 0}
-                total={leetcodeStats?.totalHard ?? 0}
+                solved={leetcodeStats?.hardSolved}
+                total={leetcodeStats?.totalHard}
                 color="#ef4444"
+                active={leetcodeActive}
+                delay={BAR_STAGGER_MS * 2}
               />
             </div>
           </a>
 
           {/* GitHub */}
           <a
+            ref={githubRef}
             href={GITHUB_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="glass rounded-lg p-6 card-hover text-left block"
+            className="stats-card glass rounded-lg p-6 card-hover text-left block"
           >
             <div className="flex items-center gap-3 mb-6">
               <Github className="h-7 w-7 text-primary" />
@@ -342,14 +563,14 @@ const StatsSection = () => {
             </div>
 
             <ul className="space-y-4 mb-6">
-              {githubItems.map(({ icon: Icon, label, value, color }) => (
-                <li key={label} className="flex items-center gap-3">
-                  <Icon className="h-5 w-5 shrink-0" style={{ color }} />
-                  <p className="text-sm">
-                    {label}:{" "}
-                    <span className="font-semibold text-primary">{value}</span>
-                  </p>
-                </li>
+              {githubItems.map((item, index) => (
+                <GitHubStat
+                  key={item.label}
+                  {...item}
+                  active={githubActive}
+                  // Cascade down the list rather than firing all at once.
+                  delay={index * CARD_STAGGER_MS}
+                />
               ))}
             </ul>
 

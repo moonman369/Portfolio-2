@@ -466,3 +466,66 @@
         scroll-behavior: auto;
     }
 }
+
+/* ---- Animated stats (scoped: .stats-*) ---- */
+
+/* The ring fills by transitioning its dash offset — no per-frame JS. */
+.stats-ring-progress {
+    transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Difficulty bars match their own numbers (1200ms), not the ring. */
+.stats-bar-fill {
+    transition: width 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Reserve the final width so the card cannot jitter as digits arrive. */
+.stats-number {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+}
+
+.stats-ring-sweep {
+    opacity: 0;
+    transform-origin: center;
+}
+
+/* Hover decoration only, and only where hovering is a real thing. */
+@media (hover: hover) and (pointer: fine) {
+    .stats-card:hover .stats-ring-sweep {
+        animation: stats-ring-sweep 700ms ease-out;
+    }
+    .stats-card:hover .stats-ring-progress {
+        filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.55));
+    }
+}
+
+@keyframes stats-ring-sweep {
+    0% {
+        opacity: 0;
+        transform: scale(0.94);
+    }
+    45% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.06);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stats-ring-progress,
+    .stats-bar-fill {
+        transition: none;
+    }
+    .stats-card:hover .stats-ring-sweep,
+    .stats-ring-sweep {
+        animation: none;
+        opacity: 0;
+    }
+    .stats-card:hover .stats-ring-progress {
+        filter: none;
+    }
+}
