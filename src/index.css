@@ -120,7 +120,6 @@
     --ease-moon-in-out: var(--motion-ease-inOut);
     --ease-moon-expo: var(--motion-ease-expo);
 
-    --animate-grow: grow 1.5s ease-out forwards;
     --animate-fade-in: fade-in 0.7s ease-out forwards;
 
     @keyframes fade-in {
@@ -131,14 +130,6 @@
         to {
             opacity: 1;
             transform: translateY(0);
-        }
-    }
-    @keyframes grow {
-        from {
-            transform: scaleX(0);
-        }
-        to {
-            transform: scaleX(1);
         }
     }
 }
@@ -409,8 +400,8 @@
 }
 
 /* ---- Legacy utilities ----
-   Still used by sections that are restyled in later phases. Remapped to the
-   new palette so nothing glows, blurs or animates shadow in the meantime. */
+   Still used by the Moonmind chat until its restyle. Remapped to the new
+   palette so nothing glows or blurs in the meantime. */
 @utility text-gradient {
     color: hsl(var(--primary));
 }
@@ -419,24 +410,6 @@
     background-color: hsl(var(--primary));
 }
 
-@utility cosmic-button {
-    @apply btn-primary;
-}
-
-@utility card-hover {
-    @apply transition-transform duration-300 hover:scale-[1.02];
-}
-
-@utility glass {
-    background-color: hsl(var(--card) / 0.92);
-    border: 1px solid hsl(var(--border));
-}
-
-@utility gradient-border {
-    @apply relative rounded-md;
-    background-color: hsl(var(--card) / 0.92);
-    border: 1px solid hsl(var(--border));
-}
 
 /* ---- Backgrounds ---- */
 
@@ -1015,5 +988,21 @@
     [data-reveal-pending] [data-reveal],
     [data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
         opacity: 1 !important;
+    }
+}
+
+/* Ambient motion waits for `html.ambient` (enableAmbientMotion in motion.js),
+   so the meteors, twinkles and button glows never compete with the first
+   paint. They fade in when it arrives. */
+:root:not(.ambient) .sky,
+:root:not(.ambient) .glow-beam,
+:root:not(.ambient) .btn-glow::before {
+    display: none;
+}
+.sky,
+.glow-beam {
+    transition: opacity 600ms ease-out;
+    @starting-style {
+        opacity: 0;
     }
 }

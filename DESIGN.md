@@ -90,13 +90,14 @@ HSL triplets. The variable names are unchanged; the values are remapped.
 | Token | Dark | Light | Use |
 | --- | --- | --- | --- |
 | `--background` | `220 24% 8%` #101319 | `216 26% 96%` #f2f4f7 | Page ink / paper |
-| `--foreground` | `214 32% 91%` #e1e7ef | `222 44% 14%` #141d33 | Body text |
+| `--foreground` | `214 45% 95%` #edf1f8 | `222 44% 14%` #141d33 | Body text |
 | `--card` | `220 20% 11%` #161a22 | `216 33% 99%` #fcfcfd | Panels |
 | `--muted` | `220 16% 15%` | `216 22% 91%` | Quiet fills |
-| `--muted-foreground` | `216 14% 66%` #9ca6b4 | `218 16% 37%` #4f5a6d | Secondary text, placeholders |
-| `--primary` | `208 56% 78%` #a7c9e6 | `212 62% 34%` #21538c | Accent: links, focus, moon line |
+| `--muted-foreground` | `215 20% 72%` #a9b5c6 | `218 18% 36%` #4b576c | Secondary text, placeholders |
+| `--primary` | `204 100% 76%` #85ceff | `212 88% 42%` #0d65c9 | Accent: links, focus, moon line |
 | `--primary-foreground` | = background | = background | Text on accent |
-| `--earthshine` (new) | `36 86% 66%` #f3b75e | `28 88% 32%` #994d0a | Live states only |
+| `--earthshine` (new) | `38 100% 64%` #ffbc47 | `28 95% 33%` | Live states only (e.g. "Sending...") |
+| `--glow` (new) | `204 100% 70%` | `212 95% 55%` | Button halos, meteors |
 | `--border` | `218 16% 19%` | `216 18% 85%` | Hairlines (decorative) |
 | `--input` (new) | `216 12% 42%` | `216 12% 54%` | Field borders (≥ 3:1) |
 | `--ring` (new) | = primary | = primary | Focus rings |
@@ -105,12 +106,15 @@ Measured contrast (WCAG 2.x):
 
 | Pair | Dark | Light |
 | --- | --- | --- |
-| foreground / background | 14.98 | 15.18 |
-| muted-foreground / background (also placeholders) | 7.56 | 6.30 |
-| muted-foreground / card | 7.06 | 6.77 |
-| primary / background | 10.78 | 7.11 |
-| primary-foreground on primary | 10.78 | 7.11 |
-| earthshine / background | 10.43 | 5.58 |
+| foreground / background | 16.48 | 15.18 |
+| muted-foreground / background (also placeholders) | 8.99 | 6.60 |
+| muted-foreground / card | 8.40 | 7.08 |
+| primary / background | 10.88 | 5.14 |
+| primary-foreground on primary | 10.88 | 5.14 |
+| earthshine / background | 11.10 | ≥ 4.5 |
+
+The palette was brightened after Phase 1 review ("a bit brighter shades");
+every pair above was re-measured.
 | input border / background | 3.33 | 3.31 |
 
 ### Type
@@ -278,7 +282,68 @@ choice, none of which is purely visual:
 
 ---
 
-## 5. Suggestions (skipped because they would change behaviour)
+## 5. Phase 2
+
+### Direction changes from the Phase 1 review
+
+These come from the site owner and supersede the original brief where the
+two disagree:
+
+- **Brighter palette** (table above).
+- **Meteors and twinkles** over the background, in both themes (ink-coloured
+  and fainter on paper). CSS keyframes on transform/opacity only; two meteors
+  and no twinkles on phones; none with reduced motion.
+- **Glowing main buttons** (`btn-glow` + `GlowBeam`): a light travelling
+  round the border and a breathing halo. On the hero buttons, navbar
+  Moonmind, launcher, Get In Touch, Check My GitHub, Send Message and Back
+  to Home. Static under reduced motion.
+- **Skills keep percentage bars**, now with counters: each bar fills and its
+  number counts 0 → exact level when first seen, on hover (that card) and on
+  every tab switch. The list scrolls in its own region with no scrollbar.
+
+These loops are the one sanctioned exception to "nothing decorative loops".
+
+**Ambient motion is deferred.** With the meteors and glows painting from the
+first frame, LCP went from 2.34s to 2.9s. They now switch on 1.2s after the
+`load` event (`enableAmbientMotion`) and fade in, which restored LCP and cut
+TBT further.
+
+### Sections
+
+- `useReveal` + `[data-reveal]`: each element rises once when it enters the
+  viewport (WAAPI, staggered), held by CSS only while motion is allowed;
+  print shows everything.
+- `SectionHeading`: `0N / Label` mono eyebrow on a hairline, then heading.
+- About: numbered hairline list. Stats: readout panels, difficulty labels as
+  text + coloured dot (coloured text failed contrast in light mode), bars via
+  `scaleX`. Projects: first two featured, dark veil lifts on hover. Contact:
+  48px fields, earthshine "Sending..." (`aria-busy`). 404: the moon with its
+  satellite drifted off orbit.
+
+### Measurements (Phase 2)
+
+Lighthouse mobile, median of 5 runs:
+
+| | Before | Phase 1 | Phase 2 | Budget |
+| --- | --- | --- | --- | --- |
+| Performance | 69 | 83 | **90** | ≥ 90 ✓ |
+| Accessibility | 90 | 100 | **100** | ✓ |
+| LCP | 2.72s | 2.34s | **2.35s** | < 2.5s ✓ |
+| TBT | 1,356ms | 541ms | **328ms** | < 200ms ✗ |
+| CLS | 0.003 | 0 | **0** | ✓ |
+| Initial JS (gzip) | 159.7 KB | 130.2 KB | **132.1 KB** | ≤ 170 KB ✓ |
+
+Full-page scroll, Chrome trace at 4x CPU:
+
+| | Before | Phase 1 | Phase 2 |
+| --- | --- | --- | --- |
+| Mobile: long tasks / blocking | 141 / 6.4s | 21 / 1.25s | **2 / 124ms** |
+| Desktop: long tasks / blocking | 135 / 8.7s | 53 / 2.7s | **15 / 282ms** |
+
+What remains in scroll is paint/layout as sections reveal and images decode,
+plus small amounts from the navbar moon frame and ScrollToTop's listener.
+
+## 6. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
@@ -294,3 +359,8 @@ choice, none of which is purely visual:
   branch); the other section links do.
 - The production bundle resolves `react-router`'s `dist/development` build;
   worth checking whether a `production` resolve condition trims it.
+- The GitHub "repos per language" card is an external image with a black
+  `midnight_purple` theme, which sits heavily on the light theme. Choosing its
+  `theme` per site theme would change the request URL, so it is left alone.
+- `ScrollToTop` sets state from a raw scroll listener; it could share the
+  navbar's single animation frame.

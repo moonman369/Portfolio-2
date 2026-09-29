@@ -64,3 +64,19 @@ export const rise = (
     delay: stagger(step, { start: delay }),
     ease: EASE.expo,
   });
+
+// ---- Ambient motion ----
+//
+// The always-on decoration — meteors, twinkles and the button glows — costs
+// real rendering work (animated layers, blurred halos). Painting it in the
+// first frames delayed the hero text by ~0.6s on a slow phone, so it switches
+// on a moment after the page has loaded: CSS keeps it off until <html> has
+// the `ambient` class, then fades it in.
+export const AMBIENT_DELAY_MS = 1200;
+
+export const enableAmbientMotion = (root = document.documentElement) => {
+  const start = () =>
+    setTimeout(() => root.classList.add("ambient"), AMBIENT_DELAY_MS);
+  if (document.readyState === "complete") start();
+  else window.addEventListener("load", start, { once: true });
+};
