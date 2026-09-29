@@ -954,3 +954,14 @@
         display: none;
     }
 }
+
+/* ---- Sections ---- */
+.section-pad {
+    padding-block: clamp(5rem, 12vw, 9rem);
+}
+
+/* Scroll entrances (useReveal): held until each element's turn. Only
+   rendered while motion is allowed. */
+[data-reveal-pending] [data-reveal] {
+    opacity: 0;
+}
