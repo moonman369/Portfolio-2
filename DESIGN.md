@@ -466,7 +466,18 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   and sits fully in frame, above the text column's paper, 64–98px clear of the
   name on phones.
 
-## 8. Suggestions (skipped because they would change behaviour)
+## 8. Round 3
+
+- **Glow colour.** Light mode's glows (button halos, travelling rims, card
+  hover) are the buttery yellow of the moon seen from earth; in dark mode the
+  halo stays lunar blue and only the rim's bright core turns butter.
+- **Thinking glow.** While Moonmind is working (after the same 300ms hold),
+  a warm butter glow sweeps across the steps header behind the label, and a
+  small orb breathes and ripples beside it; the legacy typing dots are the
+  same orb. Blurred layers on transform/opacity only; static with reduced
+  motion.
+
+## 9. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

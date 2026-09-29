@@ -66,7 +66,7 @@ const MoonmindSteps = ({
   const [settled, setSettled] = useState(false);
   const bodyId = useId();
 
-  // Hold the shimmer back briefly so a ~1s run never flashes it.
+  // Hold the thinking glow back briefly so a ~1s run never flashes it.
   useEffect(() => {
     if (!isRunning) return undefined;
     const timer = setTimeout(() => setSettled(true), 300);
@@ -80,7 +80,8 @@ const MoonmindSteps = ({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-muted/40 text-xs",
+        // Clips the thinking glow to the card's rounded edge.
+        "relative isolate overflow-hidden rounded-xl border border-border bg-muted/40 text-xs",
         className,
       )}
     >
@@ -92,6 +93,10 @@ const MoonmindSteps = ({
         className={cn(
           "flex w-full min-h-9 items-center gap-2 px-3 py-1.5 rounded-xl text-left",
           "font-mono text-muted-foreground hover:text-foreground",
+          // Inset, so the card's clipping can never hide the focus ring.
+          "focus-visible:[outline-offset:-2px]",
+          // Thinking: a warm glow sweeps across the header (see .mm-thinking).
+          shimmering && "mm-thinking",
         )}
       >
         <ChevronRight
@@ -99,13 +104,8 @@ const MoonmindSteps = ({
           aria-hidden="true"
           className={cn("mm-chevron shrink-0", open && "mm-chevron-open")}
         />
-        <span
-          className={cn(
-            "flex-1 truncate",
-            isRunning && "text-foreground",
-            shimmering && "mm-shimmer",
-          )}
-        >
+        {shimmering && <span aria-hidden="true" className="mm-orb" />}
+        <span className={cn("flex-1 truncate", isRunning && "text-foreground")}>
           {label}
         </span>
         {!isRunning && route && (

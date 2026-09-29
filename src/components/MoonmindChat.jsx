@@ -11,13 +11,12 @@ const MAX_INPUT_HEIGHT = 128;
 // How close to the bottom still counts as "following along".
 const STICKY_THRESHOLD_PX = 80;
 
-// Three dots breathing in turn (opacity only). Part of the running state,
-// the one place a loop is allowed; still under reduced motion.
+// Thinking: the same glowing orb as the steps header (see .mm-orb). Part of
+// the running state, the one place a loop is allowed; still with reduced
+// motion.
 const TypingDots = () => (
-  <span className="mm-typing flex gap-1.5 py-2" aria-hidden="true">
-    <span />
-    <span />
-    <span />
+  <span className="flex py-2.5 pl-1" aria-hidden="true">
+    <span className="mm-orb mm-orb-lg" />
   </span>
 );
 
