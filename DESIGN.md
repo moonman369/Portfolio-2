@@ -97,7 +97,8 @@ HSL triplets. The variable names are unchanged; the values are remapped.
 | `--primary` | `204 100% 76%` #85ceff | `212 88% 42%` #0d65c9 | Accent: links, focus, moon line |
 | `--primary-foreground` | = background | = background | Text on accent |
 | `--earthshine` (new) | `38 100% 64%` #ffbc47 | `28 95% 33%` | Live states only (e.g. "Sending...") |
-| `--glow` (new) | `204 100% 70%` | `212 95% 55%` | Button halos, meteors |
+| `--glow` (new) | `204 100% 70%` lunar blue | `45 96% 60%` buttery moon yellow | Button halos and travelling rims, card hover glow |
+| `--glow-hi` (new) | `49 100% 82%` butter | `50 100% 86%` pale butter | The bright core of a button's travelling light |
 | `--border` | `218 16% 19%` | `216 18% 85%` | Hairlines (decorative) |
 | `--input` (new) | `216 12% 42%` | `216 12% 54%` | Field borders (≥ 3:1) |
 | `--ring` (new) | = primary | = primary | Focus rings |

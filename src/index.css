@@ -167,8 +167,10 @@
         --input: 216 12% 54%;
         --ring: 212 88% 42%;
 
-        /* Button glow and meteors. */
-        --glow: 212 95% 55%;
+        /* Glow: the buttery yellow of the moon seen from earth. `--glow-hi`
+           is the bright core of a button's travelling light. */
+        --glow: 45 96% 60%;
+        --glow-hi: 50 100% 86%;
     }
 
     /* Dark: deep blue-grey ink, cool moonlight text, pale lunar accent. */
@@ -201,7 +203,9 @@
         --input: 216 12% 42%;
         --ring: 204 100% 76%;
 
+        /* Lunar-blue glow; its bright core is the moon's buttery yellow. */
         --glow: 204 100% 70%;
+        --glow-hi: 49 100% 82%;
     }
 
     * {
@@ -1012,7 +1016,7 @@
         animation: glow-breathe 3.2s ease-in-out infinite alternate;
     }
     :root:not(.dark) .btn-glow {
-        --glow-halo: 0.32;
+        --glow-halo: 0.42;
     }
     .glow-beam {
         position: absolute;
@@ -1033,7 +1037,7 @@
             transparent 0deg 200deg,
             hsl(var(--glow) / 0.35) 250deg,
             hsl(var(--glow)) 295deg,
-            hsl(0 0% 100%) 318deg,
+            hsl(var(--glow-hi)) 318deg,
             hsl(var(--glow)) 335deg,
             transparent 355deg
         );
