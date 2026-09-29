@@ -939,62 +939,20 @@
     }
 }
 
-/* ---- Sky motion: meteors and a few twinkling stars ----
-   Each meteor streaks for about a second, then waits out the rest of its
-   cycle invisible. Transform/opacity keyframes on the compositor; nothing
-   here runs JS. Hidden entirely with reduced motion. */
+/* ---- Sky motion: a few twinkling stars (dark mode, desktop) ----
+   Transform/opacity keyframes on the compositor; nothing here runs JS.
+   Meteors are drawn on the star canvas instead (lib/meteors.js). Hidden
+   entirely with reduced motion. */
 .sky {
-    --meteor: 204 100% 88%;
-}
-:root:not(.dark) .sky {
-    --meteor: 212 88% 42%;
-    opacity: 0.45;
-}
-.meteor {
-    position: absolute;
-    width: var(--len, 150px);
-    height: 1px;
-    border-radius: 1px;
-    background: linear-gradient(90deg, hsl(var(--meteor) / 0), hsl(var(--meteor)));
-    opacity: 0;
-    transform-origin: 100% 50%;
-    animation: meteor var(--dur, 12s) linear var(--delay, 0s) infinite;
-}
-.meteor::after {
-    content: "";
-    position: absolute;
-    right: -1px;
-    top: -1px;
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: hsl(var(--meteor));
-    box-shadow: 0 0 6px 1px hsl(var(--meteor) / 0.8);
-}
-@keyframes meteor {
-    0% {
-        opacity: 0;
-        transform: rotate(145deg) translateX(0);
-    }
-    1.5% {
-        opacity: 1;
-    }
-    8% {
-        opacity: 0;
-        transform: rotate(145deg) translateX(460px);
-    }
-    100% {
-        opacity: 0;
-        transform: rotate(145deg) translateX(460px);
-    }
+    --sky-tint: 204 100% 88%;
 }
 .twinkle {
     position: absolute;
     width: 2px;
     height: 2px;
     border-radius: 50%;
-    background: hsl(var(--meteor));
-    box-shadow: 0 0 4px hsl(var(--meteor) / 0.9);
+    background: hsl(var(--sky-tint));
+    box-shadow: 0 0 4px hsl(var(--sky-tint) / 0.9);
     opacity: 0.15;
     animation: twinkle var(--dur, 4s) ease-in-out var(--delay, 0s) infinite
         alternate;

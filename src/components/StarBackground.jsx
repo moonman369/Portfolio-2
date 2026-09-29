@@ -1,77 +1,145 @@
 import { useEffect, useRef } from "react";
+import { createMeteorShower } from "../lib/meteors";
+import { MAX_DPR, paintStarfield } from "../lib/starfield";
+import { whenAmbient } from "../lib/motion";
+import {
+  useMediaQuery,
+  usePrefersReducedMotion,
+} from "../hooks/usePrefersReducedMotion";
 import SkyMotion from "./SkyMotion";
 
-// A sparse, mostly static star field on one <canvas>, drawn once.
+// The dark sky: a sparse, mostly static star field on one <canvas>, with
+// meteors drawn onto the same canvas from a fixed pool (lib/meteors.js).
 //
-// There is no animation loop: the canvas is a still image. The movement —
-// meteors and a few twinkles — is a separate CSS layer (SkyMotion). On
-// desktop the canvas drifts very slowly with scroll through a CSS scroll
-// timeline (see .stars-canvas in index.css), which runs on the compositor;
-// phones, reduced motion and browsers without scroll timelines get the still
-// image. The layout is seeded, so a resize redraws the same sky rather than a
-// new one.
+// Where supported the canvas is handed to a worker (lib/sky.worker.js), which
+// paints the stars and runs the meteors off the main thread: a canvas
+// animated from the main thread forces a main-thread frame every time it
+// draws, and every running CSS animation pays for those frames too. Elsewhere
+// the same code runs here.
+//
+// Meteors run only once ambient motion is on, while the hero is on screen and
+// the tab is visible, and never with reduced motion. On desktop the canvas
+// drifts very slowly with scroll through a CSS scroll timeline (see
+// .stars-canvas), on the compositor.
 
-const SEED = 369;
-const MAX_DPR = 2;
-const AREA_PER_STAR = 9000; // px² of viewport per star
-const MAX_STARS = 220;
+// A canvas can be transferred only once, and StrictMode runs effects twice:
+// the worker is kept per canvas element and ended when the canvas leaves.
+const workers = new WeakMap();
 
-// Mostly cool moonlight, a few blue-white, the odd warm one.
-const TINTS = [
-  [226, 233, 245],
-  [226, 233, 245],
-  [226, 233, 245],
-  [180, 204, 236],
-  [244, 222, 190],
-];
-
-// Small, fast, deterministic PRNG (mulberry32).
-const seeded = (seed) => () => {
-  seed = (seed + 0x6d2b79f5) | 0;
-  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+const sizeOf = (canvas) => {
+  const { width, height } = canvas.getBoundingClientRect();
+  return { width, height, dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR) };
 };
 
-const draw = (canvas) => {
-  const { width, height } = canvas.getBoundingClientRect();
-  if (!width || !height) return;
-
-  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
-
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-
-  const random = seeded(SEED);
-  const count = Math.min(MAX_STARS, Math.round((width * height) / AREA_PER_STAR));
-
-  for (let i = 0; i < count; i++) {
-    const x = random() * width;
-    const y = random() * height;
-    // Skewed towards tiny: most stars are specks, a handful are brighter.
-    const size = random() ** 3;
-    const radius = 0.35 + size * 1.15;
-    const alpha = 0.18 + size * 0.5 + random() * 0.12;
-    const [r, g, b] = TINTS[Math.floor(random() * TINTS.length)];
-
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
+// The same four operations, in a worker or on this thread.
+const createSky = (canvas) => {
+  if (
+    typeof canvas.transferControlToOffscreen === "function" &&
+    typeof Worker !== "undefined"
+  ) {
+    let worker = workers.get(canvas);
+    if (!worker) {
+      worker = new Worker(new URL("../lib/sky.worker.js", import.meta.url), {
+        type: "module",
+      });
+      const offscreen = canvas.transferControlToOffscreen();
+      worker.postMessage({ type: "init", canvas: offscreen, size: sizeOf(canvas) }, [
+        offscreen,
+      ]);
+      workers.set(canvas, worker);
+    }
+    return {
+      config: (options) => worker.postMessage({ type: "config", ...options }),
+      run: (running) => worker.postMessage({ type: "run", running }),
+      resize: () => worker.postMessage({ type: "resize", size: sizeOf(canvas) }),
+      dispose: () => {
+        worker.postMessage({ type: "run", running: false });
+        setTimeout(() => {
+          if (canvas.isConnected) return; // StrictMode re-run, not unmount
+          worker.terminate();
+          workers.delete(canvas);
+        }, 0);
+      },
+    };
   }
+
+  // Main-thread fallback.
+  const layer = document.createElement("canvas");
+  let size = sizeOf(canvas);
+  paintStarfield({ canvas, layer, ...size });
+  let shower = null;
+  let allowed = false;
+  let running = false;
+  const apply = () => {
+    if (shower && allowed && running) shower.start();
+    else shower?.stop();
+  };
+  return {
+    config: ({ phone, meteors }) => {
+      shower?.stop();
+      shower = createMeteorShower({ canvas, starLayer: layer, phone });
+      shower.resize(size);
+      allowed = meteors;
+      apply();
+    },
+    run: (value) => {
+      running = value;
+      apply();
+    },
+    resize: () => {
+      shower?.stop();
+      size = sizeOf(canvas);
+      paintStarfield({ canvas, layer, ...size });
+      shower?.resize(size);
+      apply();
+    },
+    dispose: () => shower?.stop(),
+  };
 };
 
 const StarBackground = () => {
   const canvasRef = useRef(null);
+  const reducedMotion = usePrefersReducedMotion();
+  const phone = useMediaQuery("(pointer: coarse), (max-width: 767px)");
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
-    draw(canvas);
+    const sky = createSky(canvas);
+    sky.config({ phone, meteors: !reducedMotion });
+
+    // Meteors run only while all of these hold.
+    const state = { ambient: false, heroVisible: true, tabVisible: true };
+    let lastRunning = null;
+    const update = () => {
+      const running = state.ambient && state.heroVisible && state.tabVisible;
+      if (running === lastRunning) return;
+      lastRunning = running;
+      sky.run(running);
+    };
+
+    const cancelAmbient = whenAmbient(() => {
+      state.ambient = true;
+      update();
+    });
+
+    const onVisibility = () => {
+      state.tabVisible = document.visibilityState === "visible";
+      update();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // Pages without a hero (/moonmind, 404) count as "hero visible".
+    const hero = document.getElementById("hero");
+    const observer =
+      hero && typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver(([entry]) => {
+            state.heroVisible = entry.isIntersecting;
+            update();
+          })
+        : null;
+    observer?.observe(hero);
 
     // Only a width change is a real resize. Phones change height constantly
     // as the address bar shows and hides; the canvas is sized to the large
@@ -82,15 +150,19 @@ const StarBackground = () => {
       if (window.innerWidth === lastWidth) return;
       lastWidth = window.innerWidth;
       clearTimeout(timer);
-      timer = setTimeout(() => draw(canvas), 150);
+      timer = setTimeout(() => sky.resize(), 150);
     };
-
     window.addEventListener("resize", onResize, { passive: true });
+
     return () => {
+      cancelAmbient();
+      observer?.disconnect();
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", onResize);
+      sky.dispose();
     };
-  }, []);
+  }, [reducedMotion, phone]);
 
   return (
     <>

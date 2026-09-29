@@ -378,7 +378,31 @@ plus small amounts from the navbar moon frame and ScrollToTop's listener.
 Measured back-to-back with the Phase 2 build, Phase 3 changes nothing at
 page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
 
-## 7. Suggestions (skipped because they would change behaviour)
+## 7. Round 2
+
+### Meteors on the star canvas (dark mode)
+
+- The four CSS-animated meteor elements are replaced by a fixed pool drawn on
+  the star canvas (`lib/meteors.js`): desktop up to 3 at once, a new one every
+  0.8–2.3s (about 2× before), varied length, speed and angle, thin 1.2px trails
+  with a long tail fade and a short head fade; phones at most 2 at once, every
+  2.5–6s. Nothing is created in the DOM per meteor, and each frame restores
+  only the rectangles the last frame drew over.
+- **Off the main thread.** A canvas animated from the main thread forces a
+  main-thread frame each time it draws, and every running CSS animation then
+  pays style work on those frames. Measured idle on the hero at 4x CPU: 6.0s
+  busy per 10s on desktop (2.8s on phones) with a main-thread loop, 1.2s
+  (0.36s) with the canvas transferred to a worker (`lib/sky.worker.js`,
+  3.7 KB) — below the Phase 2 baseline. Browsers without OffscreenCanvas run
+  the same code on the main thread.
+- Capped at 30fps, and the loop runs only while a meteor is alive. Stops when
+  the hero is off-screen or the tab is hidden, starts only after ambient
+  motion is on (post-load), never with reduced motion. Verified by pixel-diff
+  sampling: meteors appear in the hero, nothing changes off-hero or with
+  reduced motion.
+- Light mode no longer has meteors (it gets the lunar surface instead).
+
+## 8. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

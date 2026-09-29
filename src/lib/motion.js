@@ -76,7 +76,21 @@ export const AMBIENT_DELAY_MS = 1200;
 
 export const enableAmbientMotion = (root = document.documentElement) => {
   const start = () =>
-    setTimeout(() => root.classList.add("ambient"), AMBIENT_DELAY_MS);
+    setTimeout(() => {
+      root.classList.add("ambient");
+      window.dispatchEvent(new Event("ambient"));
+    }, AMBIENT_DELAY_MS);
   if (document.readyState === "complete") start();
   else window.addEventListener("load", start, { once: true });
+};
+
+// Run `callback` once ambient motion is allowed (now, if it already is).
+// Returns a function that cancels the wait.
+export const whenAmbient = (callback) => {
+  if (document.documentElement.classList.contains("ambient")) {
+    callback();
+    return () => {};
+  }
+  window.addEventListener("ambient", callback, { once: true });
+  return () => window.removeEventListener("ambient", callback);
 };
