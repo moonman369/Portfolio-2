@@ -120,14 +120,17 @@ each with a metric-matched local fallback so the swap does not move text.
 
 | Role | Family | File | Fallback (size-adjust / ascent / descent) |
 | --- | --- | --- | --- |
-| Display (headings) | Bricolage Grotesque, variable `opsz` 12–96 + `wght` 200–800 | `latin-opsz-normal.woff2`, 75 KB, **preloaded** | Arial Bold 93.76% / 99.19% / 28.80% |
-| Body | IBM Plex Sans, variable `wght` 100–700 | `latin-wght-normal.woff2`, 45 KB | Arial 101.57% / 100.91% / 27.07% |
+| Display (headings) | Bricolage Grotesque, display cut (opsz 72), variable `wght` 500–700 | `src/assets/fonts/bricolage-grotesque-display-latin.woff2`, 37 KB, **preloaded** | Arial Bold 93.76% / 99.19% / 28.80% |
+| Body | IBM Plex Sans, variable `wght` 100–700 | `latin-wght-normal.woff2` (as shipped by Fontsource), 45 KB, **preloaded** | Arial 101.57% / 100.91% / 27.07% |
 | Mono (labels, numbers, trace) | IBM Plex Mono 500 | `latin-500-normal.woff2`, 15 KB | Courier New 99.98% / 102.52% / 27.50% |
 
-Why the `opsz` file and not the 41 KB `wght` file: the `wght` file is pinned to
-the text optical size, which loses the tight, quirky display cut that makes
-Bricolage worth having. With `font-optical-sizing: auto`, every heading gets the
-cut that suits its size.
+Why a custom instance of Bricolage: Fontsource's 41 KB `wght` file is pinned
+to the *text* optical size, which loses the tight, quirky display cut that
+makes Bricolage worth having; its `opsz` file keeps the cut but is 77 KB.
+`scripts/build-display-font.py` pins the `opsz` file at 72 with weight 500–700
+(37 KB). Bricolage is OFL 1.1 with no Reserved Font Name, so a modified
+instance may ship; its licence sits next to the file. The Plex files are used
+exactly as Fontsource ships them.
 
 | Step | Size | Line height | Tracking |
 | --- | --- | --- | --- |
@@ -184,12 +187,94 @@ so CSS transitions read the same numbers.
   and bottom bars are solid, because blur over scrolling content is exactly the
   cost we are trying to avoid on phones.
 - **Mobile bottom bar**: docked edge-to-edge (safe-area aware) so 7 × 44px
-  targets fit with ≥ 8px gaps from 360px up. At 320px the targets stay 44px but
-  the gaps shrink to 0 (still well above the WCAG 2.2 AA 24px minimum).
+  targets fit with ≥ 8px gaps from 360px up (9px measured at 375). At 320px the
+  targets stay 44px but the gaps shrink to 0 (still well above the WCAG 2.2 AA
+  24px minimum).
 - **Navbar mobile menu**: there is no menu to open; mobile navigation is the
   bottom bar, which is always visible. See Suggestions.
 - **Typewriter removed.** The roles it typed (`moonman369`, `Backend Dev`, `AI
   Engineer`) now appear as a static mono line under the name, so no copy is lost.
+- **Hero two-column layout starts at `lg`**, not `md`: at tablet width the
+  moon beside a long paragraph floated awkwardly, so tablets get the phone
+  composition (moon top-right, name beside it).
+
+### Performance-driven deviations (section 0 wins)
+
+Each of these was measured with a Chrome trace at 4x CPU slowdown.
+
+- **No runtime `splitText` for the name.** It cost 160–240ms of main thread
+  at load (it initialises `Intl.Segmenter` and rebuilds the DOM) to split two
+  words that are already separate elements. The name is split in the markup
+  instead: one `overflow: clip` mask per line (padded so descenders are never
+  cut), and each line rises out of its mask on WAAPI. Same visual, ~0ms.
+  Splitting per *character* was also rejected on quality grounds: per-character
+  inline-blocks break kerning pairs like "Ay" at display size.
+- **The entrance starts the frame after the first paint.** CSS holds the
+  animated parts hidden (`[data-entrance="pending"]`, only rendered when motion
+  is allowed), then `useAnimeScope({ afterPaint: true })` sets up the
+  animations on a settled layout and releases the hold. Doing it in a layout
+  effect forced the page's whole first layout inside React's commit.
+- **The hero description is never animated.** It is the largest text in view,
+  so it is the LCP element; hiding it for an entrance made Lighthouse fall back
+  to the navbar brand and pushed LCP out.
+- **No JS-engine `set()` for start states.** anime.js runs WAAPI with
+  `fill: "both"`, so delayed animations already hold their first keyframe;
+  `set()` read computed style on a dirty page and cost 160–420ms.
+- **Moon strokes do not use `vector-effect: non-scaling-stroke`.** With it,
+  anime.js reads each path's `getCTM()` every frame of the draw, forcing layout
+  per path per frame. Stroke widths are set in viewBox units per breakpoint
+  instead (about 1.2–1.6px rendered).
+- **Fonts: display and body are preloaded, mono is not.** Preloading only the
+  display font left the body font to swap in after first paint and re-lay-out
+  the whole page (TBT +250–350ms). Preloading all three pushed LCP over 2.5s.
+  Display + body measured best (see below).
+- **`content-visibility: auto` on sections was tried and rejected.** It cut
+  load-time main-thread work, but deep links broke: `/#stats` landed 409px off
+  because estimated section sizes were corrected after the jump. Behaviour wins.
+
+### Measurements (Phase 1)
+
+Lighthouse mobile (simulated slow 4G, 4x CPU), production build served
+locally, median of 5 runs. This machine is noisy: identical runs vary by up
+to ±8 performance points, so single runs are not meaningful.
+
+| | Before | After Phase 1 | Budget |
+| --- | --- | --- | --- |
+| Performance | 69 | **83** | ≥ 90 ✗ |
+| Accessibility | 90 | **100** | ≥ 95 ✓ |
+| LCP | 2.72s | **2.34s** | < 2.5s ✓ |
+| TBT | 1,356ms | **541ms** | < 200ms ✗ |
+| CLS | 0.003 | **0** | < 0.05 ✓ |
+| Initial JS (gzip) | 159.7 KB | **130.2 KB** | ≤ 170 KB ✓ |
+| Chat chunk (lazy) | in main bundle | 51.5 KB | — |
+| Project images | 4.2 MB of PNG | 5–48 KB each (AVIF/WebP, 1x + 2x) | < 80 KB ✓ |
+| Fonts on first load | 0 (system) | 3 files, 98 KB | ≤ 3 ✓ |
+
+Full-page scroll, Chrome trace at 4x CPU slowdown:
+
+| | Before | After Phase 1 |
+| --- | --- | --- |
+| Mobile: long tasks / blocking | 141 / 6.4s | 21 / 1.25s |
+| Desktop: long tasks / blocking | 135 / 8.7s | 53 / 2.7s |
+
+The remaining scroll cost is mostly compositor-layer updates (Layerize) and
+paint in sections still on the old styling: Stats count-ups set React state
+every frame and transition `width`, and cards scale on hover. Phase 2 rebuilds
+those and re-measures.
+
+**Why TBT is still over budget.** What remains at load is the client-rendered
+React app itself: evaluating the bundle, rendering every section, and the first
+style and layout of the whole page. The app shell plus hero alone is about 60%
+of it; each other section adds a little. Closing the gap needs a structural
+choice, none of which is purely visual:
+
+1. Pre-render the page to static HTML at build time and hydrate (largest win
+   for LCP; TBT still pays for hydration).
+2. Mount below-the-fold sections in a second, interruptible pass
+   (`useDeferredValue`). This changes when sections and their fetches mount,
+   and deep links would need re-testing.
+3. `content-visibility: auto` with measured per-section sizes (see the
+   deep-link problem above).
 
 ---
 
@@ -205,3 +290,7 @@ so CSS transitions read the same numbers.
 - `Navbar` `activeNav` only changes on click; it could follow the section in
   view.
 - The Moonmind panel is `role="dialog"` but has no focus trap or Escape to close.
+- `/#about` as a direct link does not scroll on load (also true before this
+  branch); the other section links do.
+- The production bundle resolves `react-router`'s `dist/development` build;
+  worth checking whether a `production` resolve condition trims it.

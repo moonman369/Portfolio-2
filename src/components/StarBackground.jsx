@@ -1,127 +1,100 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
-// Real stars follow the blackbody sequence you see in astrophotos:
-// hot blue/blue-white, white, warm yellow-white, orange, and cool red —
-// with a violet accent. Color dominates; pure white shows up occasionally.
-const STAR_COLORS = [
-  "155, 176, 255", // hot blue (O/B type)
-  "180, 200, 255", // blue-white (A type)
-  "224, 233, 255", // pale blue
-  "255, 255, 255", // white (occasional)
-  "255, 244, 232", // warm white (G type)
-  "255, 214, 165", // orange (K type)
-  "255, 160, 120", // deep orange
-  "255, 122, 122", // red (M type)
-  "204, 153, 255", // violet
-  "176, 148, 255", // deep violet
+// A sparse, mostly static star field on one <canvas>, drawn once.
+//
+// There is no animation loop. On desktop the canvas drifts very slowly with
+// scroll through a CSS scroll timeline (see .stars-canvas in index.css), which
+// runs on the compositor; phones, reduced motion and browsers without scroll
+// timelines get the still image. The layout is seeded, so a resize redraws the
+// same sky rather than a new one.
+
+const SEED = 369;
+const MAX_DPR = 2;
+const AREA_PER_STAR = 9000; // px² of viewport per star
+const MAX_STARS = 220;
+
+// Mostly cool moonlight, a few blue-white, the odd warm one.
+const TINTS = [
+  [226, 233, 245],
+  [226, 233, 245],
+  [226, 233, 245],
+  [180, 204, 236],
+  [244, 222, 190],
 ];
 
-const randomAccent = () =>
-  STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
+// Small, fast, deterministic PRNG (mulberry32).
+const seeded = (seed) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+const draw = (canvas) => {
+  const { width, height } = canvas.getBoundingClientRect();
+  if (!width || !height) return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const random = seeded(SEED);
+  const count = Math.min(MAX_STARS, Math.round((width * height) / AREA_PER_STAR));
+
+  for (let i = 0; i < count; i++) {
+    const x = random() * width;
+    const y = random() * height;
+    // Skewed towards tiny: most stars are specks, a handful are brighter.
+    const size = random() ** 3;
+    const radius = 0.35 + size * 1.15;
+    const alpha = 0.18 + size * 0.5 + random() * 0.12;
+    const [r, g, b] = TINTS[Math.floor(random() * TINTS.length)];
+
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+};
 
 const StarBackground = () => {
-  const [stars, setStars] = useState([]);
-  const [meteors, setMeteors] = useState([]);
-
-  const generateStars = () => {
-    const starsCount = Math.floor(
-      (window.innerWidth * window.innerHeight) / 8500,
-    );
-
-    const newStars = [];
-
-    for (let i = 0; i < starsCount; i++) {
-      newStars.push({
-        id: i,
-        size: Math.random() * 3 + 1,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        opacity: Math.random() * 0.4 + 0.6,
-        animationDuration: Math.random() * 4 + 2,
-        color: randomAccent(),
-      });
-    }
-
-    setStars(newStars);
-  };
-
-  const generateMeteors = () => {
-    const meteorsCount = 8;
-    const newMeteors = [];
-
-    for (let i = 0; i < meteorsCount; i++) {
-      newMeteors.push({
-        id: i,
-        size: Math.random() * 2 + 1,
-        // Spread across the whole viewport, not just the top strip.
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        delay: Math.random() * 15,
-        animationDuration: Math.random() * 3 + 3,
-        color: randomAccent(),
-      });
-    }
-
-    setMeteors(newMeteors);
-  };
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    generateStars();
-    generateMeteors();
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
 
-    const handleResize = () => {
-      generateStars();
+    draw(canvas);
+
+    // Only a width change is a real resize. Phones change height constantly
+    // as the address bar shows and hides; the canvas is sized to the large
+    // viewport so it never needs redrawing for that.
+    let lastWidth = window.innerWidth;
+    let timer = 0;
+    const onResize = () => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      clearTimeout(timer);
+      timer = setTimeout(() => draw(canvas), 150);
     };
 
-    window.addEventListener("resize", handleResize);
-
+    window.addEventListener("resize", onResize, { passive: true });
     return () => {
-      window.removeEventListener("resize", handleResize);
+      clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
     };
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {stars.map((star) => (
-        <div
-          key={star.id}
-          className="star animate-pulse-subtle"
-          style={{
-            width: `${star.size}px`,
-            height: `${star.size}px`,
-            top: `${star.y}%`,
-            left: `${star.x}%`,
-            opacity: star.opacity,
-            animationDuration: `${star.animationDuration}s`,
-            // Colored core with a brighter matching glow.
-            backgroundColor: `rgb(${star.color})`,
-            boxShadow: `0 0 ${star.size * 3}px ${star.size}px rgba(${star.color}, 0.85)`,
-          }}
-        />
-      ))}
-
-      {meteors.map((meteor) => (
-        <div
-          key={meteor.id}
-          className="meteor animate-meteor"
-          style={{
-            width: `${meteor.size * 35}px`,
-            height: `${meteor.size}px`,
-            top: `${meteor.y}%`,
-            left: `${meteor.x}%`,
-            animationDelay: `${meteor.delay}s`,
-            animationDuration: `${meteor.animationDuration}s`,
-            // Hidden until the animation starts, so meteors don't sit frozen
-            // as flat horizontal bars during their initial delay. The keyframes
-            // begin at opacity: 1, so each one appears only as it streaks.
-            opacity: 0,
-            // Bright colored head fading through white into a transparent tail.
-            background: `linear-gradient(to right, rgb(${meteor.color}), rgba(255, 255, 255, 0.7), transparent)`,
-            boxShadow: `0 0 14px 2px rgba(${meteor.color}, 0.65)`,
-          }}
-        />
-      ))}
-    </div>
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="stars-canvas fixed inset-x-0 top-0 w-full pointer-events-none z-0"
+    />
   );
 };
 

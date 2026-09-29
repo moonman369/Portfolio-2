@@ -1,6 +1,10 @@
+// Light mode: a faint, static dot grid on the paper (see .paper-grid).
 const LightModeBackground = () => {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 w-full h-full animated-gradient-light" />
+    <div
+      aria-hidden="true"
+      className="paper-grid fixed inset-0 pointer-events-none z-0"
+    />
   );
 };
 

@@ -1,6 +1,38 @@
 import { ArrowRight, ExternalLink, Github } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PROJECTS, GITHUB_URL } from "../context/constants";
+import {
+  PROJECT_IMAGE_HEIGHT,
+  PROJECT_IMAGE_WIDTH,
+  projectMedia,
+} from "../lib/projectMedia";
+
+// Card width: full column on phones, half at md, a third inside max-w-5xl at lg.
+const IMAGE_SIZES =
+  "(min-width: 1024px) 320px, (min-width: 768px) 344px, calc(100vw - 2.5rem)";
+
+const ProjectImage = ({ image, alt }) => {
+  const media = projectMedia(image);
+  const imgProps = {
+    alt,
+    loading: "lazy",
+    decoding: "async",
+    width: PROJECT_IMAGE_WIDTH,
+    height: PROJECT_IMAGE_HEIGHT,
+    className:
+      "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",
+  };
+
+  if (!media) return <img src={image} {...imgProps} />;
+
+  return (
+    <picture className="block h-full">
+      <source type="image/avif" srcSet={media.avif} sizes={IMAGE_SIZES} />
+      <source type="image/webp" srcSet={media.webp} sizes={IMAGE_SIZES} />
+      <img src={media.src} {...imgProps} />
+    </picture>
+  );
+};
 
 const linkClass =
   "inline-flex items-center gap-1.5 text-sm text-foreground/80 hover:text-primary transition-colors duration-300";
@@ -26,12 +58,7 @@ const ProjectSection = () => {
             >
               <div className="h-48 overflow-hidden rounded-t-lg">
                 {project.image ? (
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
+                  <ProjectImage image={project.image} alt={project.title} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
                     <span className="text-4xl font-bold text-primary/40">

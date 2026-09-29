@@ -16,7 +16,7 @@ export const Home = () => {
   const { isDarkMode } = useTheme();
 
   return (
-    <div className="min-h-screen text-foreground overflow-x-hidden">
+    <div className="min-h-svh text-foreground overflow-x-clip">
       {/* Background Effects */}
       {isDarkMode ? <StarBackground /> : <LightModeBackground />}
 

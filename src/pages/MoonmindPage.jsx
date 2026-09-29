@@ -75,7 +75,7 @@ const MoonmindPage = () => {
         </div>
 
         {/* Chat container — only the messages scroll; header + input stay put */}
-        <div className="flex-1 min-h-0 mb-4 rounded-2xl overflow-hidden flex flex-col bg-background/80 backdrop-blur-xl border border-border/60 shadow-lg">
+        <div className="flex-1 min-h-0 mb-4 rounded-2xl overflow-hidden flex flex-col bg-card border border-border shadow-lg">
           <MoonmindChat className="flex-1 min-h-0" />
         </div>
       </div>

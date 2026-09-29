@@ -368,7 +368,7 @@ const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => {
 
   return (
     <li className="flex items-center gap-3">
-      <Icon className="h-5 w-5 shrink-0" style={{ color }} />
+      <Icon className="h-5 w-5 shrink-0" style={{ color }} aria-hidden="true" />
       <p className="text-sm">
         {label}:{" "}
         <span className="font-semibold text-primary">
@@ -483,7 +483,7 @@ const StatsSection = () => {
           >
             <div className="flex items-center gap-3 mb-6">
               {Si.SiLeetcode && (
-                <Si.SiLeetcode className="h-7 w-7 text-primary" />
+                <Si.SiLeetcode className="h-7 w-7 text-primary" aria-hidden="true" />
               )}
               <h3 className="text-xl font-semibold">LeetCode Stats</h3>
             </div>
@@ -558,7 +558,7 @@ const StatsSection = () => {
             className="stats-card glass rounded-lg p-6 card-hover text-left block"
           >
             <div className="flex items-center gap-3 mb-6">
-              <Github className="h-7 w-7 text-primary" />
+              <Github className="h-7 w-7 text-primary" aria-hidden="true" />
               <h3 className="text-xl font-semibold">GitHub Stats</h3>
             </div>
 
@@ -585,7 +585,7 @@ const StatsSection = () => {
           {/* Certificates */}
           <article className="glass rounded-lg p-6 card-hover text-left">
             <div className="flex items-center gap-3 mb-6">
-              <Award className="h-7 w-7 text-primary" />
+              <Award className="h-7 w-7 text-primary" aria-hidden="true" />
               <h3 className="text-xl font-semibold">Certificates</h3>
             </div>
 
@@ -601,11 +601,12 @@ const StatsSection = () => {
                       className="flex items-center gap-3 text-sm text-foreground/90 hover:text-primary transition-colors group"
                     >
                       <Icon
+                        aria-hidden="true"
                         className="h-5 w-5 shrink-0"
                         style={{ color: CERT_COLORS[cert.icon] }}
                       />
                       <span className="flex-1">{cert.title}</span>
-                      <ExternalLink className="h-4 w-4 opacity-60 group-hover:opacity-100 shrink-0" />
+                      <ExternalLink className="h-4 w-4 opacity-60 group-hover:opacity-100 shrink-0" aria-hidden="true" />
                     </a>
                   </li>
                 );

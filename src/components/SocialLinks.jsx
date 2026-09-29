@@ -14,7 +14,7 @@ const ICONS = {
 
 const SocialLinks = ({ className, itemClassName, size = 20 }) => {
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {SOCIAL_LINKS.map((social) => {
         const Icon = ICONS[social.icon];
         if (!Icon) return null;
@@ -29,12 +29,12 @@ const SocialLinks = ({ className, itemClassName, size = 20 }) => {
               ? {}
               : { target: "_blank", rel: "noopener noreferrer" })}
             className={cn(
-              "p-3 rounded-full bg-primary/15 backdrop-blur-sm text-primary transition-all",
-              "hover:bg-primary hover:text-primary-foreground hover:btn-glow",
+              "icon-btn text-muted-foreground ring-1 ring-inset ring-border",
+              "hover:text-primary",
               itemClassName,
             )}
           >
-            <Icon size={size} />
+            <Icon size={size} aria-hidden="true" />
           </a>
         );
       })}
