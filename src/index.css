@@ -399,16 +399,6 @@
     }
 }
 
-/* ---- Legacy utilities ----
-   Still used by the Moonmind chat until its restyle. Remapped to the new
-   palette so nothing glows or blurs in the meantime. */
-@utility text-gradient {
-    color: hsl(var(--primary));
-}
-
-@utility bg-gradient-primary {
-    background-color: hsl(var(--primary));
-}
 
 
 /* ---- Backgrounds ---- */
@@ -477,8 +467,8 @@
     margin-bottom: 0;
 }
 .chat-markdown p {
-    margin: 0.5em 0;
-    line-height: 1.55;
+    margin: 0.6em 0;
+    line-height: 1.6;
 }
 .chat-markdown ul,
 .chat-markdown ol {
@@ -497,11 +487,17 @@
 .chat-markdown a {
     color: hsl(var(--primary));
     text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+.chat-markdown li::marker {
+    color: hsl(var(--muted-foreground));
 }
 .chat-markdown h1,
 .chat-markdown h2,
 .chat-markdown h3,
 .chat-markdown h4 {
+    font-family: var(--font-heading);
     font-weight: 600;
     margin: 0.7em 0 0.35em;
     line-height: 1.3;
@@ -513,15 +509,17 @@
     font-size: 1.08em;
 }
 .chat-markdown code {
-    background: hsl(var(--muted) / 0.7);
+    font-family: var(--font-mono);
+    background: hsl(var(--muted));
     padding: 0.1em 0.35em;
     border-radius: 0.3em;
     font-size: 0.85em;
 }
 .chat-markdown pre {
-    background: hsl(var(--muted) / 0.7);
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
     padding: 0.7em 0.8em;
-    border-radius: 0.5em;
+    border-radius: 0.6em;
     overflow-x: auto;
     margin: 0.6em 0;
 }
@@ -530,10 +528,10 @@
     padding: 0;
 }
 .chat-markdown blockquote {
-    border-left: 2px solid hsl(var(--primary) / 0.5);
-    padding-left: 0.75em;
-    margin: 0.5em 0;
-    opacity: 0.9;
+    border-left: 2px solid hsl(var(--primary) / 0.6);
+    padding-left: 0.85em;
+    margin: 0.6em 0;
+    color: hsl(var(--muted-foreground));
 }
 .chat-markdown table {
     border-collapse: collapse;
@@ -542,7 +540,14 @@
 .chat-markdown th,
 .chat-markdown td {
     border: 1px solid hsl(var(--border));
-    padding: 0.3em 0.55em;
+    padding: 0.35em 0.6em;
+}
+.chat-markdown th {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    font-weight: 500;
+    text-align: left;
+    background: hsl(var(--muted) / 0.6);
 }
 .chat-markdown strong {
     font-weight: 600;
@@ -550,22 +555,29 @@
 
 /* ---- MoonMind chat (scoped: .mm-* and .mm-chat descendants) ---- */
 
-/* Collapsible step list: animates height without measuring it in JS. */
+/* Collapsible step list. The height snaps (animating it would be layout on
+   every frame); the contents fade and settle instead. */
 .mm-collapse {
     display: grid;
     grid-template-rows: 0fr;
-    opacity: 0;
-    transition:
-        grid-template-rows 200ms ease,
-        opacity 200ms ease;
 }
 .mm-collapse[data-open] {
     grid-template-rows: 1fr;
-    opacity: 1;
 }
 .mm-collapse > * {
     overflow: hidden;
     min-height: 0;
+}
+.mm-collapse > * > * {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+        opacity var(--motion-base) var(--motion-ease-out),
+        transform var(--motion-base) var(--motion-ease-out);
+}
+.mm-collapse[data-open] > * > * {
+    opacity: 1;
+    transform: none;
 }
 
 /* Smooth follow-scroll for the message list (reduced motion turns it off). */
@@ -627,39 +639,110 @@
     transform: rotate(90deg);
 }
 
+/* "Still working" on the running header: a slow opacity breath. */
 .mm-shimmer {
-    background: linear-gradient(
-        90deg,
-        hsl(var(--muted-foreground)) 0%,
-        hsl(var(--foreground)) 50%,
-        hsl(var(--muted-foreground)) 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: mm-shimmer 1.6s linear infinite;
+    animation: mm-shimmer 1.4s ease-in-out infinite alternate;
+}
+@keyframes mm-shimmer {
+    to {
+        opacity: 0.5;
+    }
 }
 
-@keyframes mm-shimmer {
+/* Live pipeline (MoonmindSteps): each stage fades up and its connector
+   draws in once, as it arrives; the running stage's dot breathes. */
+.mm-stage {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+}
+@keyframes mm-stage-in {
     from {
-        background-position: 200% 0;
+        opacity: 0;
+        transform: translateY(3px);
     }
+}
+.mm-connector {
+    display: inline-block;
+    width: 0.9rem;
+    height: 1px;
+    margin-inline: 0.45rem;
+    background: hsl(var(--muted-foreground) / 0.6);
+    transform-origin: left center;
+    animation: mm-draw var(--motion-base) var(--motion-ease-out) both;
+}
+@keyframes mm-draw {
+    from {
+        transform: scaleX(0);
+    }
+}
+.mm-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+}
+.mm-dot[data-state="running"] {
+    background: hsl(var(--earthshine));
+    box-shadow: 0 0 6px hsl(var(--earthshine) / 0.8);
+    animation: mm-pulse 900ms ease-in-out infinite alternate;
+}
+@keyframes mm-pulse {
     to {
-        background-position: -200% 0;
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+}
+
+/* Typing indicator: three dots breathing in turn. */
+.mm-typing > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    animation: mm-pulse 700ms ease-in-out infinite alternate;
+}
+.mm-typing > span:nth-child(2) {
+    animation-delay: 150ms;
+}
+.mm-typing > span:nth-child(3) {
+    animation-delay: 300ms;
+}
+
+/* Sources: chips stagger in when the disclosure opens. */
+.mm-sources[open] .mm-chip {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 40ms);
+}
+.mm-sources > summary {
+    list-style: none;
+}
+.mm-sources > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* The launcher fades back in under the panel as it closes. */
+.mm-launcher {
+    transition:
+        opacity var(--motion-base) var(--motion-ease-out),
+        transform var(--motion-base) var(--motion-ease-out);
+    @starting-style {
+        opacity: 0;
+        transform: scale(0.8);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .mm-collapse,
-    .mm-chevron {
+    .mm-collapse > * > *,
+    .mm-chevron,
+    .mm-launcher {
         transition: none;
     }
-    .mm-shimmer {
-        background: none;
-        -webkit-background-clip: border-box;
-        background-clip: border-box;
-        color: hsl(var(--muted-foreground));
+    .mm-shimmer,
+    .mm-stage,
+    .mm-connector,
+    .mm-dot,
+    .mm-typing > span,
+    .mm-sources[open] .mm-chip {
         animation: none;
     }
     /* Scoped to the chat only — nothing else on the site is affected. */

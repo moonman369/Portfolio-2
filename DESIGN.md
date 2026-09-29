@@ -326,12 +326,18 @@ Lighthouse mobile, median of 5 runs:
 
 | | Before | Phase 1 | Phase 2 | Budget |
 | --- | --- | --- | --- | --- |
-| Performance | 69 | 83 | **90** | ≥ 90 ✓ |
+| Performance | 69 | 83 | **90** † | ≥ 90 (borderline) |
 | Accessibility | 90 | 100 | **100** | ✓ |
 | LCP | 2.72s | 2.34s | **2.35s** | < 2.5s ✓ |
-| TBT | 1,356ms | 541ms | **328ms** | < 200ms ✗ |
+| TBT | 1,356ms | 541ms | **328ms** † | < 200ms ✗ |
 | CLS | 0.003 | 0 | **0** | ✓ |
 | Initial JS (gzip) | 159.7 KB | 130.2 KB | **132.1 KB** | ≤ 170 KB ✓ |
+
+† Machine variance: rebuilding the Phase 2 commit and measuring it again in
+a later session gave Perf 81 / TBT ~630ms, identical to the Phase 3 build
+measured alongside it. Comparisons are only meaningful between builds run
+back-to-back; treat Perf 90 as borderline, not a pass. The ambient-motion
+deferral was measured that way (79 → 88 in the same session).
 
 Full-page scroll, Chrome trace at 4x CPU:
 
@@ -343,7 +349,36 @@ Full-page scroll, Chrome trace at 4x CPU:
 What remains in scroll is paint/layout as sections reveal and images decode,
 plus small amounts from the navbar moon frame and ScrollToTop's listener.
 
-## 6. Suggestions (skipped because they would change behaviour)
+## 6. Phase 3: Moonmind chat
+
+- **Launcher → panel morph** (desktop, motion allowed): the panel grows out
+  of the launcher's corner on the shared spring (WAAPI transform, compositor)
+  while its contents fade in, and shrinks back into the launcher on close
+  (~330ms). To animate the close, the panel stays rendered for that time with
+  `inert` and `aria-hidden`; nothing inside it can be reached, and the
+  launcher is back underneath. Phones keep the previous fade; reduced motion
+  opens and closes instantly.
+- **One visual language** for the panel and `/moonmind`: moon-mark badge,
+  display-font title, mono subtitle, 44px header actions (`moonmindUi.js`),
+  accent-tinted user bubbles, identity row with the moon mark, 16px composer
+  with a 44px send button.
+- **Steps**: the per-message toggle and collapsed default are unchanged, and
+  so is the 300ms shimmer hold. While running and closed, a mono pipeline of
+  the top-level stages sits under the header; each stage fades up and its
+  connector draws in once, and the running stage glows earthshine. When the
+  answer lands the pipeline folds away and the header shows the route as a
+  badge (earthshine if the run failed). The collapsible list no longer
+  animates its height (layout); its contents fade instead. The shimmer is
+  now an opacity breath instead of a background-position sweep.
+- **Sources** keep `<details>`; opening it staggers the chips in.
+- **Typing indicator**: three dots breathing in turn (opacity).
+- Every `.mm-*` reduced-motion rule is kept or replaced with an equivalent.
+- The last legacy utilities (`text-gradient`, `bg-gradient-primary`) are gone.
+
+Measured back-to-back with the Phase 2 build, Phase 3 changes nothing at
+page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
+
+## 7. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

@@ -1,5 +1,4 @@
 import { Minimize2, RotateCcw } from "lucide-react";
-import { BiBrain } from "react-icons/bi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
@@ -8,6 +7,7 @@ import { useTheme } from "../context/ThemeContext";
 import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
 import MoonmindChat from "../components/MoonmindChat";
+import MoonMark from "../components/MoonMark";
 
 const MoonmindPage = () => {
   const { isDarkMode } = useTheme();
@@ -32,22 +32,22 @@ const MoonmindPage = () => {
       {/* Same background as the site */}
       {isDarkMode ? <StarBackground /> : <LightModeBackground />}
 
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto p-4">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto px-[max(1rem,env(safe-area-inset-left))] pt-[env(safe-area-inset-top)]">
         {/* Header (fixed) */}
-        <div className="flex items-center gap-3 py-4 shrink-0">
-          <span className="grid place-items-center w-10 h-10 shrink-0 rounded-full bg-gradient-primary text-primary-foreground">
-            <BiBrain className="text-xl" />
+        <div className="flex items-center gap-3 py-4 shrink-0 text-left">
+          <span className="grid place-items-center size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
+            <MoonMark size={24} />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold leading-tight">
-              <span className="text-gradient">Moonmind AI</span>
+            <h1 className="font-heading text-2xl font-semibold leading-tight text-foreground">
+              Moonmind AI
             </h1>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="font-mono text-xs text-muted-foreground truncate">
               Ayan's portfolio assistant
             </p>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={refreshChat}
               disabled={refreshPending}
@@ -55,7 +55,7 @@ const MoonmindPage = () => {
               title="Refresh chat"
               className={headerActionClass}
             >
-              <RotateCcw size={16} />
+              <RotateCcw size={17} aria-hidden="true" />
             </button>
             <button
               onClick={minimize}
@@ -63,19 +63,18 @@ const MoonmindPage = () => {
               title="Minimize"
               className={cn(
                 headerActionClass,
-                "sm:inline-flex sm:items-center sm:gap-2 sm:px-4 sm:py-2 sm:rounded-full",
-                "sm:border sm:border-primary/50 sm:bg-primary/10 sm:text-primary",
-                "sm:hover:bg-primary/20 sm:hover:text-primary sm:text-sm sm:hover:btn-glow",
+                "sm:w-auto sm:inline-flex sm:items-center sm:gap-2 sm:px-4 sm:rounded-full",
+                "sm:text-sm sm:font-medium sm:text-foreground sm:ring-1 sm:ring-inset sm:ring-input",
               )}
             >
-              <Minimize2 size={16} />
+              <Minimize2 size={17} aria-hidden="true" />
               <span className="max-sm:hidden">Minimize</span>
             </button>
           </div>
         </div>
 
         {/* Chat container — only the messages scroll; header + input stay put */}
-        <div className="flex-1 min-h-0 mb-4 rounded-2xl overflow-hidden flex flex-col bg-card border border-border shadow-lg">
+        <div className="flex-1 min-h-0 mb-[max(1rem,env(safe-area-inset-bottom))] rounded-2xl overflow-hidden flex flex-col bg-background border border-border shadow-xl">
           <MoonmindChat className="flex-1 min-h-0" />
         </div>
       </div>
