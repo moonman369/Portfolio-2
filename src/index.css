@@ -915,6 +915,81 @@
     }
 }
 
+/* Expanded steps (MoonmindSteps): the pipeline's connect-the-dots, run
+   vertically. One rail down the left made of each row's segment, a dot per
+   step, nested steps branching off to their own dot. Opening the panel draws
+   it in: rows rise, rail segments and branches draw, a step at a time. */
+.mm-trace-row {
+    --dot-top: 0.55rem;
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.2rem 0 0.2rem calc(1.1rem + var(--depth, 0) * 0.9rem);
+}
+.mm-trace-row > .mm-dot {
+    position: absolute;
+    left: calc(var(--depth, 0) * 0.9rem);
+    top: var(--dot-top);
+}
+.mm-trace-row::before,
+.mm-trace-row[data-nested]::after {
+    content: "";
+    position: absolute;
+    background: hsl(var(--muted-foreground) / 0.45);
+}
+.mm-trace-row::before {
+    left: 2.5px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+.mm-trace-row:first-child::before {
+    top: calc(var(--dot-top) + 3px);
+}
+.mm-trace-row:last-child::before {
+    bottom: auto;
+    height: calc(var(--dot-top) + 3px);
+}
+.mm-trace-row:only-child::before {
+    display: none;
+}
+.mm-trace-row[data-nested]::after {
+    left: 3px;
+    top: calc(var(--dot-top) + 3px);
+    width: calc(var(--depth) * 0.9rem - 3px);
+    height: 1px;
+}
+.mm-trace .mm-dot[data-state="done"] {
+    background: hsl(var(--primary));
+}
+.mm-trace .mm-dot[data-state="warning"] {
+    background: hsl(var(--earthshine));
+}
+.mm-trace .mm-dot[data-kind="tool"] {
+    background: hsl(var(--muted));
+    box-shadow: inset 0 0 0 1px hsl(var(--muted-foreground));
+}
+.mm-collapse[data-open] .mm-trace-row {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+}
+.mm-collapse[data-open] .mm-trace-row::before {
+    transform-origin: top;
+    animation: mm-draw-y var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+}
+.mm-collapse[data-open] .mm-trace-row[data-nested]::after {
+    transform-origin: left;
+    animation: mm-draw var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms + 80ms);
+}
+@keyframes mm-draw-y {
+    from {
+        transform: scaleY(0);
+    }
+}
+
 /* Sources: chips stagger in when the disclosure opens. */
 .mm-sources[open] .mm-chip {
     animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
@@ -948,6 +1023,9 @@
     .mm-thinking::before,
     .mm-orb::before,
     .mm-orb::after,
+    .mm-collapse[data-open] .mm-trace-row,
+    .mm-collapse[data-open] .mm-trace-row::before,
+    .mm-collapse[data-open] .mm-trace-row[data-nested]::after,
     .mm-stage,
     .mm-connector,
     .mm-dot,

@@ -477,6 +477,15 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   same orb. Blurred layers on transform/opacity only; static with reduced
   motion.
 
+- **Expanded steps as a trace.** The live pipeline's connect-the-dots,
+  vertical: one rail with a dot per step (primary when done, earthshine when
+  running or warned, hollow for tool steps) and nested steps branching off.
+  Opening the panel draws it in a step at a time (rows rise, rail segments
+  and branches draw; transform/opacity), including rows that arrive while it
+  is open. Each row shows only the step name and duration: the backend's debug
+  summaries (`route=… confidence=… slots=…`) are no longer displayed anywhere
+  in the chat. The data and its storage are unchanged.
+
 ## 9. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

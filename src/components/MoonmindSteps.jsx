@@ -1,21 +1,11 @@
 import { useEffect, useId, useState } from "react";
-import { AlertTriangle, Check, ChevronRight, Loader2, Wrench } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import {
   buildStepRows,
   formatRowDuration,
   headerLabel,
 } from "../lib/moonmindSteps";
-
-const StateIcon = ({ state, kind }) => {
-  if (state === "warning")
-    return <AlertTriangle size={12} aria-hidden="true" className="shrink-0 text-earthshine" />;
-  if (state === "running")
-    return <Loader2 size={12} aria-hidden="true" className="shrink-0 text-earthshine animate-spin" />;
-  if (kind === "tool")
-    return <Wrench size={12} aria-hidden="true" className="shrink-0 text-muted-foreground" />;
-  return <Check size={12} aria-hidden="true" className="shrink-0 text-primary" />;
-};
 
 // While a run is going: the top-level stages as a small mono pipeline. Each
 // node fades in and its connector draws as it arrives (CSS, once per node —
@@ -126,31 +116,36 @@ const MoonmindSteps = ({
 
       <div id={bodyId} className="mm-collapse" data-open={open || undefined}>
         <div>
-          <ul className="px-3 pb-2.5 pt-0.5 space-y-1 font-mono text-[11px]">
-            {rows.map((row) => (
+          {/* The live pipeline's connect-the-dots, run vertically: one rail,
+              a dot per step, nested steps branching off it. Opening the
+              panel draws it in a segment at a time (see .mm-trace). Just the
+              step names and durations — the backend's debug summaries are
+              not shown. */}
+          <ol className="mm-trace px-3 pb-3 pt-1 font-mono text-[11px]">
+            {rows.map((row, index) => (
               <li
                 key={row.key}
-                className="flex items-start gap-1.5"
-                style={{ paddingLeft: row.depth * 12 }}
+                className="mm-trace-row"
+                data-nested={row.depth > 0 || undefined}
+                style={{ "--i": index, "--depth": row.depth }}
               >
-                <span className="mt-[3px]">
-                  <StateIcon state={row.state} kind={row.kind} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span
-                    className={cn(
-                      "text-foreground",
-                      row.state === "running" && "text-earthshine",
-                    )}
-                  >
-                    {row.label}
-                  </span>
-                  {/* `summary` is debug text: muted, never the label. */}
-                  {row.summary && (
-                    <span className="ml-1.5 text-muted-foreground break-words">
-                      {row.summary}
-                    </span>
+                <span
+                  aria-hidden="true"
+                  className="mm-dot"
+                  data-state={row.state}
+                  data-kind={row.kind}
+                />
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 break-words",
+                    row.state === "running"
+                      ? "text-earthshine"
+                      : row.kind === "tool"
+                        ? "text-muted-foreground"
+                        : "text-foreground",
                   )}
+                >
+                  {row.label}
                 </span>
                 {row.durationMs != null && (
                   <span className="shrink-0 tabular-nums text-muted-foreground">
@@ -159,7 +154,7 @@ const MoonmindSteps = ({
                 )}
               </li>
             ))}
-          </ul>
+          </ol>
         </div>
       </div>
     </div>
