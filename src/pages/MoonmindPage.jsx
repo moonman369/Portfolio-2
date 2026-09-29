@@ -34,7 +34,7 @@ const MoonmindPage = () => {
 
       <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto px-[max(1rem,env(safe-area-inset-left))] pt-[env(safe-area-inset-top)]">
         {/* Header (fixed) */}
-        <div className="flex items-center gap-3 py-4 shrink-0 text-left">
+        <div className="paper-scrim flex items-center gap-3 py-4 shrink-0 text-left">
           <span className="grid place-items-center size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
             <MoonMark size={24} />
           </span>

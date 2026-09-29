@@ -16,11 +16,11 @@ const FRAME_SLACK_MS = 4;
 const SETTINGS = {
   desktop: {
     pool: 4,
-    maxActive: 3,
+    maxActive: 5,
     gapMs: [800, 2300],
-    speed: [420, 720], // px/s
+    speed: [300, 720], // px/s
     length: [90, 170], // px
-    lifeMs: [800, 1400],
+    lifeMs: [800, 1500],
     peak: [0.45, 0.7],
   },
   // Phones: at most two at once, longer gaps, a little fainter.

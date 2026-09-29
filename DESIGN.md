@@ -402,6 +402,35 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   reduced motion.
 - Light mode no longer has meteors (it gets the lunar surface instead).
 
+### Light mode: a sunlit lunar surface
+
+- **Source:** NASA's Scientific Visualization Studio, CGI Moon Kit
+  (<https://svs.gsfc.nasa.gov/4720>), public domain; credit "NASA's Scientific
+  Visualization Studio". `ldem_16_uint.tif` (elevation) and
+  `lroc_color_poles_4k.tif` (albedo).
+- **Pre-rendered, not live.** `scripts/render-lunar-surface.py` crops a
+  mid-latitude region (38°W–62°E, 30°N–32.5°S, so the equirectangular stretch
+  stays small), shades the relief with a low western sun (22°) for crisp
+  crater shadows, modulates it by the real albedo and tints it cool grey.
+- **Files:** `src/assets/lunar/` — 1600×1000 landscape (AVIF 67 KB, WebP
+  116 KB) and a 900px portrait crop for phones (AVIF 50 KB, WebP 102 KB),
+  art-directed with `<picture>`. Requested only once ambient motion switches
+  on (after `load`), fading in over the paper colour; nothing is fetched
+  before the load event.
+- **Motion (desktop, motion allowed):** a 90s drift/zoom, a "sunlight"
+  gradient swinging ±28° over 75s so the craters seem to change shade, and a
+  4% scroll-timeline parallax. Transform only; 227ms of main thread per 8s at
+  4x CPU. Phones and reduced motion: the still image.
+- **Readability:** an even paper wash (50%) over the stone, and near-opaque
+  (95%) feathered paper scrims behind each section's content column, the hero
+  text column, the `/moonmind` header and the 404 copy. The light navbar is
+  95% paper. Checked by rendering: every visible text run was compared with
+  the closest-luminance background pixel under it, at 8 scroll positions,
+  1440px and 375px, plus `/moonmind` and 404. All pass AA; lowest 4.65:1.
+- Cards on the stone (`.surface`) are solid card-white with a crisp low
+  shadow. No backdrop blur on scrolling content.
+- Dark mode is unchanged.
+
 ## 8. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

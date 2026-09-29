@@ -88,7 +88,7 @@ const Navbar = () => {
         <div
           aria-hidden="true"
           className={cn(
-            "absolute inset-0 border-b border-border bg-background/95 md:bg-background/80 md:backdrop-blur-md",
+            "nav-surface absolute inset-0 border-b border-border bg-background/95 md:bg-background/80 md:backdrop-blur-md",
             "transition-opacity duration-(--motion-base) ease-moon-out",
             isScrolled ? "opacity-100" : "opacity-0",
           )}

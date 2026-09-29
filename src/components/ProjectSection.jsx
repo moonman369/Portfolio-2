@@ -77,7 +77,7 @@ const ProjectSection = () => {
                 key={project.id}
                 data-reveal
                 className={cn(
-                  "card-ring group flex flex-col overflow-hidden rounded-xl border border-border bg-card/85",
+                  "surface card-ring group flex flex-col overflow-hidden rounded-xl border border-border bg-card/85",
                   featured ? "lg:col-span-3" : "lg:col-span-2",
                 )}
               >

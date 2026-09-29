@@ -423,15 +423,147 @@
     }
 }
 
-/* Light: a faint dot grid on the paper, fading out towards the bottom. */
-.paper-grid {
-    background-image: radial-gradient(
-        hsl(var(--foreground) / 0.1) 1px,
-        transparent 1.25px
+/* ---- Light: a sunlit lunar day ----
+   LightModeBackground stacks: the surface texture (behind a parallax and a
+   drift wrapper), a "sunlight" gradient, and a paper wash. The paper colour
+   underneath is the fallback until the texture has loaded. */
+.lunar {
+    background: hsl(var(--background));
+    --lunar-wash: 0.5;
+}
+.lunar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 900ms ease-out;
+}
+.lunar[data-loaded] .lunar-img {
+    opacity: 1;
+}
+/* Sunlight: warm-white from one side, a faint cool shade on the other. */
+.lunar-sun {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 170vmax;
+    height: 170vmax;
+    margin: -85vmax 0 0 -85vmax;
+    background: linear-gradient(
+        112deg,
+        hsl(45 100% 98% / 0.38) 0%,
+        hsl(45 100% 98% / 0) 42%,
+        hsl(220 40% 20% / 0) 62%,
+        hsl(220 40% 20% / 0.12) 100%
     );
-    background-size: 24px 24px;
-    background-position: 12px 12px;
-    mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+    opacity: 0;
+    transition: opacity 900ms ease-out;
+}
+.lunar[data-loaded] .lunar-sun {
+    opacity: 1;
+}
+/* An even paper wash keeps the stone bright and quiet. Text gets its own,
+   stronger scrims (below). */
+.lunar-wash {
+    position: absolute;
+    inset: 0;
+    background: hsl(var(--background) / var(--lunar-wash));
+}
+
+/* Desktop only, and only with motion: a very slow drift, the light swinging
+   across the craters, and a little scroll parallax. Transform only. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) and (min-width: 768px) {
+    .lunar-drift {
+        animation: lunar-drift 90s ease-in-out infinite alternate;
+    }
+    .lunar-sun {
+        animation: lunar-sun 75s ease-in-out infinite alternate;
+    }
+    @supports (animation-timeline: scroll()) {
+        .lunar-parallax {
+            animation: lunar-parallax linear both;
+            animation-timeline: scroll(root block);
+        }
+    }
+}
+@keyframes lunar-drift {
+    from {
+        transform: translate3d(-1.5%, -1%, 0) scale(1.02);
+    }
+    to {
+        transform: translate3d(1.5%, 1%, 0) scale(1.06);
+    }
+}
+@keyframes lunar-sun {
+    from {
+        transform: rotate(-28deg);
+    }
+    to {
+        transform: rotate(28deg);
+    }
+}
+@keyframes lunar-parallax {
+    to {
+        transform: translate3d(0, -4%, 0);
+    }
+}
+
+/* Paper scrims behind text, light mode only. Each section's content column
+   and the hero's text column sit on near-opaque paper with feathered edges,
+   so body text keeps AA contrast over the darkest crater shadow; the surface
+   shows in the margins, between sections and around the hero moon. */
+:root:not(.dark) main > section:not(#hero) > .container,
+:root:not(.dark) .paper-scrim {
+    position: relative;
+    isolation: isolate;
+}
+:root:not(.dark) main > section:not(#hero) > .container::before,
+:root:not(.dark) .paper-scrim::before {
+    content: "";
+    position: absolute;
+    inset: -2.5rem -1.25rem;
+    z-index: -1;
+    background: hsl(var(--background) / 0.95);
+    pointer-events: none;
+    mask-image:
+        linear-gradient(to right, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent),
+        linear-gradient(to bottom, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+    mask-composite: intersect;
+}
+@media (min-width: 768px) {
+    :root:not(.dark) main > section:not(#hero) > .container::before,
+    :root:not(.dark) .paper-scrim::before {
+        inset: -3rem -3rem;
+        mask-image:
+            linear-gradient(to right, transparent, #000 3rem, #000 calc(100% - 3rem), transparent),
+            linear-gradient(to bottom, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+    }
+}
+
+/* The hero's text column fades out over a wider band on its right, towards
+   the moon, instead of ending in a visible edge. */
+@media (min-width: 1024px) {
+    :root:not(.dark) #hero .paper-scrim::before {
+        inset: -3rem -9rem -3rem -3rem;
+        mask-image:
+            linear-gradient(to right, transparent, #000 3rem, #000 calc(100% - 12rem), transparent),
+            linear-gradient(to bottom, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+    }
+}
+
+/* The navbar keeps its surface on the stone even at the top of the page. */
+:root:not(.dark) .nav-surface {
+    opacity: 1;
+    /* Near-opaque: the craters under it must not pull link text below AA. */
+    background-color: hsl(var(--background) / 0.95);
+}
+
+/* Cards on the stone: solid paper-white with a crisp, low shadow. */
+:root:not(.dark) .surface {
+    background-color: hsl(var(--card));
+    box-shadow:
+        0 1px 2px hsl(222 44% 14% / 0.06),
+        0 10px 24px -14px hsl(222 44% 14% / 0.22);
 }
 
 /* ---- Hero ---- */

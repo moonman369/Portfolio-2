@@ -172,7 +172,7 @@ const ContactSection = () => {
           {/* Contact form */}
           <div
             data-reveal
-            className="lg:col-span-7 rounded-xl border border-border bg-card/85 p-6 md:p-8"
+            className="surface lg:col-span-7 rounded-xl border border-border bg-card/85 p-6 md:p-8"
           >
             <h3 className="font-heading text-h3 font-semibold text-foreground mb-8">
               Send a Message

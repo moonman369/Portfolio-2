@@ -97,7 +97,7 @@ const HeroSection = () => {
           <HeroMoon className="w-full h-auto" />
         </div>
 
-        <div className="relative z-10 lg:order-1 lg:col-span-7 text-left">
+        <div className="paper-scrim relative z-10 lg:order-1 lg:col-span-7 text-left">
           <h1 className="font-heading">
             <span
               data-hero-rise

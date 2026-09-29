@@ -494,7 +494,7 @@ const StatsSection = () => {
             target="_blank"
             rel="noopener noreferrer"
             data-reveal
-            className="stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
+            className="surface stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
             <div className="flex items-center gap-3 mb-7">
               {Si.SiLeetcode && (
@@ -571,7 +571,7 @@ const StatsSection = () => {
             target="_blank"
             rel="noopener noreferrer"
             data-reveal
-            className="stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
+            className="surface stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
             <div className="flex items-center gap-3 mb-7">
               <Github className="h-7 w-7 text-primary" aria-hidden="true" />
@@ -604,7 +604,7 @@ const StatsSection = () => {
           {/* Certificates */}
           <article
             data-reveal
-            className="rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left"
+            className="surface rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left"
           >
             <div className="flex items-center gap-3 mb-7">
               <Award className="h-7 w-7 text-primary" aria-hidden="true" />

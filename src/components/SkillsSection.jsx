@@ -91,7 +91,7 @@ const SkillCard = ({ skill, scrollRootRef, active, reducedMotion }) => {
     <li
       ref={cardRef}
       onPointerEnter={animated ? play : undefined}
-      className="card-ring flex flex-col rounded-lg border border-border bg-card/85 p-5"
+      className="surface card-ring flex flex-col rounded-lg border border-border bg-card/85 p-5"
     >
       <div className="flex items-baseline justify-between gap-4">
         <h3 className="font-medium leading-snug text-foreground">
