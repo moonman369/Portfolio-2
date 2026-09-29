@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { moonPhasePath } from "../lib/moonPhase";
+import { publishScrollPhase } from "../lib/scrollPhase";
 
 // Scroll progress from the top of the page (new moon) to the target section
 // (full moon), written straight onto an SVG path's `d`.
@@ -35,6 +36,7 @@ export const useScrollMoonPhase = (
       if (step !== lastStep && pathRef.current) {
         lastStep = step;
         pathRef.current.setAttribute("d", moonPhasePath(step / steps));
+        publishScrollPhase(step / steps);
       }
     };
 

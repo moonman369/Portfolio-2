@@ -1179,3 +1179,35 @@
         opacity: 0;
     }
 }
+
+/* ---- Interactive hero moon (HeroMoonControl) ---- */
+.moon-slider {
+    cursor: grab;
+}
+.moon-slider:active {
+    cursor: grabbing;
+}
+.moon-slider:focus-visible {
+    outline-offset: 6px;
+}
+.moon-tilt {
+    transform-origin: center;
+    transition: transform var(--motion-base) var(--motion-ease-out);
+}
+.moon-control [data-glow] {
+    transition: opacity var(--motion-base) var(--motion-ease-out);
+}
+@media (hover: hover) {
+    .moon-slider:hover [data-glow] {
+        opacity: 0.95;
+    }
+}
+.moon-slider:focus-visible [data-glow] {
+    opacity: 0.95;
+}
+.moon-hint {
+    transition: opacity var(--motion-slow) var(--motion-ease-out);
+}
+.moon-hint[data-hidden] {
+    opacity: 0;
+}

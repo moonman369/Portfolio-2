@@ -431,6 +431,40 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   shadow. No backdrop blur on scrolling content.
 - Dark mode is unchanged.
 
+### Interactive hero moon (`HeroMoonControl`)
+
+- A `role="slider"` (0 new → 100 full, `aria-valuetext` "new moon", "waxing
+  crescent", "first quarter", "waxing gibbous", "full moon"). Drag left/right
+  moves the terminator and hatched shadow; release springs to the nearest of
+  those five. Tap/click steps to the next and sends the satellite round the
+  orbit once (fast, then settling; it passes behind the disc on the far
+  side). Arrow keys step, Home/End jump. Desktop hover tilts it toward the
+  pointer (±7°) and brightens craters and orbit. A mono hint ("drag to change
+  the phase") fades after the first interaction, in memory only.
+- Scroll sync: the navbar moon keeps the scroll-driven new → full. The hero
+  moon follows the same progress from its resting gibbous (62%) to full, so
+  the hero looks as before at the top of the page; while the visitor is
+  interacting it is theirs, and their next scroll eases it back. Progress
+  comes from the navbar's existing frame (`lib/scrollPhase.js`), not a second
+  scroll listener.
+- `touch-action: pan-y`: a vertical swipe that starts on the moon scrolls the
+  page and changes nothing (the controller only takes over once a drag moves
+  horizontally or a tap completes). Pointer moves write straight to the SVG
+  via one animation frame; React never re-renders during a drag. Springs and
+  the lap use anime.js per-module imports. Reduced motion: instant changes,
+  no spring, tilt or lap. Nothing reacts while the hero is off-screen.
+- Verified: drag/snap, tap/lap, keys, focus ring, scroll hand-back, hover
+  tilt, buttons uncovered, vertical swipe on phones, reduced motion.
+
+### Hero on phones
+
+- Both hero buttons now sit directly under the roles line below `lg`, so at
+  375×812 they end at 443px, well above the bottom bar (755px); also checked
+  at 320×640, 390×844 and 768×1024. The description follows them.
+- The moon is sized to the viewport (`clamp(6.75rem, 46vw - 2.75rem, 11rem)`)
+  and sits fully in frame, above the text column's paper, 64–98px clear of the
+  name on phones.
+
 ## 8. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

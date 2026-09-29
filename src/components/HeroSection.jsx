@@ -17,7 +17,7 @@ import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { moonmindIntentProps } from "../lib/lazyChat";
 import { DURATION, EASE, STAGGER, rise } from "../lib/motion";
 import GlowBeam from "./GlowBeam";
-import HeroMoon from "./HeroMoon";
+import HeroMoonControl from "./HeroMoonControl";
 import MoonMark from "./MoonMark";
 import SocialLinks from "./SocialLinks";
 
@@ -91,13 +91,14 @@ const HeroSection = () => {
       className="relative min-h-svh flex items-center overflow-x-clip pt-[calc(6.75rem+env(safe-area-inset-top))] lg:pt-[calc(5.5rem+env(safe-area-inset-top))] pb-28 md:pb-20"
     >
       <div className="container w-full grid grid-cols-1 lg:grid-cols-12 lg:items-center gap-y-10 lg:gap-x-8">
-        {/* The moon: top-right beside the name on phones and tablets, its own
-            column on wide screens. */}
-        <div className="pointer-events-none absolute -right-[3.75rem] top-[calc(4.25rem+env(safe-area-inset-top))] w-[15rem] sm:-right-8 sm:w-[20rem] md:right-0 md:w-[24rem] lg:static lg:order-2 lg:col-span-5 lg:w-full lg:max-w-[34rem] lg:justify-self-end">
-          <HeroMoon className="w-full h-auto" />
+        {/* The moon: top-right beside the name on phones and tablets (fully
+            in frame, above the text column's paper), its own column on wide
+            screens. Only the moon itself takes pointer input. */}
+        <div className="pointer-events-none absolute z-20 right-[max(1.25rem,env(safe-area-inset-right))] top-[calc(5.25rem+env(safe-area-inset-top))] w-[clamp(6.75rem,46vw_-_2.75rem,11rem)] sm:right-8 sm:w-[17rem] md:w-[21rem] lg:static lg:z-auto lg:order-2 lg:col-span-5 lg:w-full lg:max-w-[34rem] lg:justify-self-end">
+          <HeroMoonControl />
         </div>
 
-        <div className="paper-scrim relative z-10 lg:order-1 lg:col-span-7 text-left">
+        <div className="paper-scrim relative z-10 flex flex-col lg:block lg:order-1 lg:col-span-7 text-left">
           <h1 className="font-heading">
             <span
               data-hero-rise
@@ -145,12 +146,13 @@ const HeroSection = () => {
 
           {/* Readable from the first paint: it is the largest text in view
               (the LCP element), so it is not part of the entrance. */}
-          <p className="mt-6 max-w-[62ch] text-base md:text-lg leading-relaxed text-muted-foreground text-pretty"
-          >
+          <p className="max-lg:order-2 mt-8 lg:mt-6 max-w-[62ch] text-base md:text-lg leading-relaxed text-muted-foreground text-pretty">
             {HERO_SECTION_DESCRIPTION}
           </p>
 
-          <div data-hero-rise className="mt-9 flex flex-wrap gap-3">
+          {/* On phones and tablets the buttons come straight after the roles,
+              so both are on screen on first load. */}
+          <div data-hero-rise className="mt-7 lg:mt-9 flex flex-wrap gap-3">
             <a
               href={RESUME_URL}
               target="_blank"
@@ -171,7 +173,7 @@ const HeroSection = () => {
             </button>
           </div>
 
-          <div data-hero-rise className="mt-8">
+          <div data-hero-rise className="max-lg:order-3 mt-8">
             <SocialLinks />
           </div>
         </div>

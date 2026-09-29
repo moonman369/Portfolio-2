@@ -1,15 +1,21 @@
 import { useId } from "react";
 import { cn } from "../lib/utils";
 import { shadowPath, terminatorPath } from "../lib/moonPhase";
+import {
+  CX,
+  CY,
+  ORBIT,
+  R,
+  REST_PHASE as PHASE,
+  SATELLITE_REST,
+  satellitePoint,
+} from "../lib/heroMoonGeometry";
 
 // The hero's signature: a large thin-line moon in the style of an engraved
 // plate — limb, terminator, a few crater arcs, a hatched night side and one
 // orbit. HeroSection draws it once on load with createDrawable; without motion
-// it simply renders fully drawn.
-const CX = 240;
-const CY = 240;
-const R = 150;
-const PHASE = 0.62; // waxing gibbous
+// it simply renders fully drawn. HeroMoonControl makes it interactive through
+// the data-* hooks below (terminator, shadow, satellites, glow).
 
 // Crater arcs on the lit side: [cx, cy, rx, ry, sweep of the drawn arc].
 // Craters near the limb are foreshortened (narrower rx).
@@ -33,7 +39,6 @@ const arc = ([cx, cy, rx, ry, degrees]) => {
 };
 
 // One orbit, tilted, split so the back half passes behind the disc.
-const ORBIT = { rx: 222, ry: 58, tilt: -16 };
 const orbitBack = `M${CX - ORBIT.rx} ${CY}A${ORBIT.rx} ${ORBIT.ry} 0 0 1 ${CX + ORBIT.rx} ${CY}`;
 const orbitFront = `M${CX + ORBIT.rx} ${CY}A${ORBIT.rx} ${ORBIT.ry} 0 0 1 ${CX - ORBIT.rx} ${CY}`;
 
@@ -47,10 +52,7 @@ const TICKS = [0, 90, 180, 270].map((deg) => {
 const limb = `M${CX} ${CY - R}A${R} ${R} 0 0 1 ${CX} ${CY + R}A${R} ${R} 0 0 1 ${CX} ${CY - R}`;
 
 // Where the satellite sits on the orbit, and where a lost one ends up.
-const SATELLITE = {
-  x: CX - ORBIT.rx * 0.62,
-  y: CY + ORBIT.ry * Math.sqrt(1 - 0.62 ** 2),
-};
+const SATELLITE = satellitePoint(SATELLITE_REST);
 const LOST = { x: 64, y: 420 };
 
 // `lost`: the satellite has slipped off its orbit (the 404 page).
@@ -78,13 +80,25 @@ const HeroMoon = ({ className, lost = false }) => {
       </defs>
 
       <g transform={`rotate(${ORBIT.tilt} ${CX} ${CY})`}>
-        <path data-draw d={orbitBack} className="hero-moon-line opacity-45" />
+        <path data-draw data-glow d={orbitBack} className="hero-moon-line opacity-45" />
+        {/* The satellite's twin for the far side of a lap (hidden at rest). */}
+        {!lost && (
+          <circle
+            data-sat-back
+            cx={SATELLITE.x}
+            cy={SATELLITE.y}
+            r="4.5"
+            opacity="0"
+            className="fill-primary"
+          />
+        )}
       </g>
 
       {/* The disc occludes the back of the orbit. */}
       <circle cx={CX} cy={CY} r={R} className="fill-background" />
       <path
         data-shade
+        data-shadow
         d={shadowPath(PHASE, CX, CY, R)}
         fill={`url(#${hatchId})`}
         className="opacity-30"
@@ -93,6 +107,7 @@ const HeroMoon = ({ className, lost = false }) => {
       <path data-draw d={limb} className="hero-moon-line" />
       <path
         data-draw
+        data-terminator
         d={terminatorPath(PHASE, CX, CY, R)}
         className="hero-moon-line opacity-80"
       />
@@ -100,6 +115,7 @@ const HeroMoon = ({ className, lost = false }) => {
         <path
           key={crater.join("-")}
           data-draw
+          data-glow
           d={arc(crater)}
           className="hero-moon-line opacity-70"
         />
@@ -109,11 +125,12 @@ const HeroMoon = ({ className, lost = false }) => {
       ))}
 
       <g transform={`rotate(${ORBIT.tilt} ${CX} ${CY})`}>
-        <path data-draw d={orbitFront} className="hero-moon-line opacity-70" />
+        <path data-draw data-glow d={orbitFront} className="hero-moon-line opacity-70" />
         {/* A small satellite riding the near side of the orbit. */}
         {!lost && (
           <circle
             data-satellite
+            data-sat-front
             cx={SATELLITE.x}
             cy={SATELLITE.y}
             r="4.5"
