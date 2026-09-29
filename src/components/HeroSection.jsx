@@ -16,6 +16,7 @@ import { useAnimeScope } from "../hooks/useAnimeScope";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { moonmindIntentProps } from "../lib/lazyChat";
 import { DURATION, EASE, STAGGER, rise } from "../lib/motion";
+import GlowBeam from "./GlowBeam";
 import HeroMoon from "./HeroMoon";
 import MoonMark from "./MoonMark";
 import SocialLinks from "./SocialLinks";
@@ -154,16 +155,18 @@ const HeroSection = () => {
               href={RESUME_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary"
+              className="btn-primary btn-glow"
             >
+              <GlowBeam />
               <Download size={18} aria-hidden="true" /> Download Résumé
             </a>
 
             <button
               onClick={openMoonmind}
               {...moonmindIntentProps}
-              className="btn-ghost"
+              className="btn-ghost btn-glow"
             >
+              <GlowBeam />
               <MoonMark size={18} /> Moonmind AI
             </button>
           </div>

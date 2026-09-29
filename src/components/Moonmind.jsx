@@ -7,6 +7,7 @@ import { headerActionClass } from "../lib/moonmindUi";
 import { MoonmindChatLazy, moonmindIntentProps } from "../lib/lazyChat";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useVisualViewportVars } from "../hooks/useVisualViewportVars";
+import GlowBeam from "./GlowBeam";
 import MoonMark from "./MoonMark";
 
 // Shown for the moment it takes to fetch the chat chunk the first time.
@@ -48,10 +49,11 @@ const Moonmind = () => {
           className={cn(
             "mm-launcher max-sm:hidden fixed z-50",
             "right-[max(1.5rem,env(safe-area-inset-right))] bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
-            "grid place-items-center size-14 rounded-full",
-            "bg-card text-primary ring-1 ring-inset ring-input shadow-lg",
+            "btn-glow grid place-items-center size-14 rounded-full",
+            "bg-card text-primary shadow-lg [--glow-face:hsl(var(--card))]",
           )}
         >
+          <GlowBeam />
           <MoonMark size={26} />
         </button>
       )}

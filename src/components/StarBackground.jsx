@@ -1,12 +1,15 @@
 import { useEffect, useRef } from "react";
+import SkyMotion from "./SkyMotion";
 
 // A sparse, mostly static star field on one <canvas>, drawn once.
 //
-// There is no animation loop. On desktop the canvas drifts very slowly with
-// scroll through a CSS scroll timeline (see .stars-canvas in index.css), which
-// runs on the compositor; phones, reduced motion and browsers without scroll
-// timelines get the still image. The layout is seeded, so a resize redraws the
-// same sky rather than a new one.
+// There is no animation loop: the canvas is a still image. The movement —
+// meteors and a few twinkles — is a separate CSS layer (SkyMotion). On
+// desktop the canvas drifts very slowly with scroll through a CSS scroll
+// timeline (see .stars-canvas in index.css), which runs on the compositor;
+// phones, reduced motion and browsers without scroll timelines get the still
+// image. The layout is seeded, so a resize redraws the same sky rather than a
+// new one.
 
 const SEED = 369;
 const MAX_DPR = 2;
@@ -90,11 +93,14 @@ const StarBackground = () => {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className="stars-canvas fixed inset-x-0 top-0 w-full pointer-events-none z-0"
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="stars-canvas fixed inset-x-0 top-0 w-full pointer-events-none z-0"
+      />
+      <SkyMotion />
+    </>
   );
 };
 

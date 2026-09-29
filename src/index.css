@@ -154,30 +154,30 @@
         --card: 216 33% 99%;
         --card-foreground: 222 44% 14%;
 
-        --primary: 212 62% 34%;
-        --primary-foreground: 216 26% 96%;
+        --primary: 212 88% 42%;
+        --primary-foreground: 216 26% 98%;
 
         --secondary: 216 22% 91%;
         --secondary-foreground: 222 44% 14%;
 
         --muted: 216 22% 91%;
-        --muted-foreground: 218 16% 37%;
+        --muted-foreground: 218 18% 36%;
 
-        --accent: 212 40% 90%;
-        --accent-foreground: 212 62% 26%;
+        --accent: 212 70% 92%;
+        --accent-foreground: 212 88% 30%;
 
         /* Warm light for live states only (running, sending). */
-        --earthshine: 28 88% 32%;
+        --earthshine: 28 95% 33%;
 
         /* Stats ring/bar track. */
         --track: 216 18% 80%;
 
         --border: 216 18% 85%;
         --input: 216 12% 54%;
-        --ring: 212 62% 34%;
+        --ring: 212 88% 42%;
 
-        /* Kept for the legacy gradient utilities until they are retired. */
-        --gradient-end: 212 62% 34%;
+        /* Button glow and meteors. */
+        --glow: 212 95% 55%;
     }
 
     /* Dark: deep blue-grey ink, cool moonlight text, pale lunar accent. */
@@ -185,32 +185,32 @@
         color-scheme: dark;
 
         --background: 220 24% 8%;
-        --foreground: 214 32% 91%;
+        --foreground: 214 45% 95%;
 
         --card: 220 20% 11%;
-        --card-foreground: 214 32% 91%;
+        --card-foreground: 214 45% 95%;
 
-        --primary: 208 56% 78%;
+        --primary: 204 100% 76%;
         --primary-foreground: 220 24% 8%;
 
         --secondary: 220 16% 15%;
-        --secondary-foreground: 214 32% 91%;
+        --secondary-foreground: 214 45% 95%;
 
         --muted: 220 16% 15%;
-        --muted-foreground: 216 14% 66%;
+        --muted-foreground: 215 20% 72%;
 
-        --accent: 212 24% 18%;
-        --accent-foreground: 214 32% 91%;
+        --accent: 206 45% 18%;
+        --accent-foreground: 214 45% 95%;
 
-        --earthshine: 36 86% 66%;
+        --earthshine: 38 100% 64%;
 
         --track: 220 16% 17%;
 
         --border: 218 16% 19%;
         --input: 216 12% 42%;
-        --ring: 208 56% 78%;
+        --ring: 204 100% 76%;
 
-        --gradient-end: 208 56% 78%;
+        --glow: 204 100% 70%;
     }
 
     * {
@@ -795,4 +795,162 @@
    when motion is allowed; the description is never held. */
 [data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
     opacity: 0;
+}
+
+/* ---- Glow buttons ----
+   Main calls to action carry a light that travels around their border and a
+   soft halo that breathes. Markup: add `btn-glow` and a <GlowBeam /> child.
+   The beam is a conic gradient spinning (transform) inside a clipped layer,
+   covered by an inset face so only a 2px ring shows; the halo is a static
+   blur whose opacity breathes. Transform and opacity only: both run on the
+   compositor. */
+.btn-glow {
+    position: relative;
+    isolation: isolate;
+    --glow-face: hsl(var(--background));
+    --glow-halo: 0.5;
+}
+.btn-primary.btn-glow {
+    --glow-face: hsl(var(--primary));
+}
+.btn-glow::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: -3;
+    border-radius: inherit;
+    background: hsl(var(--glow));
+    filter: blur(16px);
+    opacity: var(--glow-halo);
+    pointer-events: none;
+    animation: glow-breathe 3.2s ease-in-out infinite alternate;
+}
+:root:not(.dark) .btn-glow {
+    --glow-halo: 0.32;
+}
+.glow-beam {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+}
+.glow-beam::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(220%, 10rem);
+    aspect-ratio: 1;
+    background: conic-gradient(
+        transparent 0deg 200deg,
+        hsl(var(--glow) / 0.35) 250deg,
+        hsl(var(--glow)) 295deg,
+        hsl(0 0% 100%) 318deg,
+        hsl(var(--glow)) 335deg,
+        transparent 355deg
+    );
+    transform: translate(-50%, -50%) rotate(0deg);
+    animation: glow-spin 4.5s linear infinite;
+}
+.glow-beam::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: inherit;
+    background: var(--glow-face);
+}
+@keyframes glow-spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+@keyframes glow-breathe {
+    from {
+        opacity: calc(var(--glow-halo) * 0.55);
+        transform: scale(0.96);
+    }
+    to {
+        opacity: var(--glow-halo);
+        transform: scale(1.04);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn-glow::before,
+    .glow-beam::before {
+        animation: none;
+    }
+}
+
+/* ---- Sky motion: meteors and a few twinkling stars ----
+   Each meteor streaks for about a second, then waits out the rest of its
+   cycle invisible. Transform/opacity keyframes on the compositor; nothing
+   here runs JS. Hidden entirely with reduced motion. */
+.sky {
+    --meteor: 204 100% 88%;
+}
+:root:not(.dark) .sky {
+    --meteor: 212 88% 42%;
+    opacity: 0.45;
+}
+.meteor {
+    position: absolute;
+    width: var(--len, 150px);
+    height: 1px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, hsl(var(--meteor) / 0), hsl(var(--meteor)));
+    opacity: 0;
+    transform-origin: 100% 50%;
+    animation: meteor var(--dur, 12s) linear var(--delay, 0s) infinite;
+}
+.meteor::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: -1px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: hsl(var(--meteor));
+    box-shadow: 0 0 6px 1px hsl(var(--meteor) / 0.8);
+}
+@keyframes meteor {
+    0% {
+        opacity: 0;
+        transform: rotate(145deg) translateX(0);
+    }
+    1.5% {
+        opacity: 1;
+    }
+    8% {
+        opacity: 0;
+        transform: rotate(145deg) translateX(460px);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(145deg) translateX(460px);
+    }
+}
+.twinkle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: hsl(var(--meteor));
+    box-shadow: 0 0 4px hsl(var(--meteor) / 0.9);
+    opacity: 0.15;
+    animation: twinkle var(--dur, 4s) ease-in-out var(--delay, 0s) infinite
+        alternate;
+}
+@keyframes twinkle {
+    to {
+        opacity: 0.9;
+        transform: scale(1.4);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .sky {
+        display: none;
+    }
 }

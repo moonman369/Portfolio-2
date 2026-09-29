@@ -4,6 +4,7 @@ import { AiOutlineHome, AiOutlineUser } from "react-icons/ai";
 import { BiCodeAlt, BiBriefcase, BiMessageSquareDetail } from "react-icons/bi";
 import { IoIosStats } from "react-icons/io";
 import ThemeToggle from "./ThemeToggle";
+import GlowBeam from "./GlowBeam";
 import MoonMark from "./MoonMark";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useScrollMoonPhase } from "../hooks/useScrollMoonPhase";
@@ -63,13 +64,17 @@ const Navbar = () => {
       aria-label="Moonmind AI"
       aria-expanded={isMoonmindOpen}
       className={cn(
-        "inline-flex items-center justify-center gap-2 min-h-11 min-w-11 rounded-full",
+        "btn-glow inline-flex items-center justify-center gap-2 min-h-11 min-w-11 rounded-full",
         "text-primary",
         variant === "top" &&
-          "lg:px-4 lg:text-sm lg:font-medium lg:text-foreground lg:ring-1 lg:ring-inset lg:ring-input",
-        isMoonmindOpen ? "bg-primary/15" : "hover:bg-primary/10",
+          "lg:px-4 lg:text-sm lg:font-medium lg:text-foreground",
+        // The glow's inner face carries the open/hover tint.
+        isMoonmindOpen
+          ? "[--glow-face:hsl(var(--accent))]"
+          : "hover:[--glow-face:hsl(var(--accent))]",
       )}
     >
+      <GlowBeam />
       <MoonMark size={variant === "bar" ? 22 : 20} className="text-primary" />
       {variant === "top" && <span className="hidden lg:inline">Moonmind</span>}
     </button>
