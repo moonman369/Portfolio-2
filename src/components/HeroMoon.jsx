@@ -46,7 +46,15 @@ const TICKS = [0, 90, 180, 270].map((deg) => {
 
 const limb = `M${CX} ${CY - R}A${R} ${R} 0 0 1 ${CX} ${CY + R}A${R} ${R} 0 0 1 ${CX} ${CY - R}`;
 
-const HeroMoon = ({ className }) => {
+// Where the satellite sits on the orbit, and where a lost one ends up.
+const SATELLITE = {
+  x: CX - ORBIT.rx * 0.62,
+  y: CY + ORBIT.ry * Math.sqrt(1 - 0.62 ** 2),
+};
+const LOST = { x: 64, y: 420 };
+
+// `lost`: the satellite has slipped off its orbit (the 404 page).
+const HeroMoon = ({ className, lost = false }) => {
   const hatchId = `moon-hatch-${useId().replace(/:/g, "")}`;
 
   return (
@@ -103,14 +111,34 @@ const HeroMoon = ({ className }) => {
       <g transform={`rotate(${ORBIT.tilt} ${CX} ${CY})`}>
         <path data-draw d={orbitFront} className="hero-moon-line opacity-70" />
         {/* A small satellite riding the near side of the orbit. */}
-        <circle
-          data-satellite
-          cx={CX - ORBIT.rx * 0.62}
-          cy={CY + ORBIT.ry * Math.sqrt(1 - 0.62 ** 2)}
-          r="4.5"
-          className="fill-primary"
-        />
+        {!lost && (
+          <circle
+            data-satellite
+            cx={SATELLITE.x}
+            cy={SATELLITE.y}
+            r="4.5"
+            className="fill-primary"
+          />
+        )}
       </g>
+      {lost && (
+        <g>
+          {/* Its dashed trail, from where it left the orbit. */}
+          <path
+            d={`M${SATELLITE.x} ${SATELLITE.y}Q${SATELLITE.x - 40} ${SATELLITE.y + 60} ${LOST.x} ${LOST.y}`}
+            transform={`rotate(${ORBIT.tilt} ${CX} ${CY})`}
+            className="hero-moon-line opacity-50"
+            strokeDasharray="2 7"
+          />
+          <circle
+            cx={LOST.x}
+            cy={LOST.y}
+            r="4.5"
+            transform={`rotate(${ORBIT.tilt} ${CX} ${CY})`}
+            className="fill-primary"
+          />
+        </g>
+      )}
     </svg>
   );
 };
