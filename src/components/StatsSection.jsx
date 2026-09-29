@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/utils";
 import { useInView } from "../hooks/useInView";
+import { useReveal } from "../hooks/useReveal";
 import { useCountUp } from "../hooks/useCountUp";
 import {
   useFinePointer,
@@ -23,6 +24,7 @@ import * as Md from "react-icons/md";
 import { CERTIFICATES, GITHUB_USERNAME } from "../context/constants";
 import { RiClaudeFill } from "react-icons/ri";
 import { GrOracle } from "react-icons/gr";
+import SectionHeading from "./SectionHeading";
 import { BsClaude } from "react-icons/bs";
 
 // ---- Config (Vite env vars; unset => that fetch is skipped) ----
@@ -314,8 +316,8 @@ const CircularProgress = ({ percentage, solved, total, active }) => {
         y="70"
         textAnchor="middle"
         dominantBaseline="central"
-        className="fill-foreground font-semibold"
-        fontSize="20"
+        className="fill-foreground font-mono"
+        fontSize="19"
         aria-hidden="true"
         style={{ fontVariantNumeric: "tabular-nums" }}
       >
@@ -334,11 +336,16 @@ const DifficultyBar = ({ label, solved, total, color, active, delay }) => {
 
   return (
     <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="font-medium" style={{ color }}>
+      <div className="flex items-baseline justify-between text-sm mb-2">
+        <span className="inline-flex items-center gap-2 font-medium text-foreground">
+          <span
+            aria-hidden="true"
+            className="size-2 rounded-full"
+            style={{ backgroundColor: color }}
+          />
           {label}
         </span>
-        <span className="text-muted-foreground">
+        <span className="font-mono text-muted-foreground">
           {/* Only the solved half counts; the total is shown straight away. */}
           <AnimatedNumber value={solved} active={started} />
           <span aria-hidden="true"> / {total ?? 0}</span>
@@ -348,13 +355,14 @@ const DifficultyBar = ({ label, solved, total, color, active, delay }) => {
         </span>
       </div>
       <div
-        className="w-full h-2 rounded-full overflow-hidden"
+        className="w-full h-1.5 rounded-full overflow-hidden"
         style={{ backgroundColor: "hsl(var(--track) / 0.6)" }}
       >
+        {/* Scales rather than resizing, so the fill never triggers layout. */}
         <div
-          className="stats-bar-fill h-2 rounded-full"
+          className="stats-bar-fill h-full w-full origin-left rounded-full"
           style={{
-            width: `${filled ? pct : 0}%`,
+            transform: `scaleX(${filled ? pct / 100 : 0})`,
             backgroundColor: color,
           }}
         />
@@ -367,11 +375,11 @@ const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => {
   const started = useStaggeredActive(active, delay);
 
   return (
-    <li className="flex items-center gap-3">
+    <li className="flex items-center gap-3 border-b border-border py-3 first:pt-0">
       <Icon className="h-5 w-5 shrink-0" style={{ color }} aria-hidden="true" />
-      <p className="text-sm">
+      <p className="flex flex-1 items-baseline justify-between gap-3 text-sm text-muted-foreground">
         {label}:{" "}
-        <span className="font-semibold text-primary">
+        <span className="font-mono text-xl text-foreground">
           <AnimatedNumber
             value={value}
             active={started}
@@ -384,6 +392,7 @@ const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => {
 };
 
 const StatsSection = () => {
+  const { ref: revealRef, pending: revealPending } = useReveal();
   const [leetcodeStats, setLeetcodeStats] = useState(
     () => readCache("leetcodeCache") ?? {},
   );
@@ -463,29 +472,35 @@ const StatsSection = () => {
   ];
 
   return (
-    <section id="stats" className="py-24 px-4 relative">
-      <div className="container mx-auto max-w-6xl">
+    <section
+      id="stats"
+      ref={revealRef}
+      data-reveal-pending={revealPending || undefined}
+      className="section-pad relative text-left"
+    >
+      <div className="container max-w-6xl">
         {/* <p className="text-center text-primary font-medium mb-2">
           Platforms I use
         </p>*/}
-        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
-          My <span className="text-gradient">Stats</span>
-        </h2>
+        <SectionHeading index="03" label="Stats">
+          My Stats
+        </SectionHeading>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
           {/* LeetCode */}
           <a
             ref={leetcodeRef}
             href={LEETCODE_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="stats-card glass rounded-lg p-6 card-hover text-left block"
+            data-reveal
+            className="stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-7">
               {Si.SiLeetcode && (
                 <Si.SiLeetcode className="h-7 w-7 text-primary" aria-hidden="true" />
               )}
-              <h3 className="text-xl font-semibold">LeetCode Stats</h3>
+              <h3 className="font-heading text-xl font-semibold">LeetCode Stats</h3>
             </div>
 
             <div className="flex items-center gap-6 mb-6">
@@ -495,10 +510,10 @@ const StatsSection = () => {
                 total={totalQuestions}
                 active={leetcodeActive}
               />
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Solved</p>
-                  <p className="text-2xl font-bold text-primary">
+                  <p className="eyebrow text-muted-foreground">Solved</p>
+                  <p className="mt-1 font-mono text-3xl text-primary">
                     <AnimatedNumber
                       value={solved}
                       active={leetcodeActive}
@@ -507,8 +522,8 @@ const StatsSection = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Rank</p>
-                  <p className="text-lg font-semibold">
+                  <p className="eyebrow text-muted-foreground">Rank</p>
+                  <p className="mt-1 font-mono text-xl text-foreground">
                     <AnimatedNumber
                       value={ranking}
                       active={leetcodeActive}
@@ -555,14 +570,15 @@ const StatsSection = () => {
             href={GITHUB_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="stats-card glass rounded-lg p-6 card-hover text-left block"
+            data-reveal
+            className="stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-7">
               <Github className="h-7 w-7 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold">GitHub Stats</h3>
+              <h3 className="font-heading text-xl font-semibold">GitHub Stats</h3>
             </div>
 
-            <ul className="space-y-4 mb-6">
+            <ul className="mb-6">
               {githubItems.map((item, index) => (
                 <GitHubStat
                   key={item.label}
@@ -575,7 +591,10 @@ const StatsSection = () => {
             </ul>
 
             <img
-              className="w-full rounded-md"
+              className="w-full h-auto rounded-md"
+              width="340"
+              height="200"
+              decoding="async"
               src={GITHUB_SUMMARY_CARD}
               alt="GitHub repositories per language"
               loading="lazy"
@@ -583,22 +602,25 @@ const StatsSection = () => {
           </a>
 
           {/* Certificates */}
-          <article className="glass rounded-lg p-6 card-hover text-left">
-            <div className="flex items-center gap-3 mb-6">
+          <article
+            data-reveal
+            className="rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left"
+          >
+            <div className="flex items-center gap-3 mb-7">
               <Award className="h-7 w-7 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold">Certificates</h3>
+              <h3 className="font-heading text-xl font-semibold">Certificates</h3>
             </div>
 
-            <ul className="space-y-3">
+            <ul>
               {CERTIFICATES.map((cert) => {
                 const Icon = CERT_ICONS[cert.icon] || Award;
                 return (
-                  <li key={cert.title}>
+                  <li key={cert.title} className="border-b border-border last:border-b-0">
                     <a
                       href={cert.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sm text-foreground/90 hover:text-primary transition-colors group"
+                      className="group flex min-h-11 items-center gap-3 py-2 text-sm text-foreground hover:text-primary"
                     >
                       <Icon
                         aria-hidden="true"

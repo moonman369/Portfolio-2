@@ -713,9 +713,10 @@
     transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Difficulty bars match their own numbers (1200ms), not the ring. */
+/* Difficulty bars match their own numbers (1200ms), not the ring. They
+   scale rather than resize, so filling never triggers layout. */
 .stats-bar-fill {
-    transition: width 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 1200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Reserve the final width so the card cannot jitter as digits arrive. */
@@ -734,9 +735,6 @@
 @media (hover: hover) and (pointer: fine) {
     .stats-card:hover .stats-ring-sweep {
         animation: stats-ring-sweep 700ms ease-out;
-    }
-    .stats-card:hover .stats-ring-progress {
-        filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.55));
     }
 }
 
@@ -763,9 +761,6 @@
     .stats-ring-sweep {
         animation: none;
         opacity: 0;
-    }
-    .stats-card:hover .stats-ring-progress {
-        filter: none;
     }
 }
 
@@ -1008,4 +1003,12 @@
 }
 .skills-scroll::-webkit-scrollbar {
     display: none;
+}
+
+/* Printing shows everything, whether or not it has scrolled into view. */
+@media print {
+    [data-reveal-pending] [data-reveal],
+    [data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
+        opacity: 1 !important;
+    }
 }
