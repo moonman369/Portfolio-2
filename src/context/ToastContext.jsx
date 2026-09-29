@@ -29,7 +29,7 @@ export const ToastProvider = ({ children }) => {
     <ToastContext.Provider value={{ toast, dismiss }}>
       {children}
 
-      <div className="fixed bottom-5 right-5 z-100 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0">
+      <div className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] md:bottom-5 right-0 sm:right-5 z-100 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0">
         {toasts.map((t) => {
           const isError = t.variant === "destructive";
           const Icon = isError ? AlertCircle : CheckCircle;
@@ -38,9 +38,9 @@ export const ToastProvider = ({ children }) => {
               key={t.id}
               role="status"
               className={cn(
-                "flex items-start gap-3 p-4 rounded-lg shadow-lg border bg-card text-card-foreground",
+                "flex items-start gap-3 p-4 rounded-xl shadow-lg border border-l-2 bg-card text-card-foreground",
                 "animate-fade-in",
-                isError ? "border-red-500/50" : "border-primary/50",
+                isError ? "border-l-red-500" : "border-l-primary",
               )}
             >
               <Icon
@@ -50,7 +50,9 @@ export const ToastProvider = ({ children }) => {
                 )}
               />
               <div className="flex-1 text-left">
-                {t.title && <p className="font-semibold text-sm">{t.title}</p>}
+                {t.title && (
+                  <p className="font-heading font-semibold text-sm">{t.title}</p>
+                )}
                 {t.description && (
                   <p className="text-sm text-muted-foreground">
                     {t.description}
@@ -60,9 +62,9 @@ export const ToastProvider = ({ children }) => {
               <button
                 onClick={() => dismiss(t.id)}
                 aria-label="Dismiss notification"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="icon-btn -m-3 text-muted-foreground hover:text-foreground"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           );
