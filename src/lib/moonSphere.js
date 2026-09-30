@@ -3,14 +3,14 @@
 // Every pixel inside the disc is mapped once (per canvas size) to a point on
 // a sphere: its latitude and longitude, plus how those change when the
 // sphere tilts a little about the horizontal axis (first-order, which is
-// exact enough for the few degrees of hover/drag tilt). A frame is then a
+// exact enough for the few degrees of drag turn). A frame is then a
 // handful of multiply-adds per pixel: look up the equirectangular texture,
 // light it with Lambert from a sun set by the phase, soften the terminator,
 // darken the limb and add a faint blue earthshine on the night side.
 //
 // Frames are drawn only when something changed (phase, texture, view) or
 // while the view is still easing or idling; the loop stops at rest. Idle
-// rotation is capped at 30fps.
+// rotation runs at a steady 30fps, blending texels so it glides.
 
 const IDLE_TURN_MS = 200_000; // a full turn in 200s
 const IDLE_FRAME_MS = 1000 / 30;
@@ -86,11 +86,9 @@ export const createMoonSphere = (canvas) => {
   const view = { lon: 0, lat: 0 }; // eased
   const target = { lon: 0, lat: 0 };
   let idleLon = 0;
-  let drawnIdleLon = 0;
   let idle = false;
   let dirty = true;
   let frame = 0;
-  let lastTime = 0;
   let lastIdleFrame = 0;
   const stats = { lastFrameMs: 0, loopMs: 0, sampleMs: 0, frames: 0 };
 
@@ -100,7 +98,7 @@ export const createMoonSphere = (canvas) => {
     const lx = Math.sin(angle);
     const lz = Math.cos(angle);
     const tilt = view.lat;
-    const uShift = (view.lon + drawnIdleLon) / twoPi;
+    const uShift = (view.lon + idleLon) / twoPi;
     const tex = texture?.data;
     const tw = texture?.w ?? 1;
     const th = texture?.h ?? 1;
@@ -114,7 +112,14 @@ export const createMoonSphere = (canvas) => {
         let ty = ((v0[i] + tilt * dv[i]) * th) | 0;
         if (ty < 0) ty = 0;
         else if (ty > vMax) ty = vMax;
-        albedo[i] = tex[ty * tw + ((u * tw) | 0)] * 0.00392156863;
+        // Blend the two nearest texels along the direction of spin, so the
+        // surface glides through sub-texel shifts instead of stepping.
+        const row = ty * tw;
+        const ux = u * tw;
+        const x0 = ux | 0;
+        const x1 = x0 + 1 < tw ? x0 + 1 : 0;
+        const a = tex[row + x0];
+        albedo[i] = (a + (tex[row + x1] - a) * (ux - x0)) * 0.00392156863;
       }
       sampledTilt = tilt;
       sampledShift = uShift;
@@ -152,11 +157,9 @@ export const createMoonSphere = (canvas) => {
 
   const tick = (now) => {
     frame = 0;
-    const dt = lastTime ? now - lastTime : 16;
-    lastTime = now;
 
     let moving = false;
-    // Ease the view toward its target (hover / drag rotation).
+    // Ease the view toward its target (the drag turn).
     for (const key of ["lon", "lat"]) {
       const delta = target[key] - view[key];
       if (Math.abs(delta) > SETTLED) {
@@ -168,21 +171,19 @@ export const createMoonSphere = (canvas) => {
         dirty = true;
       }
     }
-    // Idle rotation, ticking at no more than 30fps and redrawing only once
-    // the texture has moved a whole texel (about five times a second).
+    // Idle rotation at a steady 30fps. The step follows the real time since
+    // the last idle frame (so a slow frame never makes it lurch), and with
+    // the sub-texel blend in draw() each frame moves the surface a fraction
+    // of a pixel: a continuous glide.
     if (idle && now - lastIdleFrame >= IDLE_FRAME_MS - 4) {
-      idleLon += (Math.PI * 2 * Math.max(dt, IDLE_FRAME_MS)) / IDLE_TURN_MS;
+      const step = lastIdleFrame ? Math.min(now - lastIdleFrame, 100) : IDLE_FRAME_MS;
+      idleLon += (Math.PI * 2 * step) / IDLE_TURN_MS;
       lastIdleFrame = now;
-      const texels = ((idleLon - drawnIdleLon) / (Math.PI * 2)) * (texture?.w ?? 1024);
-      if (Math.abs(texels) >= 1) {
-        drawnIdleLon = idleLon;
-        dirty = true;
-      }
+      dirty = true;
     }
 
     if (dirty) draw();
     if (moving || idle) frame = requestAnimationFrame(tick);
-    else lastTime = 0;
   };
 
   const request = () => {
@@ -201,7 +202,7 @@ export const createMoonSphere = (canvas) => {
       phase = value;
       request();
     },
-    // Hover/drag rotation in radians; eased.
+    // The drag turn, in radians; eased.
     setTarget(lon, lat) {
       target.lon = lon;
       target.lat = lat;
@@ -210,6 +211,7 @@ export const createMoonSphere = (canvas) => {
     setIdle(value) {
       if (idle === value) return;
       idle = value;
+      lastIdleFrame = 0; // resume from where it stopped, without a jump
       if (idle && !frame) frame = requestAnimationFrame(tick);
     },
     drawNow() {

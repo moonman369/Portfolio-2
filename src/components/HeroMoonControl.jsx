@@ -19,12 +19,14 @@ import HeroMoon3D from "./HeroMoon3D";
 
 // The hero moon, made playable. It is a slider (0 = new, 100 = full):
 //
-//   drag left/right   move the terminator (and turn the sphere a little);
+//   drag left/right   the shadow follows the pointer (dragging right pushes
+//                     it over the lit side, towards new; left pulls it back,
+//                     towards full) and the sphere turns a little with it;
 //                     release springs to the nearest of new / crescent /
 //                     first quarter / gibbous / full
 //   tap or click      step to the next of those; the satellite runs a lap
 //   arrow keys        previous/next; Home/End jump to new/full
-//   hover (desktop)   the sphere turns toward the pointer; the orbit brightens
+//   hover (desktop)   the orbit brightens; the sphere itself stays put
 //
 // Left alone it follows scroll progress, waxing from its resting gibbous to
 // full by the Contact section (the navbar moon keeps the whole new → full
@@ -32,12 +34,11 @@ import HeroMoon3D from "./HeroMoon3D";
 // The moon is a lit sphere on a canvas (lib/moonSphere.js): frames are drawn
 // only when something changes; on desktop it also turns very slowly while the
 // hero is on screen and the tab is visible. Phones and reduced motion: one
-// frame per phase change, no idle turn, no hover. Every live value is in a
-// ref, so moving the pointer never re-renders React.
+// frame per phase change, no idle turn. Every live value is in a ref, so
+// moving the pointer never re-renders React.
 
 const STOPS = [0, 0.25, 0.5, 0.75, 1];
 const DRAG_THRESHOLD_PX = 6;
-const HOVER_TURN = { lon: 0.16, lat: 0.1 }; // radians at the edge (~9° / 6°)
 const DRAG_TURN = 0.22; // radians of turn for a full-width drag
 const SNAP_SPRING = { bounce: 0.25, duration: 520 };
 const LAP_MS = 1600;
@@ -79,7 +80,7 @@ const HeroMoonControl = ({ className }) => {
     const q = (selector) => slider.querySelector(selector);
     const disc = q("[data-moon-disc]");
     const canvas = q("canvas");
-    const animated = finePointer && !reducedMotion; // idle turn + hover
+    const animated = finePointer && !reducedMotion; // idle turn
     let frame = 0;
     let pendingPhase = null;
     let visible = true;
@@ -271,18 +272,17 @@ const HeroMoonControl = ({ className }) => {
         drag.moved = true;
         lastInteraction = performance.now();
         const move = (event.clientX - drag.x) / drag.width;
-        pendingPhase = clamp01(drag.start + move / 0.9);
+        // The sun is on the right (waxing), so the terminator moves right as
+        // the phase falls: dragging right lowers it, and the shadow goes
+        // where the pointer goes.
+        pendingPhase = clamp01(drag.start - move / 0.9);
         if (!reducedMotion) {
-          sphere?.setTarget(Math.max(-DRAG_TURN, Math.min(DRAG_TURN, move * DRAG_TURN * 2)), 0);
+          // Negative longitude carries the surface to the right.
+          const turn = -move * DRAG_TURN * 2;
+          sphere?.setTarget(Math.max(-DRAG_TURN, Math.min(DRAG_TURN, turn)), 0);
         }
         schedule();
-        return;
       }
-      if (!animated || event.pointerType !== "mouse") return;
-      const rect = slider.getBoundingClientRect();
-      const nx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = ((event.clientY - rect.top) / rect.height) * 2 - 1;
-      sphere?.setTarget(nx * HOVER_TURN.lon, -ny * HOVER_TURN.lat);
     };
 
     const endDrag = (event, cancelled) => {
@@ -292,7 +292,7 @@ const HeroMoonControl = ({ className }) => {
       if (!moved && cancelled) return; // the browser took it for a scroll
       lastInteraction = performance.now();
       if (pendingPhase !== null) flush();
-      if (moved && !animated) sphere?.setTarget(0, 0);
+      if (moved) sphere?.setTarget(0, 0);
       if (!moved) {
         // A tap: step to the next phase, and send the satellite round.
         takeOver();
@@ -305,11 +305,6 @@ const HeroMoonControl = ({ className }) => {
     };
     const onPointerUp = (event) => endDrag(event, false);
     const onPointerCancel = (event) => endDrag(event, true);
-
-    const onPointerLeave = () => {
-      if (drag) return;
-      sphere?.setTarget(0, 0);
-    };
 
     // ---- Keyboard ----
     const onKeyDown = (event) => {
@@ -333,7 +328,6 @@ const HeroMoonControl = ({ className }) => {
     slider.addEventListener("pointermove", onPointerMove);
     slider.addEventListener("pointerup", onPointerUp);
     slider.addEventListener("pointercancel", onPointerCancel);
-    slider.addEventListener("pointerleave", onPointerLeave);
     slider.addEventListener("keydown", onKeyDown);
 
     return () => {
@@ -351,7 +345,6 @@ const HeroMoonControl = ({ className }) => {
       slider.removeEventListener("pointermove", onPointerMove);
       slider.removeEventListener("pointerup", onPointerUp);
       slider.removeEventListener("pointercancel", onPointerCancel);
-      slider.removeEventListener("pointerleave", onPointerLeave);
       slider.removeEventListener("keydown", onKeyDown);
     };
   }, [reducedMotion, finePointer]);

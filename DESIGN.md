@@ -519,14 +519,22 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
 - **Layers:** back half of the orbit and the satellite's far-side twin behind
   the canvas; front half, ticks and satellite in front, so the lap really
   passes behind the moon.
-- **Motion:** hover and drag turn the sphere a few degrees (texture
-  longitude/latitude, eased); desktop idles through a full turn in 200s,
-  redrawing only when the texture has moved a texel (~5 frames/s), paused
-  off-screen and in hidden tabs. Phones and reduced motion: one frame per
-  phase change, no idle turn, no hover.
+- **Motion:** desktop idles through a full turn in 200s at a steady 30fps,
+  blending neighbouring texels along the spin so the surface glides instead
+  of stepping a texel at a time; paused off-screen and in hidden tabs.
+  Dragging turns it a few degrees with the pointer (eased back on release).
+  Phones and reduced motion: one frame per phase change, no idle turn.
+- **Revised after review:** hover no longer turns the sphere (only the orbit
+  brightens), and the drag was inverted so the shadow follows the pointer:
+  dragging right pushes the terminator right over the lit side (towards new),
+  dragging left pulls it back (towards full). Keys keep slider semantics
+  (Right/Up = next phase, towards full). The idle turn used to redraw only
+  per whole texel (~5 frames/s), which read as stepping.
 - **Cost:** canvas capped at 256 px (the disc shows at ≤340 CSS px). Measured
   on desktop: ~2.4 ms median (3.6 ms p90) for a turning frame, ~1.3 ms for a
   phase-only frame; ~2.3 ms on a phone at 4× CPU. Zero frames off-screen.
+  The smooth idle turn draws 30 frames/s at ~2.3 ms each (about 7% of one
+  desktop core while the hero is on screen), against ~5 frames/s before.
 - The hint now sits centred directly under the disc (below the lower tick),
   wrapping to two lines in the narrow phone column; it still fades after the
   first interaction. The 404 page keeps the line-drawn moon.
