@@ -16,6 +16,7 @@ import { useAnimeScope } from "../hooks/useAnimeScope";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { moonmindIntentProps } from "../lib/lazyChat";
 import { DURATION, EASE, STAGGER, rise } from "../lib/motion";
+import BlueSheen from "./BlueSheen";
 import GlowBeam from "./GlowBeam";
 import HeroMoonControl from "./HeroMoonControl";
 import MoonMark from "./MoonMark";
@@ -165,9 +166,9 @@ const HeroSection = () => {
               href={RESUME_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary btn-glow"
+              className="btn-primary btn-glow-blue"
             >
-              <GlowBeam />
+              <BlueSheen />
               <Download size={18} aria-hidden="true" /> Download Résumé
             </a>
 

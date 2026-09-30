@@ -8,7 +8,7 @@ import {
   PROJECT_IMAGE_WIDTH,
   projectMedia,
 } from "../lib/projectMedia";
-import GlowBeam from "./GlowBeam";
+import BlueSheen from "./BlueSheen";
 import SectionHeading from "./SectionHeading";
 
 // The first projects get more room.
@@ -162,9 +162,9 @@ const ProjectSection = () => {
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary btn-glow"
+            className="btn-primary btn-glow-blue"
           >
-            <GlowBeam />
+            <BlueSheen />
             Check My GitHub <ArrowRight size={16} aria-hidden="true" />
           </a>
         </div>

@@ -4,7 +4,7 @@ import { cn } from "../lib/utils";
 import { useToast } from "../context/ToastContext";
 import { CONTACT_INFO } from "../context/constants";
 import { useReveal } from "../hooks/useReveal";
-import GlowBeam from "./GlowBeam";
+import BlueSheen from "./BlueSheen";
 import SectionHeading from "./SectionHeading";
 import SocialLinks from "./SocialLinks";
 
@@ -245,13 +245,13 @@ const ContactSection = () => {
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
                 className={cn(
-                  "btn-primary btn-glow w-full",
+                  "btn-primary btn-glow-blue w-full",
                   // Sending: earthshine, the one warm "live" state.
                   isSubmitting &&
-                    "disabled:opacity-100 bg-earthshine text-background [--glow:var(--earthshine)] [--glow-face:hsl(var(--earthshine))]",
+                    "disabled:opacity-100 bg-earthshine text-background [--glow-blue:var(--earthshine)]",
                 )}
               >
-                <GlowBeam />
+                <BlueSheen />
                 {isSubmitting ? "Sending..." : "Send Message"}
                 <Send size={16} aria-hidden="true" />
               </button>

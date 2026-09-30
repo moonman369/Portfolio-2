@@ -171,6 +171,8 @@
            is the bright core of a button's travelling light. */
         --glow: 45 96% 60%;
         --glow-hi: 50 100% 86%;
+        /* The solid blue buttons' own halo (btn-glow-blue). */
+        --glow-blue: 212 95% 52%;
     }
 
     /* Dark: deep blue-grey ink, cool moonlight text, pale lunar accent. */
@@ -206,6 +208,7 @@
         /* Lunar-blue glow; its bright core is the moon's buttery yellow. */
         --glow: 204 100% 70%;
         --glow-hi: 49 100% 82%;
+        --glow-blue: 204 100% 66%;
     }
 
     * {
@@ -1413,4 +1416,109 @@
     box-shadow:
         inset 0 0 0 1px hsl(var(--primary) / 0.35),
         0 0 16px 1px hsl(var(--primary) / 0.28);
+}
+
+/* ---- Blue buttons: their own glow (btn-glow-blue + BlueSheen) ----
+   Separate from the dark button's btn-glow, with its own keyframes. A cool
+   halo breathes around the button: a radial gradient on ::before, masked to
+   the ring outside the button so it never tints the face, reaching ~18px
+   beyond the edge at its peak. Hover and keyboard focus brighten it and send
+   one sheen across; pressing tightens it. Only opacity and transform
+   animate; nothing blurs. */
+@layer components {
+    .btn-glow-blue {
+        position: relative;
+        isolation: isolate;
+        --blue-halo: 1;
+    }
+    .btn-glow-blue::before {
+        content: "";
+        position: absolute;
+        inset: -18px;
+        z-index: -1;
+        padding: 18px;
+        border-radius: 24px;
+        pointer-events: none;
+        background: radial-gradient(
+            closest-side,
+            hsl(var(--glow-blue) / calc(0.7 * var(--blue-halo))) 0%,
+            hsl(var(--glow-blue) / calc(0.5 * var(--blue-halo))) 62%,
+            hsl(var(--glow-blue) / 0) 100%
+        );
+        mask:
+            linear-gradient(#000 0 0) content-box exclude,
+            linear-gradient(#000 0 0);
+        -webkit-mask:
+            linear-gradient(#000 0 0) content-box xor,
+            linear-gradient(#000 0 0);
+        opacity: 0.5;
+        animation: blue-breathe 2.8s ease-in-out infinite alternate;
+    }
+    .btn-glow-blue:is(:hover, :focus-visible) {
+        --blue-halo: 1.45;
+    }
+    .btn-glow-blue:active::before {
+        animation: none;
+        opacity: 0.85;
+        transform: scale(0.97);
+    }
+    .blue-sheen {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        overflow: hidden;
+        pointer-events: none;
+    }
+    .blue-sheen::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -55%;
+        width: 45%;
+        background: linear-gradient(
+            100deg,
+            transparent,
+            hsl(0 0% 100% / 0.38),
+            transparent
+        );
+        transform: translateX(0);
+    }
+    .btn-glow-blue:is(:hover, :focus-visible) .blue-sheen::before {
+        animation: blue-sheen 850ms var(--motion-ease-out) 1 both;
+    }
+}
+@keyframes blue-breathe {
+    from {
+        opacity: 0.45;
+        transform: scale(1);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+@keyframes blue-sheen {
+    to {
+        transform: translateX(380%);
+    }
+}
+/* Like the other glows, it waits for ambient motion (after load). */
+:root:not(.ambient) .btn-glow-blue::before {
+    display: none;
+}
+/* Reduced motion: a steady, visible halo; no breathing, no sweep. Hover and
+   focus still brighten it. */
+@media (prefers-reduced-motion: reduce) {
+    .btn-glow-blue::before {
+        animation: none;
+        opacity: 0.7;
+    }
+    .btn-glow-blue:is(:hover, :focus-visible) .blue-sheen::before {
+        animation: none;
+    }
+    :root:not(.ambient) .btn-glow-blue::before {
+        display: block;
+    }
 }

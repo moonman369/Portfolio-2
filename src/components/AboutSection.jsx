@@ -6,7 +6,7 @@ import {
   RESUME_URL,
 } from "../context/constants";
 import { useReveal } from "../hooks/useReveal";
-import GlowBeam from "./GlowBeam";
+import BlueSheen from "./BlueSheen";
 import SectionHeading from "./SectionHeading";
 
 const ICONS = {
@@ -51,8 +51,8 @@ const AboutSection = () => {
             ))}
 
             <div data-reveal className="flex flex-wrap gap-3 pt-4">
-              <a href="#contact" className="btn-primary btn-glow">
-                <GlowBeam />
+              <a href="#contact" className="btn-primary btn-glow-blue">
+                <BlueSheen />
                 Get In Touch
               </a>
 

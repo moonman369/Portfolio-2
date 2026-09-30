@@ -519,6 +519,22 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   wrapping to two lines in the narrow phone column; it still fades after the
   first interaction. The 404 page keeps the line-drawn moon.
 
+### Blue buttons: their own glow
+
+- The solid blue buttons (Download Résumé, Get In Touch, Check My GitHub,
+  Send Message, Back to Home) use `btn-glow-blue` + `BlueSheen`, separate
+  from the dark button's `btn-glow` + `GlowBeam` (Moonmind AI, navbar,
+  launcher), which are unchanged.
+- A cool halo (`--glow-blue`: dark `204 100% 66%`, light `212 95% 52%`,
+  tuned apart from `--glow`) breathes on a 2.8s cycle, reaching ~18px past the
+  edge: a radial gradient on `::before`, masked to the ring outside the
+  button so it never tints the face; only opacity and transform animate.
+  Hover/focus brightens it (×1.45) and sweeps one sheen across; press
+  tightens it. Waits for ambient motion like the other glows. Reduced motion:
+  a steady halo at 0.7, no breathing or sweep, hover still brightens.
+- "Sending..." sets the halo to earthshine with the earthshine fill. Button
+  text contrast is unchanged (5.1:1 light, 10.9:1 dark).
+
 ## 10. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

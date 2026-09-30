@@ -4,7 +4,7 @@ import { useTheme } from "../context/ThemeContext";
 import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
 import HeroMoon from "../components/HeroMoon";
-import GlowBeam from "../components/GlowBeam";
+import BlueSheen from "../components/BlueSheen";
 
 // "Lost in orbit": the hero's moon, with its satellite drifted off course.
 export const NotFound = () => {
@@ -26,8 +26,8 @@ export const NotFound = () => {
             The page you're looking for doesn't exist or has been moved.
           </p>
         </div>
-        <Link to="/" className="btn-primary btn-glow mt-10">
-          <GlowBeam />
+        <Link to="/" className="btn-primary btn-glow-blue mt-10">
+          <BlueSheen />
           <HomeIcon size={16} aria-hidden="true" /> Back to Home
         </Link>
       </div>
