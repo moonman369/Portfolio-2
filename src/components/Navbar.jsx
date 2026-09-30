@@ -6,7 +6,12 @@ import { IoIosStats } from "react-icons/io";
 import ThemeToggle from "./ThemeToggle";
 import GlowBeam from "./GlowBeam";
 import MoonMark from "./MoonMark";
+import MoonmindNudge from "./MoonmindNudge";
 import { useMoonmind } from "../context/MoonmindContext";
+import {
+  MOONMIND_ASK_ARIA_LABEL,
+  MOONMIND_ASK_LABEL,
+} from "../context/constants";
 import { useScrollMoonPhase } from "../hooks/useScrollMoonPhase";
 import { moonmindIntentProps } from "../lib/lazyChat";
 
@@ -58,18 +63,25 @@ const Navbar = () => {
     );
   };
 
+  // The label is visible on the desktop pill (lg+) and, small under the
+  // mark, on the bottom-nav button, wrapped onto two lines so the bar keeps
+  // 8px between its targets at 375px (from 360px; narrower phones keep the
+  // icon). The accessible name contains the visible label.
   const renderMoonmind = (variant) => (
     <button
       onClick={toggleMoonmind}
       {...moonmindIntentProps}
-      title="Moonmind AI"
-      aria-label="Moonmind AI"
+      title={MOONMIND_ASK_LABEL}
+      aria-label={MOONMIND_ASK_ARIA_LABEL}
       aria-expanded={isMoonmindOpen}
+      data-moonmind-anchor={variant === "bar" ? "bar" : undefined}
       className={cn(
         "btn-glow inline-flex items-center justify-center gap-2 min-h-11 min-w-11 rounded-full",
         "text-primary",
         variant === "top" &&
           "lg:px-4 lg:text-sm lg:font-medium lg:text-foreground",
+        variant === "bar" &&
+          "flex-col gap-0.5 px-0.5 py-0.5 min-[360px]:w-12 min-[360px]:rounded-2xl",
         // The glow's inner face carries the open/hover tint.
         isMoonmindOpen
           ? "[--glow-face:hsl(var(--accent))]"
@@ -77,8 +89,15 @@ const Navbar = () => {
       )}
     >
       <GlowBeam />
-      <MoonMark size={variant === "bar" ? 22 : 20} className="text-primary" />
-      {variant === "top" && <span className="hidden lg:inline">Moonmind</span>}
+      <MoonMark size={20} />
+      {variant === "top" && (
+        <span className="hidden lg:inline">{MOONMIND_ASK_LABEL}</span>
+      )}
+      {variant === "bar" && (
+        <span className="max-[359px]:hidden max-w-12 text-center text-[9px] font-medium leading-[1.1] tracking-tight text-foreground">
+          {MOONMIND_ASK_LABEL}
+        </span>
+      )}
     </button>
   );
 
@@ -129,6 +148,9 @@ const Navbar = () => {
         <div className="mx-auto flex max-w-md items-center justify-between px-1.5 py-1.5">
           {navItems.slice(0, MID).map((item) => renderLink(item, "bar"))}
           {renderMoonmind("bar")}
+          {/* Out of flow (fixed); here so keyboard users meet it right
+              after the button. */}
+          <MoonmindNudge anchor="bar" />
           {navItems.slice(MID).map((item) => renderLink(item, "bar"))}
         </div>
       </nav>

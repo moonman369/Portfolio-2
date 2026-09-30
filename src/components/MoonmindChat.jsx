@@ -3,7 +3,11 @@ import { FileText, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
-import { useMoonmind } from "../context/MoonmindContext";
+import { MOONMIND_WELCOME, useMoonmind } from "../context/MoonmindContext";
+import {
+  MOONMIND_STARTERS,
+  MOONMIND_STARTERS_LABEL,
+} from "../context/constants";
 import MoonmindSteps from "./MoonmindSteps";
 import MoonMark from "./MoonMark";
 
@@ -61,6 +65,31 @@ const MoonmindSources = ({ documents = [] }) => {
     </details>
   );
 };
+
+// Starter questions under the greeting of an empty chat. A tap sends the
+// question through the same path as typing it; nothing is sent until then.
+// They go once the conversation has a user message, and are disabled while
+// a reply is loading.
+const StarterChips = ({ disabled, onPick }) => (
+  <div
+    role="group"
+    aria-label={MOONMIND_STARTERS_LABEL}
+    className="mm-starters flex flex-wrap gap-2 pt-1"
+  >
+    {MOONMIND_STARTERS.map((question, i) => (
+      <button
+        key={question}
+        type="button"
+        disabled={disabled}
+        onClick={() => onPick(question)}
+        style={{ "--i": i }}
+        className="mm-starter min-h-11 rounded-full px-4 text-left text-sm text-foreground ring-1 ring-inset ring-primary/35 bg-primary/8 hover:bg-primary/15 disabled:opacity-50"
+      >
+        {question}
+      </button>
+    ))}
+  </div>
+);
 
 const markdownComponents = {
   a: ({ children, ...props }) => {
@@ -149,6 +178,15 @@ const MoonmindChat = ({ className }) => {
     sendMessage(text);
   };
 
+  // A starter goes the same way as a typed question.
+  const sendStarter = (question) => {
+    if (loading) return;
+    stickyRef.current = true;
+    sendMessage(question);
+  };
+  const onlyGreeting =
+    messages.length === 1 && messages[0].id === MOONMIND_WELCOME.id;
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -216,6 +254,10 @@ const MoonmindChat = ({ className }) => {
             </div>
           );
         })}
+
+        {onlyGreeting && (
+          <StarterChips disabled={loading} onPick={sendStarter} />
+        )}
       </div>
 
       {/* Refresh confirmation — inline, never window.confirm */}

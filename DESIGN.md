@@ -688,6 +688,63 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   off-screen; a waning gibbous is lit on the left; a vertical swipe on a phone
   scrolls the page; reduced motion is instant. Behaviour suite: 35/35.
 
+### Part 2. Making Moonmind discoverable
+
+- **Starter chips** (`MOONMIND_STARTERS`): while the conversation holds only
+  the greeting, four chips sit under it (`role="group"`, "Suggested
+  questions"). A tap goes through the chat's own send path (`sendMessage`,
+  sticky scroll on), exactly as if typed; nothing is sent before that. They
+  are disabled while a reply loads, vanish with the first user message,
+  wrap on small screens, are 44px tall, and settle in with the chat's
+  `mm-stage-in` stagger (none with reduced motion). A double tap sends once.
+  The input is untouched (auto-grow, Enter, Shift+Enter, 16px).
+- **Labels** (`MOONMIND_ASK_LABEL`, `MOONMIND_ASK_ARIA_LABEL`): the navbar
+  pill reads "Ask Moonmind" (lg+), and the bottom-nav centre button shows it
+  under a 20px mark, wrapped onto two 9px lines in a 48px rounded square so
+  the bar keeps 8px between targets at 375px (9px measured); below 360px it
+  is the mark alone. Both are named "Ask Moonmind, AI assistant". The hero
+  button reads "Ask Moonmind" with "my AI assistant" beneath
+  (`HERO_MOONMIND_SUBLABEL`, hidden below 360px); its accessible name is its
+  text. The launcher's `aria-label` and position are unchanged.
+- **The nudge** (`MoonmindNudge`, `hooks/useMoonmindNudge.js`,
+  `lib/moonmindNudge.js`):
+  - *Where:* whichever entry point is rendered, checked in the DOM at show
+    time (not by breakpoint): the floating launcher if displayed, else the
+    bottom-nav button. 12px above the launcher, or 12px above the whole
+    bottom bar (never over it); within max(16px, safe area) of the screen
+    edges, at most 20rem wide; the tail is measured to the button's centre
+    and is the scale origin.
+  - *What:* `MOONMIND_NUDGE_TEXT`, the first two starters
+    (`MOONMIND_NUDGE_STARTERS`), and a 44px close button
+    (`MOONMIND_NUDGE_CLOSE_LABEL`). A chip opens the chat and sends through
+    `sendMessage`.
+  - *When:* ~7s after the page mounts, or when About or Projects is 30% up
+    the viewport, whichever is first, but not before 1.5s (so a deep link
+    doesn't meet it mid-load). Once per visit (`sessionStorage`
+    `moonmind_nudge_seen`, in try/catch); never while the chat is open, after
+    it has been opened in this visit, or when a conversation already exists.
+    Home page only, so never on `/moonmind`.
+  - *Away:* close button, Escape (listener only while shown), a tap outside,
+    opening the chat, or ~9s (paused while the pointer or focus is inside).
+  - *Motion:* scale 0.6 → 1 on the site spring plus a quick fade, from the
+    tail; one ring pulses out from the button (scale 1 → 1.9, fading). Out: a
+    150ms fade. Reduced motion: fade only, no ring. Transform and opacity
+    only; solid `--card` with an accent ring, no blur.
+  - *Accessibility:* an always-present, empty, out-of-flow `role="status"`
+    (polite) right after each anchor button, so the text is announced when it
+    appears and keyboard users meet it in order; never a dialog, never takes
+    focus. Timers and listeners are cleared on unmount.
+- Verified (`nudgetest.mjs`, Moonmind runs mocked, every POST counted, 30
+  checks): nothing before ~7s, then on the launcher with the 12px gap and the
+  tail on the button; live region, no focus taken, nothing sent; Escape,
+  close, outside tap and ~9s each dismiss; once per visit across a reload;
+  About in view shows it early; a chip opens the chat and sends once; never
+  while or after the chat is open, or with a conversation; 375 and 320px in
+  both themes (margins, gap, tail); reduced motion is a fade; the four
+  starters (44px, nothing sent), a starter sends once as the visitor's
+  message, a double tap sends once, and Enter / Shift+Enter still work.
+  Behaviour suite 35/35 (its selectors now use the new accessible names).
+
 ## 11. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

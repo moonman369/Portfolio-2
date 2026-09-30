@@ -9,6 +9,8 @@ import {
   HERO_SECTION_HANDLE,
   HERO_SECTION_LNAME,
   HERO_SECTION_ROLES,
+  HERO_MOONMIND_SUBLABEL,
+  MOONMIND_ASK_LABEL,
   RESUME_URL,
 } from "../context/constants";
 import { useMoonmind } from "../context/MoonmindContext";
@@ -185,7 +187,13 @@ const HeroSection = () => {
               className="btn-ghost btn-glow"
             >
               <GlowBeam />
-              <MoonMark size={18} /> Moonmind AI
+              <MoonMark size={18} />
+              <span className="flex flex-col items-start text-left leading-tight">
+                <span>{MOONMIND_ASK_LABEL}</span>
+                <span className="max-[359px]:hidden text-[0.6875rem] font-normal text-muted-foreground">
+                  {HERO_MOONMIND_SUBLABEL}
+                </span>
+              </span>
             </button>
           </div>
 

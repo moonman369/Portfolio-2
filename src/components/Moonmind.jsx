@@ -13,8 +13,10 @@ import {
   useMediaQuery,
   usePrefersReducedMotion,
 } from "../hooks/usePrefersReducedMotion";
+import { useMoonmindNudge } from "../hooks/useMoonmindNudge";
 import GlowBeam from "./GlowBeam";
 import MoonMark from "./MoonMark";
+import MoonmindNudge from "./MoonmindNudge";
 
 // The launcher's size: the panel grows out of it and shrinks back into it.
 const LAUNCHER_PX = 56;
@@ -32,7 +34,13 @@ const ChatLoading = () => (
 );
 
 const Moonmind = () => {
-  const { isOpen, open, close, refreshChat, refreshPending } = useMoonmind();
+  const { isOpen, open, close, refreshChat, refreshPending, messages } =
+    useMoonmind();
+  // The once-per-visit nudge by the entry point (see MoonmindNudge).
+  useMoonmindNudge({
+    isOpen,
+    hasConversation: messages.some((m) => m.role === "user"),
+  });
   const navigate = useNavigate();
   const location = useLocation();
   // Keeps the mobile panel (and its input) inside the visible area when the
@@ -112,6 +120,7 @@ const Moonmind = () => {
           aria-label="Open Moonmind chat"
           aria-expanded={isOpen}
           title="Moonmind AI"
+          data-moonmind-anchor="launcher"
           className={cn(
             "mm-launcher max-sm:hidden fixed z-50",
             "right-[max(1.5rem,env(safe-area-inset-right))] bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
@@ -123,6 +132,8 @@ const Moonmind = () => {
           <MoonMark size={26} />
         </button>
       )}
+      {/* Right after the launcher, so keyboard users meet it in order. */}
+      <MoonmindNudge anchor="launcher" />
 
       {/* Chat panel */}
       {showPanel && (

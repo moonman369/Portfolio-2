@@ -1073,6 +1073,17 @@
     animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
     animation-delay: calc(var(--i, 0) * 40ms);
 }
+/* The nudge's ring: one soft pulse out from the Moonmind button when the
+   bubble appears (transform + opacity, run by MoonmindNudge). */
+.mm-nudge-ring {
+    box-shadow: 0 0 0 2px hsl(var(--glow) / 0.9);
+}
+
+/* Starter questions settle in one after another under the greeting. */
+.mm-starter {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(120ms + var(--i, 0) * 50ms);
+}
 .mm-sources > summary {
     list-style: none;
 }
@@ -1107,7 +1118,8 @@
     .mm-stage,
     .mm-connector,
     .mm-dot,
-    .mm-sources[open] .mm-chip {
+    .mm-sources[open] .mm-chip,
+    .mm-starter {
         animation: none;
     }
     /* Scoped to the chat only — nothing else on the site is affected. */
