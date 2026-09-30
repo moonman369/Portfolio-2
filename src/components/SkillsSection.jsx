@@ -100,7 +100,7 @@ const SkillCard = ({ skill, scrollRootRef, active, reducedMotion }) => {
         <span
           ref={numberRef}
           aria-hidden="true"
-          className="shrink-0 min-w-[6.5ch] text-right font-mono text-sm tabular-nums text-primary"
+          className="shrink-0 min-w-[6.5ch] text-right font-mono text-sm tabular-nums text-ink"
         >
           {formatLevel(animated ? 0 : level, places)}
         </span>

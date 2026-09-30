@@ -30,7 +30,7 @@ const SocialLinks = ({ className, itemClassName, size = 20 }) => {
               : { target: "_blank", rel: "noopener noreferrer" })}
             className={cn(
               "icon-btn text-muted-foreground ring-1 ring-inset ring-border",
-              "hover:text-primary",
+              "hover:text-ink",
               itemClassName,
             )}
           >

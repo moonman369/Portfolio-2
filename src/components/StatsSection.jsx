@@ -447,7 +447,7 @@ const StatsSection = () => {
             target="_blank"
             rel="noopener noreferrer"
             data-reveal
-            className="surface stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
+            className="surface glass-blur stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
             <div className="flex items-center gap-3 mb-7">
               {Si.SiLeetcode && (
@@ -527,7 +527,7 @@ const StatsSection = () => {
             target="_blank"
             rel="noopener noreferrer"
             data-reveal
-            className="surface stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
+            className="surface glass-blur stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
             <div className="flex items-center gap-3 mb-7">
               <Github className="h-7 w-7 text-primary" aria-hidden="true" />
@@ -560,7 +560,7 @@ const StatsSection = () => {
           {/* Certificates */}
           <article
             data-reveal
-            className="surface rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left"
+            className="surface glass-blur rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left"
           >
             <div className="flex items-center gap-3 mb-7">
               <Award className="h-7 w-7 text-primary" aria-hidden="true" />
@@ -576,7 +576,7 @@ const StatsSection = () => {
                       href={cert.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex min-h-11 items-center gap-3 py-2 text-sm text-foreground hover:text-primary"
+                      className="group flex min-h-11 items-center gap-3 py-2 text-sm text-foreground hover:text-ink"
                     >
                       <Icon
                         aria-hidden="true"

@@ -139,7 +139,7 @@ const HeroSection = () => {
 
           <p
             data-hero-rise
-            className="mt-6 md:mt-8 font-mono text-[0.8125rem] md:text-sm text-primary flex flex-wrap gap-x-2 md:gap-x-3 gap-y-1"
+            className="mt-6 md:mt-8 font-mono text-[0.8125rem] md:text-sm text-ink flex flex-wrap gap-x-2 md:gap-x-3 gap-y-1"
           >
             {ROLES.map((role, index) => (
               <span key={role} className="inline-flex items-center gap-2 md:gap-3">

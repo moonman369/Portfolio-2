@@ -118,7 +118,7 @@ const ContactSection = () => {
                   <div>
                     <a
                       href={`mailto:${CONTACT_INFO.email}`}
-                      className="inline-flex min-h-11 items-center break-all text-foreground hover:text-primary"
+                      className="inline-flex min-h-11 items-center break-all text-foreground hover:text-ink"
                     >
                       {CONTACT_INFO.email}
                     </a>
@@ -134,7 +134,7 @@ const ContactSection = () => {
                     <div>
                       <a
                         href={`tel:${CONTACT_INFO.phone}`}
-                        className="inline-flex min-h-11 items-center text-foreground hover:text-primary"
+                        className="inline-flex min-h-11 items-center text-foreground hover:text-ink"
                       >
                         {CONTACT_INFO.phone}
                       </a>
@@ -152,7 +152,7 @@ const ContactSection = () => {
                       href={CONTACT_INFO.locationUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center text-foreground hover:text-primary"
+                      className="inline-flex min-h-11 items-center text-foreground hover:text-ink"
                     >
                       {CONTACT_INFO.location}
                     </a>
@@ -172,7 +172,7 @@ const ContactSection = () => {
           {/* Contact form */}
           <div
             data-reveal
-            className="surface lg:col-span-7 rounded-xl border border-border bg-card/85 p-6 md:p-8"
+            className="surface glass-blur lg:col-span-7 rounded-xl border border-border bg-card/85 p-6 md:p-8"
           >
             <h3 className="font-heading text-h3 font-semibold text-foreground mb-8">
               Send a Message

@@ -46,7 +46,7 @@ const Navbar = () => {
           "min-h-11 min-w-11",
           variant === "bar" ? "text-[1.3rem]" : "text-xl lg:text-sm lg:px-3 lg:font-medium",
           isActive
-            ? "text-primary"
+            ? "text-ink"
             : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -120,7 +120,7 @@ const Navbar = () => {
         aria-label="Sections"
         className={cn(
           "md:hidden fixed inset-x-0 bottom-0 z-50",
-          "border-t border-border bg-background/[0.97]",
+          "nav-bar border-t border-border bg-background/[0.97]",
           "pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]",
         )}
       >

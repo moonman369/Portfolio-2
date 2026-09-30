@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 const SectionHeading = ({ index, label, children, intro, className }) => (
   <header className={cn("mb-12 md:mb-16", className)}>
     <div data-reveal className="flex items-center gap-4">
-      <p className="eyebrow text-primary shrink-0">
+      <p className="eyebrow text-ink shrink-0">
         {index} / {label}
       </p>
       <span aria-hidden="true" className="h-px flex-1 bg-border" />

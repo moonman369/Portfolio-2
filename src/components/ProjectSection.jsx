@@ -46,7 +46,7 @@ const ProjectImage = ({ image, alt, sizes }) => {
 };
 
 const linkClass =
-  "group/link inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-foreground hover:text-primary";
+  "group/link inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-foreground hover:text-ink";
 const linkIconClass =
   "transition-transform duration-(--motion-fast) ease-moon-out group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5";
 

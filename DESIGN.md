@@ -93,9 +93,10 @@ HSL triplets. The variable names are unchanged; the values are remapped.
 | `--foreground` | `214 45% 95%` #edf1f8 | `222 44% 14%` #141d33 | Body text |
 | `--card` | `220 20% 11%` #161a22 | `216 33% 99%` #fcfcfd | Panels |
 | `--muted` | `220 16% 15%` | `216 22% 91%` | Quiet fills |
-| `--muted-foreground` | `215 20% 72%` #a9b5c6 | `218 18% 36%` #4b576c | Secondary text, placeholders |
+| `--muted-foreground` | `215 20% 72%` #a9b5c6 | `218 20% 32%` #414d62 (was `218 18% 36%`) | Secondary text, placeholders |
 | `--primary` | `204 100% 76%` #85ceff | `212 88% 42%` #0d65c9 | Accent: links, focus, moon line |
 | `--primary-foreground` | = background | = background | Text on accent |
+| `--ink` (new, Round 4) | = primary | `212 92% 32%` #074d9d | Small blue text: eyebrows, active/hover links, skill levels (`text-ink`) |
 | `--earthshine` (new) | `38 100% 64%` #ffbc47 | `28 95% 33%` | Live states only (e.g. "Sending...") |
 | `--glow` (new) | `204 100% 70%` lunar blue | `45 96% 60%` buttery moon yellow | Button halos and travelling rims, card hover glow |
 | `--glow-hi` (new) | `49 100% 82%` butter | `50 100% 86%` pale butter | The bright core of a button's travelling light |
@@ -103,13 +104,24 @@ HSL triplets. The variable names are unchanged; the values are remapped.
 | `--input` (new) | `216 12% 42%` | `216 12% 54%` | Field borders (≥ 3:1) |
 | `--ring` (new) | = primary | = primary | Focus rings |
 
+Light glass (light mode only, Round 4; see §9):
+
+| Token | Light | Use |
+| --- | --- | --- |
+| `--lunar-wash` | `0.25` (was 0.5) | Paper wash over the whole stone |
+| `--haze` | `0.8` phones/tablets, `0.75` desktop | Feathered haze behind each text column |
+| `--glass-top` / `--glass-bottom` | `0.55` / `0.38` | Card glass: vertical gradient of `--card` |
+| `--glass-edge` | `0 0% 100%` (used at 60-70%) | 1px lighter glass edge and top highlight |
+| `--glass-shade` | `218 45% 28%` | Cool, soft card and bar shadows |
+
 Measured contrast (WCAG 2.x):
 
 | Pair | Dark | Light |
 | --- | --- | --- |
 | foreground / background | 16.48 | 15.18 |
-| muted-foreground / background (also placeholders) | 8.99 | 6.60 |
-| muted-foreground / card | 8.40 | 7.08 |
+| muted-foreground / background (also placeholders) | 8.99 | 7.73 |
+| muted-foreground / card | 8.40 | 8.30 |
+| ink / background | 10.88 | 7.51 |
 | primary / background | 10.88 | 5.14 |
 | primary-foreground on primary | 10.88 | 5.14 |
 | earthshine / background | 11.10 | ≥ 4.5 |
@@ -422,14 +434,14 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   gradient swinging ±28° over 75s so the craters seem to change shade, and a
   4% scroll-timeline parallax. Transform only; 227ms of main thread per 8s at
   4x CPU. Phones and reduced motion: the still image.
-- **Readability:** an even paper wash (50%) over the stone, and near-opaque
+- **Readability (superseded by the light glass in §9):** an even paper wash (50%) over the stone, and near-opaque
   (95%) feathered paper scrims behind each section's content column, the hero
   text column, the `/moonmind` header and the 404 copy. The light navbar is
   95% paper. Checked by rendering: every visible text run was compared with
   the closest-luminance background pixel under it, at 8 scroll positions,
   1440px and 375px, plus `/moonmind` and 404. All pass AA; lowest 4.65:1.
-- Cards on the stone (`.surface`) are solid card-white with a crisp low
-  shadow. No backdrop blur on scrolling content.
+- Cards on the stone (`.surface`) were solid card-white with a crisp low
+  shadow (now glass, see §9).
 - Dark mode is unchanged.
 
 ### Interactive hero moon (`HeroMoonControl`)
@@ -559,6 +571,40 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   sr-only span (bars: "x of y solved"; the ring keeps its `aria-label`).
 - Tested with mocked stats responses in the browser; the fetch and cache code
   is untouched.
+
+### Light mode: less white, more glass
+
+- **Layers:** the stone under a thin paper wash (`--lunar-wash` 0.25, was
+  0.5); each section's content column, the hero text column, the `/moonmind`
+  header and the 404 copy in a feathered haze (`--haze`, was 95% paper);
+  cards (`.surface`) as glass on top: a vertical `--card` gradient from 55%
+  to 38%, a 1px edge lighter than the glass plus a top highlight (white at
+  60-70%, no hard white borders), and a cool, soft shadow (`--glass-shade`).
+- **Blur, desktop only** (fine pointer and 1024px+): `backdrop-filter:
+  blur(10px)` on the large panels marked `.glass-blur` (the three Stats
+  cards and the contact form) and 12px behind the navbar, so at most four
+  blur at once. Skills and project cards, phones and tablets: no blur; the
+  denser haze (0.8 vs 0.75) is the faked frost.
+- **Bars:** the navbar is glass from the top of the page (phones 94%→86%
+  paper; desktop 88%→80% with the blur); the mobile bottom bar (`.nav-bar`)
+  95%→88% with a top highlight. Dense enough that text scrolling under them
+  stays out of the way, and nav labels keep AA even over dark project images.
+- **Text:** light `--muted-foreground` deepened to `218 20% 32%`, and a new
+  `--ink` (`212 92% 32%`) for small blue text, since the paper under text
+  is thinner. Button blue (`--primary`) is unchanged. In dark mode `--ink`
+  equals `--primary`.
+- **Checked:** every visible text run against the closest-luminance pixel
+  under it, 8 scroll positions at 1440px and 375px, plus `/moonmind` and
+  404: all pass AA, lowest 5.0:1 (hero copy over the stone 5.03:1). Dark mode
+  screenshots are pixel-identical before and after (375/1440, six sections,
+  reduced motion).
+- **Blur cost:** wheel-scroll of the whole page at 4x CPU, 1440px, light,
+  3 runs each: blur on 83-110 long tasks, p50 frame 57-90ms; blur off
+  109-117, p50 89-90ms. No measurable cost, so the blur stays. The absolute
+  numbers are high because this machine is much slower today than in Phase 2:
+  the Phase 2 commit, rebuilt and traced back-to-back, gave 93 long tasks /
+  3.5s blocking against this build's 102 / 3.6s (15 / 282ms when first
+  recorded). Compare builds only when they are run side by side.
 
 ## 10. Suggestions (skipped because they would change behaviour)
 
