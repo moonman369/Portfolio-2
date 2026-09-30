@@ -535,6 +535,31 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
 - "Sending..." sets the halo to earthshine with the earthshine fill. Button
   text contrast is unchanged (5.1:1 light, 10.9:1 dark).
 
+### Stats count-up
+
+- Every LeetCode and GitHub number counts: solved, rank, the ring percentage
+  (in tenths), Easy/Medium/Hard (the solved half of "x / y"; the total shows
+  at once), repos, commits, PRs and stars.
+- One shared rAF loop (`lib/countDriver.js`) runs all of them and stops when
+  idle; values come from `countUp.js`'s `frameValue`, so finals and formats
+  are exact (the rank steps in 500s while running and lands exact). Text is
+  written with `textContent` only, in tabular digits, with the final width
+  reserved so nothing shifts. `useCountDriver` binds a number to it.
+- Load: plays once the card is in view and its data is in, 70ms apart within a
+  card (ring and solved, rank, Easy, Medium, Hard; GitHub rows in order),
+  1200ms ease-out (rank and ring 900ms).
+- Replay: hovering a number (mouse) or tapping it (touch, on pointerdown)
+  counts only that number again from 0 in 700ms; ignored while it runs. No
+  extra tab stops. The ring and the bars are driven by their numbers, so they
+  replay with them.
+- Cached then fresh data: counts on from the shown value (800ms), never from
+  0. A 0 or missing value is shown as is. Reduced motion: finals at once, no
+  replay.
+- Screen readers: the counting text is `aria-hidden`; the final value is in an
+  sr-only span (bars: "x of y solved"; the ring keeps its `aria-label`).
+- Tested with mocked stats responses in the browser; the fetch and cache code
+  is untouched.
+
 ## 10. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

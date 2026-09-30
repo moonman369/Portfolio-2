@@ -1054,16 +1054,9 @@
 
 /* ---- Animated stats (scoped: .stats-*) ---- */
 
-/* The ring fills by transitioning its dash offset — no per-frame JS. */
-.stats-ring-progress {
-    transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Difficulty bars match their own numbers (1200ms), not the ring. They
-   scale rather than resize, so filling never triggers layout. */
-.stats-bar-fill {
-    transition: transform 1200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
+/* The ring's dash offset and the bars' scaleX are written by the count
+   driver on the same frames as their numbers, so they need no transitions.
+   The bars scale rather than resize, so filling never triggers layout. */
 
 /* Reserve the final width so the card cannot jitter as digits arrive. */
 .stats-number {
@@ -1099,10 +1092,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .stats-ring-progress,
-    .stats-bar-fill {
-        transition: none;
-    }
     .stats-card:hover .stats-ring-sweep,
     .stats-ring-sweep {
         animation: none;
