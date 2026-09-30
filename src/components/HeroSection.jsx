@@ -47,6 +47,14 @@ const playEntrance = (root) => {
     delay: stagger(STAGGER * 0.75),
   });
 
+  // The lit sphere settles in as its orbit draws.
+  waapi.animate(q("[data-moon-disc]"), {
+    opacity: [0, 1],
+    transform: ["scale(0.94)", "scale(1)"],
+    duration: DURATION.slow * 1.5,
+    ease: EASE.out,
+  });
+
   waapi.animate(q("[data-shade], [data-satellite]"), {
     opacity: [0, 1],
     duration: DURATION.slow,

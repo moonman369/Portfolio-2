@@ -486,7 +486,40 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   summaries (`route=… confidence=… slots=…`) are no longer displayed anywhere
   in the chat. The data and its storage are unchanged.
 
-## 9. Suggestions (skipped because they would change behaviour)
+## 9. Round 4
+
+### Hero moon as a lit sphere
+
+- **Texture:** 1024×512 equirectangular, grayscale, from NASA's Scientific
+  Visualization Studio CGI Moon Kit (<https://svs.gsfc.nasa.gov/4720>,
+  public domain): `lroc_color_poles_4k.tif` albedo with a gentle
+  overhead-lit relief from `ldem_16_uint.tif` baked in
+  (`scripts/render-moon-sphere-texture.py`). `src/assets/moon/` — AVIF
+  46.9 KB, WebP 66.7 KB. Loaded after the first paint; until it arrives the
+  sphere is lit but plain, and before the first frame the disc is a flat CSS
+  circle, so there is never a hole.
+- **Rendering** (`lib/moonSphere.js`, no WebGL): each disc pixel is mapped
+  once to latitude/longitude plus their first-order change under tilt; a
+  frame looks up the texture (cached per view), lights it with Lambert from
+  a sun set by the phase, softens the terminator (smoothstep over n·l),
+  darkens the limb and adds ~5% cool earthshine on the night side. Accent rim
+  glow and a halo (dark) / cool cast shadow (light, stronger) in CSS.
+- **Layers:** back half of the orbit and the satellite's far-side twin behind
+  the canvas; front half, ticks and satellite in front, so the lap really
+  passes behind the moon.
+- **Motion:** hover and drag turn the sphere a few degrees (texture
+  longitude/latitude, eased); desktop idles through a full turn in 200s,
+  redrawing only when the texture has moved a texel (~5 frames/s), paused
+  off-screen and in hidden tabs. Phones and reduced motion: one frame per
+  phase change, no idle turn, no hover.
+- **Cost:** canvas capped at 256 px (the disc shows at ≤340 CSS px). Measured
+  on desktop: ~2.4 ms median (3.6 ms p90) for a turning frame, ~1.3 ms for a
+  phase-only frame; ~2.3 ms on a phone at 4× CPU. Zero frames off-screen.
+- The hint now sits centred directly under the disc (below the lower tick),
+  wrapping to two lines in the narrow phone column; it still fades after the
+  first interaction. The 404 page keeps the line-drawn moon.
+
+## 10. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
