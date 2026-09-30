@@ -354,3 +354,9 @@ export const MOONMIND_NUDGE_TEXT =
   "Ask me about Ayan's projects, stack and experience";
 export const MOONMIND_NUDGE_STARTERS = MOONMIND_STARTERS.slice(0, 2);
 export const MOONMIND_NUDGE_CLOSE_LABEL = "Dismiss Moonmind suggestion";
+
+// ---- Shorter hero (round 4) ----
+// One line in the hero in place of HERO_SECTION_DESCRIPTION (kept above;
+// the detail lives in About). Keep it under ~70 characters.
+export const HERO_SECTION_TAGLINE =
+  "AI Engineer building agentic systems on Azure.";

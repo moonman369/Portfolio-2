@@ -1438,6 +1438,20 @@
 .moon-hint {
     transition: opacity var(--motion-slow) var(--motion-ease-out);
 }
+/* The caption sits on a small plate of page colour, feathered by its soft
+   shadow: on wide screens it is outside the text haze, over bare stone
+   (light, where a crater shadow can be near-black) or stars (dark). Keeps it
+   at AA against the worst pixel under it. Static. */
+.moon-caption {
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.75rem;
+    --plate: 0.75;
+    background: hsl(var(--background) / var(--plate));
+    box-shadow: 0 0 10px 6px hsl(var(--background) / calc(var(--plate) * 0.6));
+}
+:root:not(.dark) .moon-caption {
+    --plate: 0.9;
+}
 .moon-hint[data-hidden] {
     opacity: 0;
 }

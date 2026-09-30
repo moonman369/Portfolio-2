@@ -4,11 +4,11 @@ import { createDrawable } from "animejs/svg";
 import { stagger } from "animejs/utils";
 import { waapi } from "animejs/waapi";
 import {
-  HERO_SECTION_DESCRIPTION,
   HERO_SECTION_FNAME,
   HERO_SECTION_HANDLE,
   HERO_SECTION_LNAME,
   HERO_SECTION_ROLES,
+  HERO_SECTION_TAGLINE,
   HERO_MOONMIND_SUBLABEL,
   MOONMIND_ASK_LABEL,
   RESUME_URL,
@@ -162,14 +162,15 @@ const HeroSection = () => {
             ))}
           </p>
 
-          {/* Readable from the first paint: it is the largest text in view
-              (the LCP element), so it is not part of the entrance. */}
-          <p className="max-lg:order-2 mt-8 lg:mt-6 max-w-[62ch] text-base md:text-lg leading-relaxed text-muted-foreground text-pretty">
-            {HERO_SECTION_DESCRIPTION}
+          {/* One line in place of the long introduction (which now lives
+              only in About). Readable from the first paint, so it is not
+              part of the entrance. */}
+          <p className="mt-4 md:mt-5 max-w-[40ch] text-base md:text-xl leading-snug text-muted-foreground text-pretty">
+            {HERO_SECTION_TAGLINE}
           </p>
 
-          {/* On phones and tablets the buttons come straight after the roles,
-              so both are on screen on first load. */}
+          {/* Straight after the tagline, so both buttons are on screen on
+              first load on phones. */}
           <div data-hero-rise className="mt-7 lg:mt-9 flex flex-wrap gap-3">
             <a
               href={RESUME_URL}

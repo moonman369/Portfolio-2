@@ -745,6 +745,28 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   message, a double tap sends once, and Enter / Shift+Enter still work.
   Behaviour suite 35/35 (its selectors now use the new accessible names).
 
+### Part 3a. A shorter hero
+
+- `HERO_SECTION_TAGLINE` ("AI Engineer building agentic systems on
+  Azure.", 46 characters, facts already on the site) replaces the long
+  introduction in the hero, straight after the role line and before the
+  buttons; readable from the first paint (not part of the entrance).
+  `HERO_SECTION_DESCRIPTION` stays in `constants.js`; About is untouched.
+- Measured with the bottom bar in place: at 375×667 the buttons end at
+  503px (bar at 608px), at 375×812 at 564px (bar at 753px); the moon
+  (84-213px) and its caption (to 244px) are fully in frame. 768 and 1440
+  are shorter too (desktop buttons end at 669px of 900).
+- **Caption contrast fix:** the contrast scanner skips `pointer-events:
+  none` text, so the caption under the moon (and the old drag hint before it)
+  had never been measured. On wide screens it sits outside the text haze, and
+  in light mode it measured ~1:1 against the darkest crater pixel. It now has
+  its own small plate of page colour (90% light, 75% dark) feathered by a soft
+  shadow. Worst-pixel contrast: light 6.43:1, dark 6.29:1 (before the plate,
+  a star under one glyph gave 1.63:1 in dark; 8.73:1 against the
+  background itself), at 375, 768 and 1440, for "today", "viewing", the hint
+  and "back to today" (`captioncontrast.mjs`). The full-page scan still
+  passes (lowest 5.04:1).
+
 ## 11. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
