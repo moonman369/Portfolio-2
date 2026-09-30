@@ -3,7 +3,8 @@ import { moonPhasePath } from "../lib/moonPhase";
 import { publishScrollPhase } from "../lib/scrollPhase";
 
 // Scroll progress from the top of the page (new moon) to the target section
-// (full moon), written straight onto an SVG path's `d`.
+// (full moon), published through lib/scrollPhase.js and, if `pathRef` holds
+// an SVG path, written straight onto its `d`.
 //
 // Scrolling only schedules one animation frame; that frame quantises progress
 // to `steps` and touches the DOM only when the step changes. React state is
@@ -33,9 +34,11 @@ export const useScrollMoonPhase = (
       const progress = end > 0 ? Math.min(1, Math.max(0, y / end)) : 0;
       const step = Math.round(progress * steps);
 
-      if (step !== lastStep && pathRef.current) {
+      // The progress is published for every subscriber (the navbar's mark
+      // listens there); a path, when one is given, is written too.
+      if (step !== lastStep) {
         lastStep = step;
-        pathRef.current.setAttribute("d", moonPhasePath(step / steps));
+        pathRef?.current?.setAttribute("d", moonPhasePath(step / steps));
         publishScrollPhase(step / steps);
       }
     };

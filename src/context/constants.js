@@ -309,3 +309,26 @@ export const CERTIFICATES = [
     url: "https://drive.google.com/file/d/1tnS2bd_6f_PDUB8J4xePtsIpWVTIYjRN/view?usp=sharing",
   },
 ];
+
+// ---- Hero moon ↔ moonman369 (round 4) ----
+// The handle shown as the hero's identity line, above the name.
+export const HERO_SECTION_HANDLE = "moonman369";
+
+// Lunar phase names, in cycle order from new moon.
+export const MOON_PHASE_NAMES = [
+  "new moon",
+  "waxing crescent",
+  "first quarter",
+  "waxing gibbous",
+  "full moon",
+  "waning gibbous",
+  "last quarter",
+  "waning crescent",
+];
+// The caption under the hero moon. {phase} is a name from MOON_PHASE_NAMES,
+// {lit} the illuminated percentage.
+export const MOON_CAPTION_TODAY = "today · {phase} · {lit}% lit";
+export const MOON_CAPTION_VIEWING = "viewing · {phase}";
+// Shown under the caption until the first interaction of the visit.
+export const MOON_DRAG_HINT = "drag the moon";
+export const MOON_BACK_TO_TODAY = "back to today";

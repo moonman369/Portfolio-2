@@ -6,7 +6,7 @@ import { waapi } from "animejs/waapi";
 import {
   HERO_SECTION_DESCRIPTION,
   HERO_SECTION_FNAME,
-  HERO_SECTION_GREETING,
+  HERO_SECTION_HANDLE,
   HERO_SECTION_LNAME,
   HERO_SECTION_ROLES,
   RESUME_URL,
@@ -25,9 +25,13 @@ import SocialLinks from "./SocialLinks";
 const FULL_NAME = `${HERO_SECTION_FNAME} ${HERO_SECTION_LNAME}`;
 
 // The typewriter used to cycle through these; they now sit under the name as
-// one quiet line, minus the name itself.
+// one quiet line, minus the name itself and the handle (which has its own
+// line above the name).
 const ROLES = HERO_SECTION_ROLES.filter(
-  (role, index, all) => role !== FULL_NAME && all.indexOf(role) === index,
+  (role, index, all) =>
+    role !== FULL_NAME &&
+    role !== HERO_SECTION_HANDLE &&
+    all.indexOf(role) === index,
 );
 
 // Load choreography: the moon draws itself while the name rises line by line
@@ -108,13 +112,16 @@ const HeroSection = () => {
         </div>
 
         <div className="paper-scrim relative z-10 flex flex-col lg:block lg:order-1 lg:col-span-7 text-left">
+          {/* The handle is the identity line: the moon glyph ties it to the
+              hero moon and the site mark. */}
+          <p
+            data-hero-rise
+            className="eyebrow normal-case inline-flex items-center gap-2 text-ink mb-5 md:mb-7"
+          >
+            <MoonMark size={14} />
+            {HERO_SECTION_HANDLE}
+          </p>
           <h1 className="font-heading">
-            <span
-              data-hero-rise
-              className="eyebrow block text-muted-foreground mb-5 md:mb-7"
-            >
-              {HERO_SECTION_GREETING}
-            </span>{" "}
             <span
               data-hero-name
               className="block text-display font-semibold text-foreground"

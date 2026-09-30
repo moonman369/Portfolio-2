@@ -628,7 +628,67 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   3.5s blocking against this build's 102 / 3.6s (15 / 282ms when first
   recorded). Compare builds only when they are run side by side.
 
-## 10. Suggestions (skipped because they would change behaviour)
+## 10. "Round 4" brief: moon ↔ moonman369, Moonmind, shorter hero, idle cost
+
+(Section 9 above covers the previous brief; its heading predates this one.)
+
+### Part 1. The moon and "moonman369"
+
+- **Identity line:** the hero's eyebrow is now the handle, `moonman369`
+  (`HERO_SECTION_HANDLE`), in mono, letter-spaced, `--ink`, lower case, with
+  a 14px moon mark in front. It sits above the `<h1>`, which holds only the
+  name. The greeting (`HERO_SECTION_GREETING`) is no longer shown and the
+  handle left the role line ("Backend Dev / AI Engineer"); both constants
+  are kept. Nothing is said about "369".
+- **The mark (`MoonMark`)** is now a tiny lit sphere: the hero moon's own
+  renderer (`lib/moonSphere.js`) on a canvas at the device pixel ratio (up to
+  3×), with a brighter night side (earthshine 0.14 vs 0.05) and a 1px accent
+  rim (`.moon-mark::after`) so a new moon keeps its outline. It draws once per
+  phase change and has no loop. The navbar mark (28px) follows scroll as
+  before (new at the top, full at Contact): `useScrollMoonPhase` now publishes
+  progress even without a path to write (same signature), and the mark
+  subscribes. The same component is used in the Moonmind launcher, the chat
+  headers, the hero button, the assistant label and the footer. All spheres
+  share one texture (`lib/moonTextureSource.js`), requested once at `load`.
+- **Favicons** (`scripts/render-favicons.py`, from the same texture and
+  lighting, a waxing gibbous with the accent rim, exposure lifted so the lit
+  side carries the shape at 16px): `favicon.svg` (a hand-drawn vector match),
+  `favicon-32.png` (2.9 KB), `apple-touch-icon.png` (180px on dark paper,
+  16 KB), `icon-192.png` (13 KB) and `icon-512.png` (61 KB, 256-colour).
+  Checked on white, light-grey and two dark tab colours. The old
+  `personal-information.png` is no longer linked (the file is kept in
+  `public/`). Title and meta tags are unchanged.
+- **Today's phase** (`lib/lunarPhase.js`): days since the new moon of
+  2000-01-06 18:14 UTC, modulo 29.530588853; illuminated fraction
+  (1 − cos 2πc) / 2; eight names (`MOON_PHASE_NAMES`), each covering an
+  eighth of the cycle centred on it. Checked against the new moon of
+  2024-04-08 and the full moons of 2024-04-23 and 2025-09-07.
+- **The hero moon now spans one whole lunar cycle** (slider 0 new, 25 first
+  quarter, 50 full, 75 last quarter, 100 new). A waning moon is lit from the
+  left, so today's real moon is drawn correctly (the sphere takes a cycle
+  position; the sun swings from right to left through full). Along the cycle
+  the terminator always moves right to left, so the drag keeps "the shadow
+  follows the pointer". Release, tap and arrow keys step through the eight
+  named phases; Home/End go to either end (both new moon);
+  `aria-valuetext` is the phase name.
+- It opens on today's phase and **no longer follows scroll** (the navbar
+  mark still does). The caption under the moon reads
+  `today · waning gibbous · 83% lit` (`MOON_CAPTION_TODAY`), or
+  `viewing · full moon` (`MOON_CAPTION_VIEWING`) once the moon is more than
+  ~3.5 hours of cycle away from today. Then a "back to today" button (44px
+  tall, focus ring, next in tab order) eases it home and returns focus to the
+  moon; with reduced motion the jump is instant. A second line, "drag the
+  moon", fades after the first interaction and stays gone for the visit
+  (a module-level flag, memory only). All strings are in `constants.js`.
+- Verified (`moontest.mjs`, date pinned in the page, 22 checks): opens on
+  today's phase and caption; drag both ways; snap to named phases; caption
+  and button switch; tap and lap; back to today by keyboard, with the focus
+  ring and focus returned; Home/Right/End/Left over the cycle; scroll leaves
+  the hero moon alone; hover draws nothing; idle 30fps on-screen, none
+  off-screen; a waning gibbous is lit on the left; a vertical swipe on a phone
+  scrolls the page; reduced motion is instant. Behaviour suite: 35/35.
+
+## 11. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

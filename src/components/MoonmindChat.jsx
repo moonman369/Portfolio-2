@@ -63,11 +63,15 @@ const MoonmindSources = ({ documents = [] }) => {
 };
 
 const markdownComponents = {
-  a: ({ node: _node, children, ...props }) => (
-    <a {...props} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
+  a: ({ children, ...props }) => {
+    // react-markdown passes its AST node too; it is not an HTML attribute.
+    const { node: _node, ...anchorProps } = props;
+    return (
+      <a {...anchorProps} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  },
 };
 
 // Shared conversation body (message list + input). Reused by the floating

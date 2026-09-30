@@ -25,7 +25,9 @@ const MID = Math.ceil(navItems.length / 2);
 const Navbar = () => {
   const [activeNav, setActiveNav] = useState("#hero");
   const { toggle: toggleMoonmind, isOpen: isMoonmindOpen } = useMoonmind();
-  // The brand moon waxes from new (top of the page) to full (Contact).
+  // The brand moon waxes from new (top of the page) to full (Contact): the
+  // hook publishes scroll progress and the mark follows it. No path to
+  // write, so the ref stays empty.
   const phaseRef = useRef(null);
   const isScrolled = useScrollMoonPhase(phaseRef);
 
@@ -98,7 +100,7 @@ const Navbar = () => {
             href="#hero"
             className="inline-flex min-h-11 items-center gap-2.5 rounded-md font-heading text-[1.0625rem] font-semibold tracking-tight"
           >
-            <MoonMark phase={0} size={22} litRef={phaseRef} className="text-primary" />
+            <MoonMark followScroll size={28} />
             <span>Ayan's Portfolio</span>
           </a>
 

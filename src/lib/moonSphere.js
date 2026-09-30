@@ -1,5 +1,9 @@
 // ---- A lit, textured moon on a small canvas ----
 //
+// The phase is a position in the lunar cycle (0 new → 0.25 first quarter →
+// 0.5 full → 0.75 last quarter → 1 new): the sun sits to the right while the
+// moon waxes and to the left while it wanes.
+//
 // Every pixel inside the disc is mapped once (per canvas size) to a point on
 // a sphere: its latitude and longitude, plus how those change when the
 // sphere tilts a little about the horizontal axis (first-order, which is
@@ -21,7 +25,9 @@ const SETTLED = 0.0005; // radians
 const EDGE_LO = -0.07;
 const EDGE_SPAN = 0.21;
 
-export const createMoonSphere = (canvas) => {
+// `earthshine` is how bright the night side glows (small marks raise it so a
+// new moon still reads as a sphere).
+export const createMoonSphere = (canvas, { earthshine = 0.05 } = {}) => {
   const ctx = canvas.getContext("2d");
   const size = canvas.width;
   const radius = size / 2 - 1;
@@ -82,7 +88,7 @@ export const createMoonSphere = (canvas) => {
   const albedo = new Float32Array(count).fill(0.72);
   let sampledTilt = NaN;
   let sampledShift = NaN;
-  let phase = 0.5;
+  let phase = 0.25; // cycle position
   const view = { lon: 0, lat: 0 }; // eased
   const target = { lon: 0, lat: 0 };
   let idleLon = 0;
@@ -94,7 +100,7 @@ export const createMoonSphere = (canvas) => {
 
   const draw = () => {
     const t0 = performance.now();
-    const angle = Math.PI * (1 - phase); // sun–viewer angle
+    const angle = Math.PI * (1 - 2 * phase); // sun–viewer angle, signed
     const lx = Math.sin(angle);
     const lz = Math.cos(angle);
     const tilt = view.lat;
@@ -137,7 +143,7 @@ export const createMoonSphere = (canvas) => {
       const lit = t * t * (3 - 2 * t);
       const shade = limb[i] * albedo[i];
       const sun = lit * (0.3 + 0.7 * (ndl > 0 ? Math.sqrt(ndl) : 0)) * shade;
-      const earth = (1 - lit) * 0.05 * shade;
+      const earth = (1 - lit) * earthshine * shade;
 
       let r = (sun * 255 + earth * 140) | 0;
       let g = (sun * 250 + earth * 170) | 0;

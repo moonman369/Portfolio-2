@@ -327,22 +327,25 @@ const DifficultyBar = ({ label, solved, total, color, active, delay }) => {
   );
 };
 
-const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => (
-  <li className="flex items-center gap-3 border-b border-border py-3 first:pt-0">
-    <Icon className="h-5 w-5 shrink-0" style={{ color }} aria-hidden="true" />
-    <p className="flex flex-1 items-baseline justify-between gap-3 text-sm text-muted-foreground">
-      {label}:{" "}
-      <span className="font-mono text-xl text-foreground">
-        <AnimatedNumber
-          value={value}
-          active={active}
-          delay={delay}
-          srLabel={String(value ?? 0)}
-        />
-      </span>
-    </p>
-  </li>
-);
+const GitHubStat = ({ icon, label, value, color, active, delay }) => {
+  const Icon = icon;
+  return (
+    <li className="flex items-center gap-3 border-b border-border py-3 first:pt-0">
+      <Icon className="h-5 w-5 shrink-0" style={{ color }} aria-hidden="true" />
+      <p className="flex flex-1 items-baseline justify-between gap-3 text-sm text-muted-foreground">
+        {label}:{" "}
+        <span className="font-mono text-xl text-foreground">
+          <AnimatedNumber
+            value={value}
+            active={active}
+            delay={delay}
+            srLabel={String(value ?? 0)}
+          />
+        </span>
+      </p>
+    </li>
+  );
+};
 
 const StatsSection = () => {
   const { ref: revealRef, pending: revealPending } = useReveal();
