@@ -535,6 +535,20 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   phase-only frame; ~2.3 ms on a phone at 4× CPU. Zero frames off-screen.
   The smooth idle turn draws 30 frames/s at ~2.3 ms each (about 7% of one
   desktop core while the hero is on screen), against ~5 frames/s before.
+- **Startup (fixed after the final Lighthouse pass):** the sphere had added
+  ~390ms of TBT (Lighthouse bisect over the Round 4 commits: 711 → 1098ms
+  median; the blue buttons, stats and glass commits were flat). Its geometry
+  now fills typed arrays directly (324ms → 35ms at 4x CPU on a phone) and is
+  built in its own task just after the first paint instead of inside React's
+  first commit; the texture is requested at `load` and decoded in a
+  short-lived worker (`moonTexture.worker.js`, main-thread fallback), which
+  took an 82ms task off the main thread. The canvas is pixel-identical.
+- **Lighthouse mobile after the fix**, alternating with the pre-Round-4 build
+  in one session: when the machine benchmarked like earlier rounds (index
+  ~1400-1600) both scored 91-94, TBT 223-273ms, CLS 0, A11y 100; LCP (the
+  hero paragraph, gated by its entrance) 2.2-2.7s against 2.2-2.3s. When it
+  benchmarked ~600-700, both fell to the 70s, with this build 100-400ms of
+  TBT behind.
 - The hint now sits centred directly under the disc (below the lower tick),
   wrapping to two lines in the narrow phone column; it still fades after the
   first interaction. The 404 page keeps the line-drawn moon.

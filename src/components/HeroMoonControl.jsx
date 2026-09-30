@@ -226,12 +226,22 @@ const HeroMoonControl = ({ className }) => {
       typeof ResizeObserver !== "undefined"
         ? new ResizeObserver(() => buildSphere())
         : null;
-    resizer?.observe(disc);
-    buildSphere();
+    // The sphere is built in a task of its own just after the first paint
+    // (its geometry is ~10ms, ~50ms on a throttled phone), not inside React's
+    // first commit, so it never lengthens the page's longest startup task.
+    // Until then the disc is a flat circle in CSS.
+    let buildTimer = 0;
+    const buildFrame = requestAnimationFrame(() => {
+      buildTimer = setTimeout(() => {
+        if (disposed) return;
+        buildSphere();
+        resizer?.observe(disc);
+      }, 0);
+    });
 
-    // The texture arrives after the page is up; until then the sphere is
-    // lit but plain (and before its first frame, a flat circle in CSS).
-    if (!s.texture) {
+    // The texture is requested once the page has loaded (decoded in a
+    // worker); until it arrives the sphere is lit but plain.
+    const requestTexture = () => {
       loadMoonTexture(moonAvif)
         .catch(() => loadMoonTexture(moonWebp))
         .then((texture) => {
@@ -241,6 +251,10 @@ const HeroMoonControl = ({ className }) => {
         .catch(() => {
           /* keep the plain sphere */
         });
+    };
+    if (!s.texture) {
+      if (document.readyState === "complete") requestTexture();
+      else window.addEventListener("load", requestTexture, { once: true });
     }
 
     // ---- Pointer ----
@@ -333,6 +347,9 @@ const HeroMoonControl = ({ className }) => {
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(buildFrame);
+      clearTimeout(buildTimer);
+      window.removeEventListener("load", requestTexture);
       spring?.cancel();
       lap?.cancel();
       sphere?.destroy();

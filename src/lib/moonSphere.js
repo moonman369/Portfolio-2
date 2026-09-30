@@ -29,52 +29,52 @@ export const createMoonSphere = (canvas) => {
   const image = ctx.createImageData(size, size);
   const out = new Uint32Array(image.data.buffer);
 
-  // Per-pixel sphere geometry for the disc only.
-  const index = [];
-  const nx = [];
-  const nz = [];
-  const lat0 = [];
-  const lon0 = [];
-  const dLat = [];
-  const dLon = [];
-  const edge = []; // anti-aliased disc edge, 0..1
+  // Per-pixel sphere geometry for the disc only: everything a frame needs,
+  // precomputed as texture coordinates (u, v in 0..1) and their change per
+  // radian of tilt, so the frame loop stays cheap. Written straight into
+  // typed arrays (sized for the bounding square, then trimmed) — this runs
+  // once per canvas size, on the main thread, during the hero's first second.
+  const twoPi = Math.PI * 2;
+  const max = size * size;
+  const geo = {
+    index: new Int32Array(max),
+    nx: new Float32Array(max),
+    nz: new Float32Array(max),
+    u0: new Float32Array(max),
+    du: new Float32Array(max),
+    v0: new Float32Array(max),
+    dv: new Float32Array(max),
+    limb: new Float32Array(max),
+    alpha: new Uint32Array(max),
+  };
+  const outer = (1 + 1 / radius) ** 2; // one pixel of anti-aliased edge
+  let count = 0;
   for (let y = 0; y < size; y++) {
+    const py = (centre - (y + 0.5)) / radius;
     for (let x = 0; x < size; x++) {
       const px = (x + 0.5 - centre) / radius;
-      const py = (centre - (y + 0.5)) / radius;
       const d2 = px * px + py * py;
-      const distPx = (1 - Math.sqrt(d2)) * radius;
-      if (distPx < -1) continue;
-      const cx = d2 < 1 ? px : px / Math.sqrt(d2);
-      const cy = d2 < 1 ? py : py / Math.sqrt(d2);
-      const z = Math.sqrt(Math.max(0, 1 - cx * cx - cy * cy));
-      const lat = Math.asin(cy);
-      const cosLat = Math.max(Math.cos(lat), 0.05);
-      index.push(y * size + x);
-      nx.push(cx);
-      nz.push(z);
-      lat0.push(lat);
-      lon0.push(Math.atan2(cx, z));
-      dLat.push(z / cosLat);
-      dLon.push((cx * cy) / Math.max(cx * cx + z * z, 0.0025));
-      edge.push(Math.min(1, Math.max(0, distPx + 0.5)));
+      if (d2 > outer) continue;
+      const d = Math.sqrt(d2);
+      const cx = d2 < 1 ? px : px / d;
+      const cy = d2 < 1 ? py : py / d;
+      const z2 = 1 - cx * cx - cy * cy;
+      const z = z2 > 0 ? Math.sqrt(z2) : 0;
+      const cosLat = Math.max(Math.sqrt(1 - cy * cy), 0.05);
+      const e = (1 - d) * radius + 0.5; // anti-aliased disc edge, 0..1
+      geo.index[count] = y * size + x;
+      geo.nx[count] = cx;
+      geo.nz[count] = z;
+      geo.u0[count] = Math.atan2(cx, z) / twoPi + 0.5;
+      geo.du[count] = (cx * cy) / Math.max(cx * cx + z * z, 0.0025) / twoPi;
+      geo.v0[count] = 0.5 - Math.asin(cy) / Math.PI;
+      geo.dv[count] = -(z / cosLat) / Math.PI;
+      geo.limb[count] = 0.8 + 0.2 * z;
+      geo.alpha[count] = (((e < 0 ? 0 : e > 1 ? 1 : e) * 255) | 0) << 24;
+      count++;
     }
   }
-  const count = index.length;
-  // Everything a frame needs, precomputed as texture coordinates (u, v in
-  // 0..1) and their change per radian of tilt, so the loop stays cheap.
-  const twoPi = Math.PI * 2;
-  const geo = {
-    index: Int32Array.from(index),
-    nx: Float32Array.from(nx),
-    nz: Float32Array.from(nz),
-    u0: Float32Array.from(lon0, (lon) => lon / twoPi + 0.5),
-    du: Float32Array.from(dLon, (d) => d / twoPi),
-    v0: Float32Array.from(lat0, (lat) => 0.5 - lat / Math.PI),
-    dv: Float32Array.from(dLat, (d) => -d / Math.PI),
-    limb: Float32Array.from(nz, (z) => 0.8 + 0.2 * z),
-    alpha: Uint32Array.from(edge, (e) => ((e * 255) | 0) << 24),
-  };
+  for (const key in geo) geo[key] = geo[key].subarray(0, count);
 
   let texture = null; // { data: Uint8Array (luma), w, h }
   // The texture sample per pixel depends only on the view, so it is cached:
@@ -225,8 +225,41 @@ export const createMoonSphere = (canvas) => {
   };
 };
 
-// Decode an equirectangular texture to a luma array (red channel).
-export const loadMoonTexture = (src) =>
+// Grey texture: the red channel is the luma. Read it a pixel at a time as
+// 32-bit words (little-endian: red is the low byte).
+export const lumaFromRgba = (rgba, pixels) => {
+  const words = new Uint32Array(rgba.buffer, rgba.byteOffset, pixels);
+  const luma = new Uint8Array(pixels);
+  for (let i = 0; i < pixels; i++) luma[i] = words[i] & 255;
+  return luma;
+};
+
+// Decoding the 1024×512 texture and reading its pixels back is one ~20ms
+// task (80ms+ on a throttled phone), so it runs in a short-lived worker
+// (moonTexture.worker.js). Browsers without workers or OffscreenCanvas, or
+// if the worker fails, decode on this thread instead.
+const decodeInWorker = (src) =>
+  new Promise((resolve, reject) => {
+    if (typeof Worker === "undefined" || typeof OffscreenCanvas === "undefined") {
+      reject(new Error("No OffscreenCanvas worker"));
+      return;
+    }
+    const worker = new Worker(new URL("./moonTexture.worker.js", import.meta.url), {
+      type: "module",
+    });
+    worker.onmessage = ({ data }) => {
+      worker.terminate();
+      if (data.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+    worker.onerror = (event) => {
+      worker.terminate();
+      reject(event);
+    };
+    worker.postMessage({ src: new URL(src, window.location.href).href });
+  });
+
+const decodeOnMainThread = (src) =>
   new Promise((resolve, reject) => {
     const img = new Image();
     img.decoding = "async";
@@ -237,10 +270,12 @@ export const loadMoonTexture = (src) =>
       const cx = c.getContext("2d", { willReadFrequently: true });
       cx.drawImage(img, 0, 0);
       const rgba = cx.getImageData(0, 0, c.width, c.height).data;
-      const luma = new Uint8Array(c.width * c.height);
-      for (let i = 0; i < luma.length; i++) luma[i] = rgba[i * 4];
-      resolve({ data: luma, w: c.width, h: c.height });
+      resolve({ data: lumaFromRgba(rgba, c.width * c.height), w: c.width, h: c.height });
     };
     img.onerror = reject;
     img.src = src;
   });
+
+// Decode an equirectangular texture to a luma array: { data, w, h }.
+export const loadMoonTexture = (src) =>
+  decodeInWorker(src).catch(() => decodeOnMainThread(src));
