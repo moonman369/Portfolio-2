@@ -30,9 +30,7 @@ const MID = Math.ceil(navItems.length / 2);
 const Navbar = () => {
   const [activeNav, setActiveNav] = useState("#hero");
   const { toggle: toggleMoonmind, isOpen: isMoonmindOpen } = useMoonmind();
-  // The brand moon waxes from new (top of the page) to full (Contact): the
-  // hook publishes scroll progress and the mark follows it. No path to
-  // write, so the ref stays empty.
+  // The brand moon waxes from new (top of the page) to full (Contact).
   const phaseRef = useRef(null);
   const isScrolled = useScrollMoonPhase(phaseRef);
 
@@ -63,10 +61,8 @@ const Navbar = () => {
     );
   };
 
-  // The label is visible on the desktop pill (lg+) and, small under the
-  // mark, on the bottom-nav button, wrapped onto two lines so the bar keeps
-  // 8px between its targets at 375px (from 360px; narrower phones keep the
-  // icon). The accessible name contains the visible label.
+  // The label is visible on the desktop pill (lg+); the bottom-nav button is
+  // the mark alone. Both are named "Ask Moonmind, AI assistant".
   const renderMoonmind = (variant) => (
     <button
       onClick={toggleMoonmind}
@@ -80,8 +76,6 @@ const Navbar = () => {
         "text-primary",
         variant === "top" &&
           "lg:px-4 lg:text-sm lg:font-medium lg:text-foreground",
-        variant === "bar" &&
-          "flex-col gap-0.5 px-0.5 py-0.5 min-[360px]:w-12 min-[360px]:rounded-2xl",
         // The glow's inner face carries the open/hover tint.
         isMoonmindOpen
           ? "[--glow-face:hsl(var(--accent))]"
@@ -89,14 +83,9 @@ const Navbar = () => {
       )}
     >
       <GlowBeam />
-      <MoonMark size={20} />
+      <MoonMark size={variant === "bar" ? 22 : 20} className="text-primary" />
       {variant === "top" && (
         <span className="hidden lg:inline">{MOONMIND_ASK_LABEL}</span>
-      )}
-      {variant === "bar" && (
-        <span className="max-[359px]:hidden max-w-12 text-center text-[9px] font-medium leading-[1.1] tracking-tight text-foreground">
-          {MOONMIND_ASK_LABEL}
-        </span>
       )}
     </button>
   );
@@ -119,7 +108,7 @@ const Navbar = () => {
             href="#hero"
             className="inline-flex min-h-11 items-center gap-2.5 rounded-md font-heading text-[1.0625rem] font-semibold tracking-tight"
           >
-            <MoonMark followScroll size={28} />
+            <MoonMark phase={0} size={22} litRef={phaseRef} className="text-primary" />
             <span>Ayan's Portfolio</span>
           </a>
 

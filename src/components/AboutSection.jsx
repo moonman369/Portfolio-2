@@ -7,6 +7,7 @@ import {
 } from "../context/constants";
 import { useReveal } from "../hooks/useReveal";
 import BlueSheen from "./BlueSheen";
+import GlowBeam from "./GlowBeam";
 import SectionHeading from "./SectionHeading";
 
 const ICONS = {
@@ -60,8 +61,9 @@ const AboutSection = () => {
                 href={RESUME_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-ghost"
+                className="btn-ghost btn-glow"
               >
+                <GlowBeam />
                 Download Résumé
               </a>
             </div>

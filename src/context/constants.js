@@ -337,10 +337,10 @@ export const MOON_BACK_TO_TODAY = "back to today";
 // Tappable starter questions under the greeting of an empty chat; each is
 // sent exactly as if typed.
 export const MOONMIND_STARTERS = [
-  "What has Ayan built?",
-  "What's his tech stack?",
-  "Tell me about his experience",
-  "Which projects use RAG or AI agents?",
+  "Who are you?",
+  "Tell me something about Ayan",
+  "Share all of Ayan's profile links and his résumé",
+  "Show me Ayan's LeetCode and GitHub stats",
 ];
 export const MOONMIND_STARTERS_LABEL = "Suggested questions";
 // Visible label on the navbar pill, the bottom-nav centre button and the
@@ -350,8 +350,7 @@ export const MOONMIND_ASK_ARIA_LABEL = "Ask Moonmind, AI assistant";
 // Second, smaller line on the hero button (hidden below 360px).
 export const HERO_MOONMIND_SUBLABEL = "my AI assistant";
 // The once-per-visit nudge bubble by the Moonmind entry point.
-export const MOONMIND_NUDGE_TEXT =
-  "Ask me about Ayan's projects, stack and experience";
+export const MOONMIND_NUDGE_TEXT = "Ask me anything about Ayan";
 export const MOONMIND_NUDGE_STARTERS = MOONMIND_STARTERS.slice(0, 2);
 export const MOONMIND_NUDGE_CLOSE_LABEL = "Dismiss Moonmind suggestion";
 

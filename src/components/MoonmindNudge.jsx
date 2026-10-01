@@ -8,6 +8,7 @@ import {
 import { X } from "lucide-react";
 import { waapi } from "animejs/waapi";
 import { createSpring } from "animejs/easings/spring";
+import { stagger } from "animejs/utils";
 import { cn } from "../lib/utils";
 import { DURATION, EASE, SPRING } from "../lib/motion";
 import { hideNudge, nudgeStore } from "../lib/moonmindNudge";
@@ -16,7 +17,6 @@ import { useMoonmind } from "../context/MoonmindContext";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import {
   MOONMIND_NUDGE_CLOSE_LABEL,
-  MOONMIND_NUDGE_STARTERS,
   MOONMIND_NUDGE_TEXT,
 } from "../context/constants";
 
@@ -30,16 +30,23 @@ import {
 //
 // Goes away on its close button, Escape, a tap outside it, opening the chat,
 // or by itself after ~9s (paused while the pointer or focus is inside it).
-// Motion: it scales and fades out of its tail on a soft spring, and one ring
-// pulses out from the button. Reduced motion: a fade only. Transform and
-// opacity only; no blur.
+// The bubble itself is a button: it opens the chat (nothing is sent).
+//
+// Motion (anime.js, on WAAPI so it runs on the compositor): the bubble pops
+// out of its tail on a soft spring, its words rise into place one after
+// another, and one ring pulses out from the button; going away, it shrinks
+// back into the tail. Reduced motion: a fade only. Transform and opacity
+// only; no blur.
+
+// The words animate one by one; split here, in the markup, not at runtime.
+const WORDS = MOONMIND_NUDGE_TEXT.split(" ");
 
 const GAP_PX = 12;
 const AUTO_HIDE_MS = 9000;
 const TAIL_INSET_PX = 22; // keep the tail off the rounded corners
 
 const NudgeBubble = ({ anchor, leaving, onGone }) => {
-  const { open, sendMessage } = useMoonmind();
+  const { open } = useMoonmind();
   const reducedMotion = usePrefersReducedMotion();
   const bubbleRef = useRef(null);
   const ringRef = useRef(null);
@@ -85,10 +92,17 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
       ? [waapi.animate(bubble, { opacity: [0, 1], duration: DURATION.base, ease: EASE.out })]
       : [
           waapi.animate(bubble, {
-            transform: ["scale(0.6)", "scale(1)"],
+            transform: ["translateY(6px) scale(0.4)", "translateY(0) scale(1)"],
             ease: createSpring(SPRING),
           }),
           waapi.animate(bubble, { opacity: [0, 1], duration: DURATION.fast, ease: EASE.out }),
+          waapi.animate(bubble.querySelectorAll("[data-word]"), {
+            transform: ["translateY(0.55em)", "translateY(0)"],
+            opacity: [0, 1],
+            duration: DURATION.base,
+            delay: stagger(55, { start: 140 }),
+            ease: EASE.out,
+          }),
           waapi.animate(ringRef.current, {
             transform: ["scale(1)", "scale(1.9)"],
             opacity: [0.7, 0],
@@ -109,12 +123,13 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
     }
     const animation = waapi.animate(bubble, {
       opacity: [Number(getComputedStyle(bubble).opacity) || 1, 0],
+      ...(reducedMotion ? {} : { transform: ["scale(1)", "scale(0.85)"] }),
       duration: DURATION.fast,
-      ease: EASE.out,
+      ease: "in(2)",
       onComplete: onGone,
     });
     return () => animation.cancel();
-  }, [leaving, onGone]);
+  }, [leaving, onGone, reducedMotion]);
 
   // Escape (only while shown), a tap outside, and the ~9s timer (paused
   // while the pointer or focus is inside).
@@ -147,10 +162,9 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
     holdRef.current.restart?.();
   };
 
-  const ask = (question) => {
+  const openChat = () => {
     hideNudge();
     open();
-    sendMessage(question);
   };
 
   if (!place) return null;
@@ -181,32 +195,36 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
           onPointerLeave={() => hold("pointer", false)}
           onFocus={() => hold("focus", true)}
           onBlur={() => hold("focus", false)}
-          className="mm-nudge pointer-events-auto relative w-full max-w-[20rem] rounded-2xl bg-card p-3 pr-12 text-left shadow-xl ring-1 ring-inset ring-primary/35"
+          className="mm-nudge pointer-events-auto relative flex w-max max-w-full items-center rounded-full bg-card py-0.5 pl-1 pr-0.5 shadow-xl ring-1 ring-inset ring-primary/35"
           style={{
             opacity: 0,
             transformOrigin: tailX === null ? "50% 100%" : `${tailX}px 100%`,
           }}
         >
-          <p className="text-sm leading-snug text-foreground">{MOONMIND_NUDGE_TEXT}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {MOONMIND_NUDGE_STARTERS.map((question) => (
-              <button
-                key={question}
-                type="button"
-                onPointerEnter={preloadMoonmindChat}
-                onFocus={preloadMoonmindChat}
-                onClick={() => ask(question)}
-                className="min-h-11 rounded-full bg-primary/8 px-3.5 text-left text-sm text-foreground ring-1 ring-inset ring-primary/35 hover:bg-primary/15"
-              >
-                {question}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={openChat}
+            onPointerEnter={preloadMoonmindChat}
+            onFocus={preloadMoonmindChat}
+            className="mm-nudge-ask inline-flex min-h-11 items-center gap-2.5 rounded-full pl-3 pr-2 text-left text-sm font-medium text-foreground"
+          >
+            <span aria-hidden="true" className="mm-nudge-spark size-1.5 shrink-0 rounded-full bg-primary" />
+            <span>
+              {WORDS.map((word, i) => (
+                <span key={`${word}-${i}`}>
+                  {i > 0 && " "}
+                  <span data-word className="inline-block">
+                    {word}
+                  </span>
+                </span>
+              ))}
+            </span>
+          </button>
           <button
             type="button"
             onClick={hideNudge}
             aria-label={MOONMIND_NUDGE_CLOSE_LABEL}
-            className="icon-btn absolute right-0.5 top-0.5 text-muted-foreground hover:text-foreground"
+            className="icon-btn text-muted-foreground hover:text-foreground"
           >
             <X size={16} aria-hidden="true" />
           </button>

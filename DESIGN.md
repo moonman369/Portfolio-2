@@ -859,6 +859,37 @@ jump; after 30s idle the glows hold and the moon stops; the next input
 resumes everything. Moon tests 22/22 (stats now read from the worker; the
 lit side read from a screenshot), behaviour 35/35, nudge 30/30, stats 14/14.
 
+### Review tweaks (after the four parts)
+
+These supersede the matching points in Parts 1 and 2 above.
+
+- **The mark is the line icon again.** The tiny lit sphere read as overuse of
+  the moon image, so `MoonMark` is back to the thin-line moon (stroke circle +
+  lit path in `currentColor`) everywhere: beside "Ayan's Portfolio" (still
+  waxing with scroll, through its path again), the "Ask Moonmind" pill and
+  buttons, the launcher, the chat headers, the hero eyebrow and the footer.
+  The hero moon and the favicons keep the textured moon.
+- **Bottom-nav Moonmind button:** the mark alone in its 44px glow circle;
+  the small "Ask Moonmind" label is gone (still named "Ask Moonmind, AI
+  assistant"). The desktop pill and the hero button keep their labels.
+- **The nudge is a slim pill that says "Ask me anything about Ayan"**
+  (`MOONMIND_NUDGE_TEXT`), with a small glow-coloured spark and a close
+  button; the starter chips moved out of it (they stay in the chat). Tapping
+  it opens the chat; nothing is sent. Same anchors (the launcher on
+  desktop, the bottom-nav button on phones), timing, once-per-visit rule and
+  dismissals. Motion, with anime.js on WAAPI: the pill pops out of its tail
+  on the site spring, its words rise into place one after another
+  (`stagger`, 55ms apart), one ring pulses from the button, and it shrinks
+  back into the tail when it goes. Reduced motion: a fade.
+- **About's "Download Résumé"** has the dark button glow (`btn-glow` +
+  `GlowBeam`), like the hero's Ask Moonmind; it stops off-screen and freezes
+  when idle like the others.
+- **Starter questions** (`MOONMIND_STARTERS`): "Who are you?", "Tell me
+  something about Ayan", "Share all of Ayan's profile links and his résumé",
+  "Show me Ayan's LeetCode and GitHub stats".
+- Re-verified: behaviour 35/35, nudge 30/30 (the bubble's text, and a tap
+  opens the chat with nothing sent), moon 22/22, idle 10/10, stats 14/14.
+
 ## 11. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
