@@ -51,6 +51,7 @@ export const createMeteorShower = ({
   const pool = Array.from({ length: config.pool }, () => ({ alive: false }));
   let dirty = []; // rectangles drawn last frame, in CSS px
   let running = false;
+  let draining = false; // stopped spawning; the ones in flight finish
   let frame = 0;
   let spawnTimer = 0;
   let lastFrame = 0;
@@ -149,7 +150,7 @@ export const createMeteorShower = ({
 
   const tick = (now) => {
     frame = 0;
-    if (!running) return;
+    if (!running && !draining) return;
     if (now - lastFrame < FRAME_MS - FRAME_SLACK_MS) {
       frame = raf(tick);
       return;
@@ -167,6 +168,7 @@ export const createMeteorShower = ({
     // Keep going only while something is in flight.
     if (pool.some((m) => m.alive)) frame = raf(tick);
     else {
+      draining = false;
       dirty.forEach(restore);
       dirty = [];
     }
@@ -186,10 +188,19 @@ export const createMeteorShower = ({
     start() {
       if (running || !width) return;
       running = true;
+      draining = false;
       scheduleSpawn();
+    },
+    // No new meteors; the ones in flight finish their run (so nothing
+    // vanishes mid-sky), then the loop ends.
+    drain() {
+      running = false;
+      clearTimeout(spawnTimer);
+      draining = pool.some((m) => m.alive);
     },
     stop() {
       running = false;
+      draining = false;
       clearTimeout(spawnTimer);
       caf(frame);
       frame = 0;

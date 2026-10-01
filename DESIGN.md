@@ -767,6 +767,98 @@ page load (the chat is still lazy): Perf 81 vs 81, TBT ~620 vs ~630ms.
   and "back to today" (`captioncontrast.mjs`). The full-page scan still
   passes (lowest 5.04:1).
 
+### Part 3b. Idle cost
+
+**Sources of ongoing motion** (audited before the change):
+
+| Source | Kind | Where it ran |
+| --- | --- | --- |
+| Hero moon idle turn | rAF loop (main thread), 30fps | desktop, hero on screen |
+| Meteors | rAF loop in the sky worker | while the hero is on screen |
+| `stars-drift` | CSS scroll-timeline animation | dark, desktop |
+| `twinkle` × 6 | CSS, infinite | dark, desktop |
+| `glow-breathe` + `glow-spin` | CSS, infinite (×3 dark glow buttons) | navbar pill, hero, launcher |
+| `blue-breathe` | CSS, infinite (×4-5 blue buttons) | hero, About, Projects, Contact |
+| `lunar-drift`, `lunar-sun` | CSS, infinite | light, desktop |
+| `lunar-parallax` | CSS scroll-timeline | light, desktop |
+| Chat thinking (`mm-*`) | CSS, infinite | only while a run is in progress (functional) |
+| Nudge timers | setTimeout (7s, 9s) | once per visit |
+| No `setInterval` anywhere; the count-up, scroll and springs loops run only while something changes. |
+
+**Measured** (`ui-tools/idlemeasure.mjs`): 1440×900, 4× CPU, 10s trace of
+the idle page with no input, main-thread busy time (union of tasks), split
+by self time; `document.getAnimations().length` at the same moment.
+
+| | Before | After (first 30s) | After (frozen, 30s+ idle) |
+| --- | --- | --- | --- |
+| Dark, top: animations / busy | 17 / **93.3%** (scripting 36%, rendering 13%, painting 3.6%) | 8 / 4.9% (0.3 / 1.2 / 0.4) | 8 (1 running) / 0.00% |
+| Dark, About | 17 / 8.3% | 6 / 5.0% | 6 (1 running) / 0.00% |
+| Dark, Projects | 17 / 7.2% | 5 / 3.1% | 5 (1 running) / 0.00% |
+| Light, top | 13 / **91.6%** (34.8% / 12.8% / 4.2%) | 10 / 6.1% | 10 (1 running) / 0.02% |
+| Light, About | 13 / 5.3% | 8 / 3.3% | 8 (1 running) / 0.00% |
+| Light, Projects | 13 / 3.5% | 7 / 2.5% | 7 (1 running) / 0.00% |
+
+No task over 50ms in any of these. Runs on this machine vary by about ±1.5
+points (see Round 4's note on machine variance), so the active figures are
+"about 5%" rather than precise.
+
+**What changed:**
+
+1. *The hero moon renders in a worker* (`lib/moon.worker.js` behind
+   `lib/moonSphereHost.js`; the canvas is handed over with
+   `transferControlToOffscreen`). Its 30fps idle turn was nearly all of the
+   93%: ~12ms of script per frame at 4× CPU, and, worse, a main-thread frame
+   30 times a second, in which every CSS animation, the IntersectionObservers
+   and hit-testing were serviced too. From a worker the canvas reaches the
+   compositor without a main-thread frame. Same renderer, pixel-identical,
+   same API to the controller; browsers without OffscreenCanvas keep the
+   main-thread path. The loop still runs only while something changes or
+   the idle turn is on.
+2. *The six twinkles moved onto the star canvas in the sky worker*
+   (`lib/twinkles.js`, 20fps cap, small dirty squares restored from the star
+   layer): they cost ~3% as CSS animations and were six entries in
+   `getAnimations()`. They now ride the star canvas, so they drift with the
+   star field on scroll (≤120px over the page) rather than sitting on a
+   separate fixed layer; brightness, size, timing and positions are as before.
+   Without a worker they stay CSS (`SkyMotion`).
+3. *Off-screen pause* (`hooks/useOffscreenPause.js`, used by Home and 404):
+   an IntersectionObserver (96px margin) sets `data-offscreen` on the glow
+   buttons in the page flow, and CSS removes their looping animation while it
+   is set. Removed rather than `animation-play-state: paused`, because a
+   paused animation still counts in `getAnimations()`; it restarts inside the
+   margin, before it is visible, so nothing jumps. The fixed navbar pill and
+   launcher are always in view and keep theirs.
+4. *Hidden tab*: `<html data-tab-hidden>` pauses every animation in place
+   (they resume from the same point: measured +367ms of drift for 367ms
+   visible, no jump); the moon worker stops its idle turn; the sky worker
+   stops meteors and twinkles (they already respected visibility; the
+   twinkles keep their phase across the pause).
+5. *Idle freeze* (`lib/idleFreeze.js`): the always-on layers (fixed glows,
+   lunar drift, twinkles, meteors, moon turn) were together above the 3%
+   line, so after 30s without pointer, scroll, touch or key input
+   `<html data-idle>` pauses the decorative CSS loops in place, the sky
+   worker lets the meteors in flight finish but starts no more and holds the
+   twinkles, and the moon stops turning; the next input carries on from the
+   same frame. Functional motion (chat thinking, springs, count-ups) is never
+   frozen.
+
+**Targets:** dark meets "6 or fewer animations at a text-only section" (5 at
+Projects, 6 at About). Light has 7 at Projects (8 at About, where a blue
+button is in view): its three fixed lunar layers (drift, sunlight swing,
+scroll parallax) plus the navbar pill's and the launcher's two loops each.
+Getting to 6 would mean removing one of those visible effects (merging the
+sunlight swing into the drift changes how the light moves), so they stay; in
+the frozen state all of them are paused and only the scroll-linked
+parallax counts as running. Idle main-thread cost: from 92-93% to about 5%
+at the top while active (2.5-5% elsewhere), and 0% once frozen.
+
+Verified (`ui-tools/idletest.mjs`, 10 checks): hero glows flagged and their
+loops removed at Projects, fixed glows kept, ≤6 at Projects (dark), back on
+return; hidden tab holds every animation and the moon, and resumes with no
+jump; after 30s idle the glows hold and the moon stops; the next input
+resumes everything. Moon tests 22/22 (stats now read from the worker; the
+lit side read from a screenshot), behaviour 35/35, nudge 30/30, stats 14/14.
+
 ## 11. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

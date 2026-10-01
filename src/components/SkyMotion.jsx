@@ -1,14 +1,9 @@
-// A few twinkling stars over the dark background. Pure CSS (opacity/transform
-// keyframes), so it costs the main thread nothing; see .sky in index.css.
-// Desktop only; the meteors live on the star canvas (lib/meteors.js).
-const TWINKLES = [
-  { top: "14%", left: "22%", dur: 3.6, delay: 0.4 },
-  { top: "22%", left: "58%", dur: 4.8, delay: 1.9 },
-  { top: "41%", left: "12%", dur: 4.2, delay: 0.9 },
-  { top: "63%", left: "47%", dur: 5.4, delay: 2.6 },
-  { top: "78%", left: "81%", dur: 3.9, delay: 1.2 },
-  { top: "86%", left: "28%", dur: 5, delay: 3.1 },
-];
+import { TWINKLES } from "../lib/twinkles";
+
+// A few twinkling stars over the dark background, in CSS (opacity/transform
+// keyframes; see .sky in index.css). Only where the star canvas cannot move
+// to a worker: otherwise the same stars twinkle on the canvas, in the worker
+// (lib/twinkles.js), which costs the main thread nothing. Desktop only.
 
 const SkyMotion = () => (
   <div
@@ -17,11 +12,11 @@ const SkyMotion = () => (
   >
     {TWINKLES.map((t) => (
       <span
-        key={`${t.top}-${t.left}`}
+        key={`${t.x}-${t.y}`}
         className="twinkle"
         style={{
-          top: t.top,
-          left: t.left,
+          top: `${t.y * 100}%`,
+          left: `${t.x * 100}%`,
           "--dur": `${t.dur}s`,
           "--delay": `${t.delay}s`,
         }}

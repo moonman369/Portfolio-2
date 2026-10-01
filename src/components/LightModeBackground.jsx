@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { whenAmbient } from "../lib/motion";
+import { subscribeIdle } from "../lib/idleFreeze";
 import lunar1600Avif from "../assets/lunar/lunar-1600.avif";
 import lunar1600Webp from "../assets/lunar/lunar-1600.webp";
 import lunar900Avif from "../assets/lunar/lunar-900.avif";
@@ -21,6 +22,9 @@ const LightModeBackground = () => {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => whenAmbient(() => setRequested(true)), []);
+  // Starts the idle tracker, so the drift freezes after 30s without input
+  // (CSS, via <html data-idle>).
+  useEffect(() => subscribeIdle(() => {}), []);
 
   return (
     <div

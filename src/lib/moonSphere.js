@@ -26,8 +26,16 @@ const EDGE_LO = -0.07;
 const EDGE_SPAN = 0.21;
 
 // `earthshine` is how bright the night side glows (small marks raise it so a
-// new moon still reads as a sphere).
-export const createMoonSphere = (canvas, { earthshine = 0.05 } = {}) => {
+// new moon still reads as a sphere). `raf`/`caf` default to the global ones;
+// the moon worker passes its own (with a timer fallback).
+export const createMoonSphere = (
+  canvas,
+  {
+    earthshine = 0.05,
+    raf = (cb) => requestAnimationFrame(cb),
+    caf = (id) => cancelAnimationFrame(id),
+  } = {},
+) => {
   const ctx = canvas.getContext("2d");
   const size = canvas.width;
   const radius = size / 2 - 1;
@@ -189,12 +197,12 @@ export const createMoonSphere = (canvas, { earthshine = 0.05 } = {}) => {
     }
 
     if (dirty) draw();
-    if (moving || idle) frame = requestAnimationFrame(tick);
+    if (moving || idle) frame = raf(tick);
   };
 
   const request = () => {
     dirty = true;
-    if (!frame) frame = requestAnimationFrame(tick);
+    if (!frame) frame = raf(tick);
   };
 
   return {
@@ -212,19 +220,19 @@ export const createMoonSphere = (canvas, { earthshine = 0.05 } = {}) => {
     setTarget(lon, lat) {
       target.lon = lon;
       target.lat = lat;
-      if (!frame) frame = requestAnimationFrame(tick);
+      if (!frame) frame = raf(tick);
     },
     setIdle(value) {
       if (idle === value) return;
       idle = value;
       lastIdleFrame = 0; // resume from where it stopped, without a jump
-      if (idle && !frame) frame = requestAnimationFrame(tick);
+      if (idle && !frame) frame = raf(tick);
     },
     drawNow() {
       draw();
     },
     destroy() {
-      cancelAnimationFrame(frame);
+      caf(frame);
       frame = 0;
       idle = false;
     },

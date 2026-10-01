@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Home as HomeIcon } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { useOffscreenPause } from "../hooks/useOffscreenPause";
 import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
 import HeroMoon from "../components/HeroMoon";
@@ -9,6 +10,7 @@ import BlueSheen from "../components/BlueSheen";
 // "Lost in orbit": the hero's moon, with its satellite drifted off course.
 export const NotFound = () => {
   const { isDarkMode } = useTheme();
+  useOffscreenPause();
 
   return (
     <div className="relative min-h-svh overflow-x-clip text-foreground">

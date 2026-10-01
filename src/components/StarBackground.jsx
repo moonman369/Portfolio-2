@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createMeteorShower } from "../lib/meteors";
 import { MAX_DPR, paintStarfield } from "../lib/starfield";
 import { whenAmbient } from "../lib/motion";
+import { isIdle, subscribeIdle } from "../lib/idleFreeze";
 import {
   useMediaQuery,
   usePrefersReducedMotion,
@@ -18,25 +19,35 @@ import SkyMotion from "./SkyMotion";
 // the same code runs here.
 //
 // Meteors run only once ambient motion is on, while the hero is on screen and
-// the tab is visible, and never with reduced motion. On desktop the canvas
-// drifts very slowly with scroll through a CSS scroll timeline (see
-// .stars-canvas), on the compositor.
+// the tab is visible, and never with reduced motion. Six twinkling stars
+// (lib/twinkles.js) are drawn in the worker too, on desktop, once ambient
+// motion is on and while the tab is visible; without a worker they stay the
+// CSS twinkles of SkyMotion. On desktop the canvas drifts very slowly with
+// scroll through a CSS scroll timeline (see .stars-canvas), on the
+// compositor.
 
 // A canvas can be transferred only once, and StrictMode runs effects twice:
 // the worker is kept per canvas element and ended when the canvas leaves.
 const workers = new WeakMap();
 
+const skyInWorker =
+  typeof HTMLCanvasElement !== "undefined" &&
+  typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function" &&
+  typeof Worker !== "undefined";
+
 const sizeOf = (canvas) => {
   const { width, height } = canvas.getBoundingClientRect();
-  return { width, height, dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR) };
+  return {
+    width,
+    height,
+    viewportHeight: window.innerHeight,
+    dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
+  };
 };
 
 // The same four operations, in a worker or on this thread.
 const createSky = (canvas) => {
-  if (
-    typeof canvas.transferControlToOffscreen === "function" &&
-    typeof Worker !== "undefined"
-  ) {
+  if (skyInWorker) {
     let worker = workers.get(canvas);
     if (!worker) {
       worker = new Worker(new URL("../lib/sky.worker.js", import.meta.url), {
@@ -50,10 +61,12 @@ const createSky = (canvas) => {
     }
     return {
       config: (options) => worker.postMessage({ type: "config", ...options }),
-      run: (running) => worker.postMessage({ type: "run", running }),
+      run: (running, drain) => worker.postMessage({ type: "run", running, drain }),
+      twinkle: (running) => worker.postMessage({ type: "twinkle", running }),
       resize: () => worker.postMessage({ type: "resize", size: sizeOf(canvas) }),
       dispose: () => {
         worker.postMessage({ type: "run", running: false });
+        worker.postMessage({ type: "twinkle", running: false });
         setTimeout(() => {
           if (canvas.isConnected) return; // StrictMode re-run, not unmount
           worker.terminate();
@@ -82,10 +95,13 @@ const createSky = (canvas) => {
       allowed = meteors;
       apply();
     },
-    run: (value) => {
+    run: (value, drain) => {
       running = value;
-      apply();
+      if (!value && drain) shower?.drain();
+      else apply();
     },
+    // Here the twinkles are SkyMotion's CSS stars.
+    twinkle: () => {},
     resize: () => {
       shower?.stop();
       size = sizeOf(canvas);
@@ -107,16 +123,35 @@ const StarBackground = () => {
     if (!canvas) return undefined;
 
     const sky = createSky(canvas);
-    sky.config({ phone, meteors: !reducedMotion });
+    sky.config({
+      phone,
+      meteors: !reducedMotion,
+      twinkles: !reducedMotion && !phone,
+    });
 
-    // Meteors run only while all of these hold.
-    const state = { ambient: false, heroVisible: true, tabVisible: true };
+    // Meteors run only while all of these hold; twinkles need all but the
+    // hero. After 30s without input (lib/idleFreeze.js) no new meteors start
+    // (the ones in flight finish) and the twinkles hold still.
+    const state = {
+      ambient: false,
+      heroVisible: true,
+      tabVisible: true,
+      awake: !isIdle(),
+    };
     let lastRunning = null;
+    let lastTwinkling = null;
     const update = () => {
-      const running = state.ambient && state.heroVisible && state.tabVisible;
-      if (running === lastRunning) return;
-      lastRunning = running;
-      sky.run(running);
+      const running =
+        state.ambient && state.heroVisible && state.tabVisible && state.awake;
+      if (running !== lastRunning) {
+        lastRunning = running;
+        sky.run(running, !state.awake);
+      }
+      const twinkling = state.ambient && state.tabVisible && state.awake;
+      if (twinkling !== lastTwinkling) {
+        lastTwinkling = twinkling;
+        sky.twinkle(twinkling);
+      }
     };
 
     const cancelAmbient = whenAmbient(() => {
@@ -129,6 +164,10 @@ const StarBackground = () => {
       update();
     };
     document.addEventListener("visibilitychange", onVisibility);
+    const unsubscribeIdle = subscribeIdle((idle) => {
+      state.awake = !idle;
+      update();
+    });
 
     // Pages without a hero (/moonmind, 404) count as "hero visible".
     const hero = document.getElementById("hero");
@@ -156,6 +195,7 @@ const StarBackground = () => {
 
     return () => {
       cancelAmbient();
+      unsubscribeIdle();
       observer?.disconnect();
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibility);
@@ -171,7 +211,7 @@ const StarBackground = () => {
         aria-hidden="true"
         className="stars-canvas fixed inset-x-0 top-0 w-full pointer-events-none z-0"
       />
-      <SkyMotion />
+      {!skyInWorker && <SkyMotion />}
     </>
   );
 };

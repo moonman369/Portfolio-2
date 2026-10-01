@@ -3,8 +3,9 @@ import { animate } from "animejs/animation";
 import { createSpring } from "animejs/easings/spring";
 import { cn } from "../lib/utils";
 import { SATELLITE_REST, satellitePoint } from "../lib/heroMoonGeometry";
-import { createMoonSphere } from "../lib/moonSphere";
+import { createMoonSphereHost } from "../lib/moonSphereHost";
 import { getMoonTexture } from "../lib/moonTextureSource";
+import { isIdle, subscribeIdle } from "../lib/idleFreeze";
 import {
   fillCaption,
   illuminatedFraction,
@@ -41,10 +42,12 @@ import HeroMoon3D from "./HeroMoon3D";
 // The caption underneath says what is shown: today's phase and how much is
 // lit, or the phase being viewed. The hero moon does not follow scroll (the
 // navbar's mark does). The moon is a lit sphere on a canvas
-// (lib/moonSphere.js): frames are drawn only when something changes; on
-// desktop it also turns very slowly while the hero is on screen and the tab
-// is visible. Phones and reduced motion: one frame per phase change, no idle
-// turn. Live values are in refs; React re-renders only when the caption's
+// (lib/moonSphere.js), drawn in a worker where the browser allows it
+// (lib/moonSphereHost.js), so its frames never cost the main thread: frames
+// are drawn only when something changes; on desktop it also turns very
+// slowly while the hero is on screen, the tab is visible and there has been
+// input in the last 30s (lib/idleFreeze.js). Phones and reduced motion: one
+// frame per phase change, no idle turn. Live values are in refs; React re-renders only when the caption's
 // phase name or the "away from today" state changes.
 
 const STOPS = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
@@ -103,10 +106,12 @@ const HeroMoonControl = ({ className }) => {
     let pendingPhase = null;
     let visible = true;
     let tabVisible = document.visibilityState === "visible";
+    let awake = !isIdle(); // false after 30s without input (idleFreeze)
     let spring = null;
     let lap = null;
     let drag = null;
-    let sphere = null;
+    let sphere = null; // lib/moonSphereHost.js: in a worker where possible
+    let spherePx = 0;
     let disposed = false;
 
     // ---- The sphere ----
@@ -114,20 +119,22 @@ const HeroMoonControl = ({ className }) => {
       const width = disc.getBoundingClientRect().width;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const px = Math.max(64, Math.min(MAX_CANVAS_PX, Math.round(width * dpr)));
-      if (sphere && canvas.width === px) return;
-      sphere?.destroy();
-      canvas.width = px;
-      canvas.height = px;
-      sphere = createMoonSphere(canvas);
-      canvas.__moon = sphere; // for measurement in tests
-      if (s.texture) sphere.setTexture(s.texture.data, s.texture.w, s.texture.h);
-      sphere.setPhase(s.phase);
-      sphere.drawNow();
-      disc.setAttribute("data-ready", "");
+      if (sphere && spherePx === px) return;
+      if (!sphere) {
+        // The flat placeholder goes once the first frame is on the canvas.
+        sphere = createMoonSphereHost(canvas, {
+          onDrawn: () => disc.setAttribute("data-ready", ""),
+        });
+        canvas.__moon = sphere; // for measurement in tests
+        if (s.texture) sphere.setTexture(s.texture);
+        sphere.setPhase(s.phase);
+      }
+      spherePx = px;
+      sphere.resize(px);
       updateIdle();
     };
     const updateIdle = () =>
-      sphere?.setIdle(animated && visible && tabVisible);
+      sphere?.setIdle(animated && visible && tabVisible && awake);
 
     // ---- Painting ----
     const paint = (phase) => {
@@ -230,6 +237,10 @@ const HeroMoonControl = ({ className }) => {
       updateIdle();
     };
     document.addEventListener("visibilitychange", onVisibility);
+    const unsubscribeIdle = subscribeIdle((idle) => {
+      awake = !idle;
+      updateIdle();
+    });
 
     // Resize: rebuild only when the canvas resolution would change.
     const resizer =
@@ -254,7 +265,7 @@ const HeroMoonControl = ({ className }) => {
     getMoonTexture()
       .then((texture) => {
         s.texture = texture;
-        if (!disposed) sphere?.setTexture(texture.data, texture.w, texture.h);
+        if (!disposed) sphere?.setTexture(texture);
       })
       .catch(() => {
         /* keep the plain sphere */
@@ -359,6 +370,7 @@ const HeroMoonControl = ({ className }) => {
       observer?.disconnect();
       resizer?.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
+      unsubscribeIdle();
       slider.removeEventListener("pointerdown", onPointerDown);
       slider.removeEventListener("pointermove", onPointerMove);
       slider.removeEventListener("pointerup", onPointerUp);

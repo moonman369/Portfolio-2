@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
 import { useTheme } from "../context/ThemeContext";
+import { useOffscreenPause } from "../hooks/useOffscreenPause";
 import AboutSection from "../components/AboutSection";
 import SkillsSection from "../components/SkillsSection";
 import StatsSection from "../components/StatsSection";
@@ -14,6 +15,8 @@ import ScrollToTop from "../components/ScrollToTop";
 
 export const Home = () => {
   const { isDarkMode } = useTheme();
+  // Decorative loops stop off-screen and in a hidden tab.
+  useOffscreenPause();
 
   return (
     <div className="min-h-svh text-foreground overflow-x-clip">

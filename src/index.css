@@ -1623,3 +1623,28 @@
         display: block;
     }
 }
+
+/* ---- Idle cost (useOffscreenPause) ----
+   Looping decorations in the page flow lose their animation while they are
+   off-screen (it restarts just before they scroll back in, so nothing
+   visibly jumps; removed rather than paused so it no longer counts as a
+   running animation), and every animation holds still while the tab is
+   hidden, resuming from the same point. */
+[data-offscreen].btn-glow::before,
+[data-offscreen] .glow-beam::before,
+[data-offscreen].btn-glow-blue::before {
+    animation: none;
+}
+:root[data-tab-hidden] *,
+:root[data-tab-hidden] *::before,
+:root[data-tab-hidden] *::after {
+    animation-play-state: paused !important;
+}
+
+/* After 30s without input (lib/idleFreeze.js) the always-on decorative loops
+   hold where they are and carry on at the next input. */
+:root[data-idle] :is(.btn-glow, .btn-glow-blue)::before,
+:root[data-idle] .glow-beam::before,
+:root[data-idle] :is(.lunar-drift, .lunar-sun, .twinkle) {
+    animation-play-state: paused;
+}
