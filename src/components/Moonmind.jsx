@@ -34,13 +34,9 @@ const ChatLoading = () => (
 );
 
 const Moonmind = () => {
-  const { isOpen, open, close, refreshChat, refreshPending, messages } =
-    useMoonmind();
-  // The once-per-visit nudge by the entry point (see MoonmindNudge).
-  useMoonmindNudge({
-    isOpen,
-    hasConversation: messages.some((m) => m.role === "user"),
-  });
+  const { isOpen, open, close, refreshChat, refreshPending } = useMoonmind();
+  // The intro pop-up by the entry point, on every load (see MoonmindNudge).
+  useMoonmindNudge({ isOpen });
   const navigate = useNavigate();
   const location = useLocation();
   // Keeps the mobile panel (and its input) inside the visible area when the

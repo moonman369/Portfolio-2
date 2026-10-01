@@ -1078,10 +1078,27 @@
 .mm-nudge-ring {
     box-shadow: 0 0 0 2px hsl(var(--glow) / 0.9);
 }
-/* The little light at the start of the nudge, in the glow colour. Static. */
-.mm-nudge-spark {
-    background: hsl(var(--glow));
-    box-shadow: 0 0 6px 1px hsl(var(--glow) / 0.8);
+/* The intro card's sheen: a soft diagonal band in the glow colour that
+   crosses the card once (MoonmindNudge animates it; hidden until then). */
+.mm-nudge-sheen {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 45%;
+    opacity: 0;
+    pointer-events: none;
+    background: linear-gradient(
+        105deg,
+        transparent 15%,
+        hsl(var(--glow) / 0.14) 50%,
+        transparent 85%
+    );
+}
+/* Its countdown line: drains from right to left over the card's lifetime. */
+.mm-nudge-countdown {
+    background: linear-gradient(to right, hsl(var(--primary) / 0.75), hsl(var(--glow) / 0.9));
+}
+.mm-nudge-ask:hover {
+    background: hsl(var(--primary) / 0.05);
 }
 
 /* Starter questions settle in one after another under the greeting. */

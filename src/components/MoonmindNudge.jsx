@@ -16,33 +16,34 @@ import { preloadMoonmindChat } from "../lib/lazyChat";
 import { useMoonmind } from "../context/MoonmindContext";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import {
+  MOONMIND_INTRO_MS,
+  MOONMIND_INTRO_TAG,
+  MOONMIND_INTRO_TEXT,
+  MOONMIND_INTRO_TITLE,
   MOONMIND_NUDGE_CLOSE_LABEL,
-  MOONMIND_NUDGE_TEXT,
 } from "../context/constants";
+import MoonMark from "./MoonMark";
 
-// The once-per-visit speech bubble by a Moonmind entry point (see
-// lib/moonmindNudge.js for when). Rendered straight after its button so
-// keyboard users meet it in order; a polite live region (role="status"),
-// never a dialog, and it never takes focus. It sits 12px above the button
-// (or, for the bottom-nav button, above the whole bar, so it never covers
-// it), within 16px of the screen edges and the safe areas, with a tail
-// pointing at the button.
+// The Moonmind intro: a small card that pops out of the Moonmind button on
+// every page load (see hooks/useMoonmindNudge.js for when) and says what
+// Moonmind is. Rendered straight after its button so keyboard users meet it
+// in order; a polite live region (role="status"), never a dialog, and it
+// never takes focus. It sits 12px above the button (or, for the bottom-nav
+// button, above the whole bar, so it never covers it), within 16px of the
+// screen edges and the safe areas, with a tail pointing at the button. The
+// card itself is a button: it opens the chat (nothing is sent).
 //
-// Goes away on its close button, Escape, a tap outside it, opening the chat,
-// or by itself after ~9s (paused while the pointer or focus is inside it).
-// The bubble itself is a button: it opens the chat (nothing is sent).
+// It goes by itself after MOONMIND_INTRO_MS (a thin line along its foot
+// drains over that time; hovering or focusing it pauses the countdown), or
+// on its close button, Escape, a tap outside it, or opening the chat.
 //
-// Motion (anime.js, on WAAPI so it runs on the compositor): the bubble pops
-// out of its tail on a soft spring, its words rise into place one after
-// another, and one ring pulses out from the button; going away, it shrinks
-// back into the tail. Reduced motion: a fade only. Transform and opacity
-// only; no blur.
-
-// The words animate one by one; split here, in the markup, not at runtime.
-const WORDS = MOONMIND_NUDGE_TEXT.split(" ");
+// Motion (anime.js, on WAAPI so it runs on the compositor): the card springs
+// out of its tail, its mark turns in and its lines rise one after another,
+// one soft sheen crosses it, and a ring pulses out from the button; going
+// away, it shrinks back into the tail. Reduced motion: a fade, and a plain
+// timer. Transform and opacity only; no blur.
 
 const GAP_PX = 12;
-const AUTO_HIDE_MS = 9000;
 const TAIL_INSET_PX = 22; // keep the tail off the rounded corners
 
 const NudgeBubble = ({ anchor, leaving, onGone }) => {
@@ -71,7 +72,7 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
     return () => window.removeEventListener("resize", measure);
   }, [anchor]);
 
-  // The tail points at the button: its x within the bubble, clamped clear of
+  // The tail points at the button: its x within the card, clamped clear of
   // the corners. Also the scale origin.
   const [tailX, setTailX] = useState(null);
   useLayoutEffect(() => {
@@ -83,37 +84,68 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
     );
   }, [place]);
 
-  // In: once the tail is placed.
+  // In, and the countdown. The countdown line's own animation ends the card
+  // (so pausing it pauses the countdown); reduced motion uses a timer.
   const placed = tailX !== null;
+  const countdownRef = useRef(null);
   useLayoutEffect(() => {
     const bubble = bubbleRef.current;
     if (!bubble || !placed) return undefined;
-    const animations = reducedMotion
-      ? [waapi.animate(bubble, { opacity: [0, 1], duration: DURATION.base, ease: EASE.out })]
-      : [
-          waapi.animate(bubble, {
-            transform: ["translateY(6px) scale(0.4)", "translateY(0) scale(1)"],
-            ease: createSpring(SPRING),
-          }),
-          waapi.animate(bubble, { opacity: [0, 1], duration: DURATION.fast, ease: EASE.out }),
-          waapi.animate(bubble.querySelectorAll("[data-word]"), {
-            transform: ["translateY(0.55em)", "translateY(0)"],
-            opacity: [0, 1],
-            duration: DURATION.base,
-            delay: stagger(55, { start: 140 }),
-            ease: EASE.out,
-          }),
-          waapi.animate(ringRef.current, {
-            transform: ["scale(1)", "scale(1.9)"],
-            opacity: [0.7, 0],
-            duration: DURATION.slow * 1.5,
-            ease: EASE.out,
-          }),
-        ];
+    const q = (selector) => bubble.querySelectorAll(selector);
+    if (reducedMotion) {
+      const fade = waapi.animate(bubble, { opacity: [0, 1], duration: DURATION.base, ease: EASE.out });
+      countdownRef.current = { timer: setTimeout(hideNudge, MOONMIND_INTRO_MS) };
+      return () => {
+        fade.cancel();
+        clearTimeout(countdownRef.current?.timer);
+      };
+    }
+    const countdown = waapi.animate(q("[data-countdown]"), {
+      transform: ["scaleX(1)", "scaleX(0)"],
+      duration: MOONMIND_INTRO_MS,
+      ease: "linear",
+      onComplete: hideNudge,
+    });
+    countdownRef.current = { animation: countdown };
+    const animations = [
+      countdown,
+      waapi.animate(bubble, {
+        transform: ["translateY(10px) scale(0.5)", "translateY(0) scale(1)"],
+        ease: createSpring(SPRING),
+      }),
+      waapi.animate(bubble, { opacity: [0, 1], duration: DURATION.fast, ease: EASE.out }),
+      // Mark, title, tag and text rise in one after another.
+      waapi.animate(q("[data-intro]"), {
+        transform: ["translateY(8px)", "translateY(0)"],
+        opacity: [0, 1],
+        duration: DURATION.base,
+        delay: stagger(70, { start: 150 }),
+        ease: EASE.out,
+      }),
+      waapi.animate(q("[data-intro-mark]"), {
+        transform: ["rotate(-120deg) scale(0.6)", "rotate(0deg) scale(1)"],
+        delay: 150,
+        ease: createSpring({ bounce: 0.35, duration: 700 }),
+      }),
+      // One soft sheen across the card once it has landed.
+      waapi.animate(q("[data-sheen]"), {
+        transform: ["translateX(-100%)", "translateX(260%)"],
+        opacity: [0, 1, 0],
+        duration: 1100,
+        delay: 480,
+        ease: EASE.inOut,
+      }),
+      waapi.animate(ringRef.current, {
+        transform: ["scale(1)", "scale(1.9)"],
+        opacity: [0.7, 0],
+        duration: DURATION.slow * 1.5,
+        ease: EASE.out,
+      }),
+    ];
     return () => animations.forEach((animation) => animation.cancel());
   }, [placed, reducedMotion]);
 
-  // Out: a quick fade, then unmount.
+  // Out: shrink back into the tail, then unmount.
   useLayoutEffect(() => {
     if (!leaving) return undefined;
     const bubble = bubbleRef.current;
@@ -131,18 +163,9 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
     return () => animation.cancel();
   }, [leaving, onGone, reducedMotion]);
 
-  // Escape (only while shown), a tap outside, and the ~9s timer (paused
-  // while the pointer or focus is inside).
-  const holdRef = useRef({ pointer: false, focus: false });
+  // Escape (only while shown) and a tap outside.
   useLayoutEffect(() => {
     if (leaving) return undefined;
-    let timer = setTimeout(hideNudge, AUTO_HIDE_MS);
-    const restart = () => {
-      clearTimeout(timer);
-      const { pointer, focus } = holdRef.current;
-      if (!pointer && !focus) timer = setTimeout(hideNudge, AUTO_HIDE_MS);
-    };
-    holdRef.current.restart = restart;
     const onKeyDown = (event) => {
       if (event.key === "Escape") hideNudge();
     };
@@ -152,14 +175,25 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
     window.addEventListener("keydown", onKeyDown);
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, [leaving]);
+
+  // Hovering or focusing the card pauses the countdown; leaving resumes it.
+  const holdRef = useRef({ pointer: false, focus: false });
   const hold = (key, value) => {
     holdRef.current[key] = value;
-    holdRef.current.restart?.();
+    const held = holdRef.current.pointer || holdRef.current.focus;
+    const countdown = countdownRef.current;
+    if (!countdown || leaving) return;
+    if (countdown.animation) {
+      if (held) countdown.animation.pause();
+      else countdown.animation.resume();
+    } else {
+      clearTimeout(countdown.timer);
+      if (!held) countdown.timer = setTimeout(hideNudge, MOONMIND_INTRO_MS);
+    }
   };
 
   const openChat = () => {
@@ -195,36 +229,53 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
           onPointerLeave={() => hold("pointer", false)}
           onFocus={() => hold("focus", true)}
           onBlur={() => hold("focus", false)}
-          className="mm-nudge pointer-events-auto relative flex w-max max-w-full items-center rounded-full bg-card py-0.5 pl-1 pr-0.5 shadow-xl ring-1 ring-inset ring-primary/35"
+          className="mm-nudge pointer-events-auto relative w-full max-w-[20rem] rounded-2xl bg-card text-left shadow-xl ring-1 ring-inset ring-primary/35"
           style={{
             opacity: 0,
             transformOrigin: tailX === null ? "50% 100%" : `${tailX}px 100%`,
           }}
         >
-          <button
-            type="button"
-            onClick={openChat}
-            onPointerEnter={preloadMoonmindChat}
-            onFocus={preloadMoonmindChat}
-            className="mm-nudge-ask inline-flex min-h-11 items-center gap-2.5 rounded-full pl-3 pr-2 text-left text-sm font-medium text-foreground"
-          >
-            <span aria-hidden="true" className="mm-nudge-spark size-1.5 shrink-0 rounded-full bg-primary" />
-            <span>
-              {WORDS.map((word, i) => (
-                <span key={`${word}-${i}`}>
-                  {i > 0 && " "}
-                  <span data-word className="inline-block">
-                    {word}
-                  </span>
+          {/* Clips the sheen and the countdown line to the rounded card. */}
+          <div className="relative overflow-hidden rounded-2xl">
+            <span aria-hidden="true" data-sheen className="mm-nudge-sheen" />
+            <button
+              type="button"
+              onClick={openChat}
+              onPointerEnter={preloadMoonmindChat}
+              onFocus={preloadMoonmindChat}
+              className="mm-nudge-ask flex w-full items-start gap-3 rounded-2xl p-3.5 pr-12 text-left"
+            >
+              <span
+                data-intro
+                aria-hidden="true"
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30"
+              >
+                <span data-intro-mark className="grid place-items-center">
+                  <MoonMark size={20} />
                 </span>
-              ))}
+              </span>
+              <span className="min-w-0">
+                <span data-intro className="block font-heading text-[0.95rem] font-semibold leading-tight text-foreground">
+                  {MOONMIND_INTRO_TITLE}
+                </span>
+                <span data-intro className="mt-0.5 block font-mono text-[11px] leading-tight text-muted-foreground">
+                  {MOONMIND_INTRO_TAG}
+                </span>
+                <span data-intro className="mt-2 block text-sm leading-snug text-foreground">
+                  {MOONMIND_INTRO_TEXT}
+                </span>
+              </span>
+            </button>
+            {/* Drains over the card's lifetime. */}
+            <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/12">
+              <span data-countdown className="mm-nudge-countdown block h-full w-full origin-left" />
             </span>
-          </button>
+          </div>
           <button
             type="button"
             onClick={hideNudge}
             aria-label={MOONMIND_NUDGE_CLOSE_LABEL}
-            className="icon-btn text-muted-foreground hover:text-foreground"
+            className="icon-btn absolute right-0.5 top-0.5 text-muted-foreground hover:text-foreground"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -243,14 +294,14 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
 const MoonmindNudge = ({ anchor }) => {
   const { anchor: current } = useSyncExternalStore(nudgeStore.subscribe, nudgeStore.get);
   const active = current === anchor;
-  // Stays mounted through its fade-out.
+  // Stays mounted through its exit.
   const [mounted, setMounted] = useState(active);
   if (active && !mounted) setMounted(true);
   const onGone = useCallback(() => setMounted(false), []);
 
   return (
     // The live region is always present (empty and out of flow when idle),
-    // so the bubble's text is announced when it appears.
+    // so the card's text is announced when it appears.
     <div role="status" aria-live="polite" className="fixed">
       {mounted && (
         <NudgeBubble anchor={anchor} leaving={!active} onGone={onGone} />

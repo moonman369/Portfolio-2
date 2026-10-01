@@ -360,3 +360,11 @@ export const MOONMIND_NUDGE_CLOSE_LABEL = "Dismiss Moonmind suggestion";
 // phone so both hero buttons stay above the fold.
 export const HERO_SECTION_TAGLINE =
   "Senior Software Engineer at EY GDS, building agentic AI systems with Microsoft Agent Framework and Azure AI Foundry.";
+
+// ---- Moonmind intro pop-up (shown on every load by the Moonmind button) ----
+export const MOONMIND_INTRO_TITLE = "Moonmind AI";
+export const MOONMIND_INTRO_TAG = "Ayan's portfolio assistant";
+export const MOONMIND_INTRO_TEXT =
+  "Ask me anything about Ayan's projects, skills and experience.";
+// How long it stays before going by itself (paused while hovered/focused).
+export const MOONMIND_INTRO_MS = 7000;

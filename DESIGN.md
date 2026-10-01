@@ -890,6 +890,45 @@ These supersede the matching points in Parts 1 and 2 above.
 - Re-verified: behaviour 35/35, nudge 30/30 (the bubble's text, and a tap
   opens the chat with nothing sent), moon 22/22, idle 10/10, stats 14/14.
 
+### Moonmind intro pop-up (replaces the nudge's timing and content)
+
+- **When:** on every page load and reload, ~2s in (ambient motion, i.e.
+  `load` + 1.2s, plus 600ms so the hero entrance has played). Once per page
+  load: an in-site return from `/moonmind` does not show it again (a
+  memory-only flag). Not while the chat is open; opening the chat closes it.
+  The old once-per-visit `sessionStorage` key and the 7s / About-in-view
+  trigger are gone.
+- **Where:** unchanged: the floating launcher on laptops, else the
+  bottom-nav Moonmind button, 12px above it (above the whole bar on phones),
+  within 16px and the safe areas, tail at the button.
+- **What:** a card in the chat-header style: the line moon in its accent
+  circle, "Moonmind AI" (`MOONMIND_INTRO_TITLE`), "Ayan's portfolio
+  assistant" in mono (`MOONMIND_INTRO_TAG`), and "Ask me anything about
+  Ayan's projects, skills and experience." (`MOONMIND_INTRO_TEXT`). The card
+  is a button that opens the chat (nothing is sent); a 44px close button sits
+  in its corner.
+- **How long:** `MOONMIND_INTRO_MS` (7s; measured 6.9-7.5s). A thin
+  accent-to-glow line along its foot drains over that time, and its WAAPI
+  animation is the timer: hovering or focusing the card pauses it, leaving
+  resumes it. Closes early on outside click, Escape, the close button, or
+  opening the chat.
+- **Motion** (anime.js `waapi` + `createSpring` + `stagger`, compositor
+  only): the card springs out of its tail (translate + scale from 0.5), the
+  mark turns in on a bouncier spring, the mark, title, tag and text rise in
+  70ms apart, one soft glow-coloured sheen crosses the card at ~0.5s, and one
+  ring pulses out from the button. Going away it shrinks back into the tail
+  (150ms). Reduced motion: a fade in and out, and a plain 7s timer.
+- **Accessibility:** unchanged: an always-present polite `role="status"`
+  right after the button; never a dialog; never takes focus.
+- Verified (`nudgetest.mjs`, 26 checks): shown ~2.2s after load at the
+  launcher with the 12px gap and the tail on the button; its text; live
+  region, no focus taken, nothing sent; gone after 6-8s; a reload shows it
+  again; Escape, outside click and the close button; hover holds it past 9s
+  and it finishes once the pointer leaves; a tap opens the chat and sends
+  nothing; never while the chat is open, nor again after an in-site return
+  from `/moonmind`; 375 and 320px in both themes; reduced motion is a fade;
+  and the starter chips as before. Behaviour 35/35, idle 10/10, moon 22/22.
+
 ## 11. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
