@@ -3,7 +3,15 @@ import { Mail, MapPin, Phone, Send } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useToast } from "../context/ToastContext";
 import { CONTACT_INFO } from "../context/constants";
+import { useReveal } from "../hooks/useReveal";
+import BlueSheen from "./BlueSheen";
+import SectionHeading from "./SectionHeading";
 import SocialLinks from "./SocialLinks";
+
+// Fields: 48px tall, 16px text (no iOS zoom), a >= 3:1 border and the global
+// focus ring.
+const fieldClass =
+  "block w-full h-12 rounded-md border border-input bg-background px-4 text-base text-foreground focus:border-primary";
 
 // Web3Forms delivers submissions to the email tied to this access key.
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
@@ -11,6 +19,7 @@ const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
 const ContactSection = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { ref: revealRef, pending: revealPending } = useReveal();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,84 +85,96 @@ const ContactSection = () => {
   };
 
   return (
-    <section id="contact" className="py-24 px-4 relative">
-      <div className="container mx-auto max-w-5xl">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-          Get In <span className="text-gradient">Touch</span>
-        </h2>
+    <section
+      id="contact"
+      ref={revealRef}
+      data-reveal-pending={revealPending || undefined}
+      className="section-pad relative text-left"
+    >
+      <div className="container max-w-6xl">
+        <SectionHeading
+          index="05"
+          label="Contact"
+          intro="Have a project in mind or just want to say hi? My inbox is always open, let's build something together!"
+        >
+          Get In Touch
+        </SectionHeading>
 
-        <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-          Have a project in mind or just want to say hi? My inbox is always
-          open, let's build something together!
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
           {/* Contact info */}
-          <div className="space-y-8">
-            <h3 className="text-2xl font-semibold text-left">
+          <div className="lg:col-span-5 space-y-10">
+            <h3
+              data-reveal
+              className="font-heading text-h3 font-semibold text-foreground"
+            >
               Contact Information
             </h3>
 
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Mail className="h-6 w-6 text-primary" />
-                </div>
-                <div className="text-left">
-                  <h4 className="font-medium">Email</h4>
-                  <a
-                    href={`mailto:${CONTACT_INFO.email}`}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {CONTACT_INFO.email}
-                  </a>
+            <div data-reveal className="border-t border-border">
+              <div className="flex items-start gap-4 border-b border-border py-5">
+                <Mail className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <div>
+                  <h4 className="eyebrow text-muted-foreground">Email</h4>
+                  <div>
+                    <a
+                      href={`mailto:${CONTACT_INFO.email}`}
+                      className="inline-flex min-h-11 items-center break-all text-foreground hover:text-ink"
+                    >
+                      {CONTACT_INFO.email}
+                    </a>
+                  </div>
                 </div>
               </div>
 
               {CONTACT_INFO.phone && (
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-full bg-primary/10">
-                    <Phone className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-medium">Phone</h4>
-                    <a
-                      href={`tel:${CONTACT_INFO.phone}`}
-                      className="text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      {CONTACT_INFO.phone}
-                    </a>
+                <div className="flex items-start gap-4 border-b border-border py-5">
+                  <Phone className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                  <div>
+                    <h4 className="eyebrow text-muted-foreground">Phone</h4>
+                    <div>
+                      <a
+                        href={`tel:${CONTACT_INFO.phone}`}
+                        className="inline-flex min-h-11 items-center text-foreground hover:text-ink"
+                      >
+                        {CONTACT_INFO.phone}
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <MapPin className="h-6 w-6 text-primary" />
-                </div>
-                <div className="text-left">
-                  <h4 className="font-medium">Location</h4>
-                  <a
-                    href={CONTACT_INFO.locationUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {CONTACT_INFO.location}
-                  </a>
+              <div className="flex items-start gap-4 border-b border-border py-5">
+                <MapPin className="mt-1 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <div>
+                  <h4 className="eyebrow text-muted-foreground">Location</h4>
+                  <div>
+                    <a
+                      href={CONTACT_INFO.locationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center text-foreground hover:text-ink"
+                    >
+                      {CONTACT_INFO.location}
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4">
-              <h4 className="font-medium mb-4 text-left">Connect With Me</h4>
+            <div data-reveal>
+              <h4 className="eyebrow text-muted-foreground mb-4">
+                Connect With Me
+              </h4>
               <SocialLinks className="flex-wrap justify-start" />
             </div>
           </div>
 
           {/* Contact form */}
-          <div className="p-8 rounded-lg bg-card/25 backdrop-blur-md border border-border/50 shadow-lg">
-            <h3 className="text-2xl font-semibold mb-6 text-left">
+          <div
+            data-reveal
+            className="surface glass-blur lg:col-span-7 rounded-xl border border-border bg-card/85 p-6 md:p-8"
+          >
+            <h3 className="font-heading text-h3 font-semibold text-foreground mb-8">
               Send a Message
             </h3>
 
@@ -168,10 +189,10 @@ const ContactSection = () => {
                 aria-hidden="true"
               />
 
-              <div className="text-left">
+              <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-sm font-medium text-foreground mb-2"
                 >
                   Your Name
                 </label>
@@ -180,15 +201,15 @@ const ContactSection = () => {
                   id="name"
                   name="name"
                   required
-                  className="w-full px-4 py-3 rounded-md border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                  className={fieldClass}
                   placeholder="Jane Doe"
                 />
               </div>
 
-              <div className="text-left">
+              <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-sm font-medium text-foreground mb-2"
                 >
                   Your Email
                 </label>
@@ -197,15 +218,15 @@ const ContactSection = () => {
                   id="email"
                   name="email"
                   required
-                  className="w-full px-4 py-3 rounded-md border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+                  className={fieldClass}
                   placeholder="jane@example.com"
                 />
               </div>
 
-              <div className="text-left">
+              <div>
                 <label
                   htmlFor="message"
-                  className="block text-sm font-medium mb-2"
+                  className="block text-sm font-medium text-foreground mb-2"
                 >
                   Your Message
                 </label>
@@ -213,8 +234,8 @@ const ContactSection = () => {
                   id="message"
                   name="message"
                   required
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-md border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-primary resize-none"
+                  rows={5}
+                  className={cn(fieldClass, "h-auto py-3 resize-none")}
                   placeholder="Hi Ayan, I'd love to talk about..."
                 />
               </div>
@@ -222,13 +243,17 @@ const ContactSection = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
+                aria-busy={isSubmitting}
                 className={cn(
-                  "cosmic-button w-full flex items-center justify-center gap-2",
-                  isSubmitting && "opacity-70 cursor-not-allowed",
+                  "btn-primary btn-glow-blue w-full",
+                  // Sending: earthshine, the one warm "live" state.
+                  isSubmitting &&
+                    "disabled:opacity-100 bg-earthshine text-background [--glow-blue:var(--earthshine)]",
                 )}
               >
+                <BlueSheen />
                 {isSubmitting ? "Sending..." : "Send Message"}
-                <Send size={16} />
+                <Send size={16} aria-hidden="true" />
               </button>
             </form>
           </div>

@@ -309,3 +309,62 @@ export const CERTIFICATES = [
     url: "https://drive.google.com/file/d/1tnS2bd_6f_PDUB8J4xePtsIpWVTIYjRN/view?usp=sharing",
   },
 ];
+
+// ---- Hero moon ↔ moonman369 (round 4) ----
+// The handle shown as the hero's identity line, above the name.
+export const HERO_SECTION_HANDLE = "moonman369";
+
+// Lunar phase names, in cycle order from new moon.
+export const MOON_PHASE_NAMES = [
+  "new moon",
+  "waxing crescent",
+  "first quarter",
+  "waxing gibbous",
+  "full moon",
+  "waning gibbous",
+  "last quarter",
+  "waning crescent",
+];
+// The caption under the hero moon. {phase} is a name from MOON_PHASE_NAMES,
+// {lit} the illuminated percentage.
+export const MOON_CAPTION_TODAY = "today · {phase} · {lit}% lit";
+export const MOON_CAPTION_VIEWING = "viewing · {phase}";
+// Shown under the caption until the first interaction of the visit.
+export const MOON_DRAG_HINT = "drag the moon";
+export const MOON_BACK_TO_TODAY = "back to today";
+
+// ---- Moonmind discoverability (round 4) ----
+// Tappable starter questions under the greeting of an empty chat; each is
+// sent exactly as if typed.
+export const MOONMIND_STARTERS = [
+  "Who are you?",
+  "Tell me something about Ayan",
+  "Share all of Ayan's profile links and his résumé",
+  "Show me Ayan's LeetCode and GitHub stats",
+];
+export const MOONMIND_STARTERS_LABEL = "Suggested questions";
+// Visible label on the navbar pill, the bottom-nav centre button and the
+// hero button, and the accessible name that goes with it.
+export const MOONMIND_ASK_LABEL = "Ask Moonmind";
+export const MOONMIND_ASK_ARIA_LABEL = "Ask Moonmind, AI assistant";
+// Second, smaller line on the hero button (hidden below 360px).
+export const HERO_MOONMIND_SUBLABEL = "my AI assistant";
+// The once-per-visit nudge bubble by the Moonmind entry point.
+export const MOONMIND_NUDGE_TEXT = "Ask me anything about Ayan";
+export const MOONMIND_NUDGE_STARTERS = MOONMIND_STARTERS.slice(0, 2);
+export const MOONMIND_NUDGE_CLOSE_LABEL = "Dismiss Moonmind suggestion";
+
+// ---- Shorter hero (round 4) ----
+// A short line in the hero in place of HERO_SECTION_DESCRIPTION (kept
+// above; the full detail lives in About). Keep it to about two lines on a
+// phone so both hero buttons stay above the fold.
+export const HERO_SECTION_TAGLINE =
+  "Senior Software Engineer at EY GDS, building agentic AI systems with Microsoft Agent Framework and Azure AI Foundry.";
+
+// ---- Moonmind intro pop-up (shown on every load by the Moonmind button) ----
+export const MOONMIND_INTRO_TITLE = "Moonmind AI";
+export const MOONMIND_INTRO_TAG = "Ayan's portfolio assistant";
+export const MOONMIND_INTRO_TEXT =
+  "Ask me anything about Ayan's projects, skills and experience.";
+// How long it stays before going by itself (paused while hovered/focused).
+export const MOONMIND_INTRO_MS = 7000;

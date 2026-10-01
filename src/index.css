@@ -1,12 +1,106 @@
 @import "tailwindcss";
 
+/* ---- Fonts: three self-hosted Latin files, swap, metric-matched fallbacks ----
+   Display: Bricolage Grotesque, display cut (preloaded by vite.config.js).
+   Body: IBM Plex Sans (wght). Mono: IBM Plex Mono 500. See DESIGN.md. */
+@font-face {
+    font-family: "Bricolage";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500 700;
+    /* The display cut (opsz 72) of the @fontsource-variable Latin file,
+       weights 500-700. Built by scripts/build-display-font.py. */
+    src: url("./assets/fonts/bricolage-grotesque-display-latin.woff2")
+        format("woff2-variations");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+        U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Plex Sans";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 700;
+    src: url("../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2")
+        format("woff2-variations");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+        U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Plex Mono";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 500;
+    src: url("../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2")
+        format("woff2");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+        U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Local stand-ins sized to the web fonts' metrics, so the swap does not move
+   text. Values computed from the font files (DESIGN.md, Type). */
+@font-face {
+    font-family: "Bricolage Fallback";
+    src: local("Arial Bold"), local("Arial-BoldMT");
+    font-weight: 200 800;
+    size-adjust: 93.76%;
+    ascent-override: 99.19%;
+    descent-override: 28.8%;
+    line-gap-override: 0%;
+}
+@font-face {
+    font-family: "Plex Sans Fallback";
+    src: local("Arial"), local("ArialMT");
+    font-weight: 100 700;
+    size-adjust: 101.57%;
+    ascent-override: 100.91%;
+    descent-override: 27.07%;
+    line-gap-override: 0%;
+}
+@font-face {
+    font-family: "Plex Mono Fallback";
+    src: local("Courier New"), local("CourierNewPSMT");
+    size-adjust: 99.98%;
+    ascent-override: 102.52%;
+    descent-override: 27.5%;
+    line-gap-override: 0%;
+}
+
 @theme {
+    --font-sans:
+        "Plex Sans", "Plex Sans Fallback", ui-sans-serif, system-ui,
+        sans-serif;
+    --font-heading:
+        "Bricolage", "Bricolage Fallback", ui-sans-serif, system-ui,
+        sans-serif;
+    --font-mono:
+        "Plex Mono", "Plex Mono Fallback", ui-monospace, SFMono-Regular,
+        monospace;
+
+    /* Type scale (DESIGN.md). */
+    --text-display: clamp(3.75rem, 1.6rem + 10.5vw, 9.5rem);
+    --text-display--line-height: 0.9;
+    --text-display--letter-spacing: -0.04em;
+    --text-h2: clamp(2.25rem, 1.4rem + 3.6vw, 4.25rem);
+    --text-h2--line-height: 1;
+    --text-h2--letter-spacing: -0.03em;
+    --text-h3: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
+    --text-h3--line-height: 1.15;
+    --text-h3--letter-spacing: -0.015em;
+
     --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
     --color-background: hsl(var(--background));
     --color-foreground: hsl(var(--foreground));
 
     --color-primary: hsl(var(--primary));
     --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-ink: hsl(var(--ink));
 
     --color-secondary: hsl(var(--secondary));
     --color-secondary-foreground: hsl(var(--secondary-foreground));
@@ -20,37 +114,15 @@
     --color-card: hsl(var(--card));
     --color-card-foreground: hsl(var(--card-foreground));
 
-    --animate-float: float 6s ease-in-out infinite;
-    --animate-grow: grow 1.5s ease-out forwards;
-    --animate-moonmind-glow: moonmind-glow 2s ease-in-out infinite;
-    --animate-blink: blink 1.1s ease-in-out infinite;
-    --animate-pulse-subtle: pulse-subtle 4s ease-in-out infinite;
-    --animate-fade-in: fade-in 0.7s ease-out forwards;
-    --animate-fade-in-delay-1: fade-in 0.7s ease-out 0.2s forwards;
-    --animate-fade-in-delay-2: fade-in 0.7s ease-out 0.4s forwards;
-    --animate-fade-in-delay-3: fade-in 0.7s ease-out 0.6s forwards;
-    --animate-fade-in-delay-4: fade-in 0.7s ease-out 0.8s forwards;
-    --animate-meteor: meteor 5s linear infinite;
-    --animate-gradient: gradient-move 10s ease-in-out infinite;
+    --color-earthshine: hsl(var(--earthshine));
 
-    @keyframes float {
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-10px);
-        }
-    }
-    @keyframes pulse-subtle {
-        0%,
-        100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.8;
-        }
-    }
+    /* Motion: values come from src/lib/motion.js via applyMotionTokens(). */
+    --ease-moon-out: var(--motion-ease-out);
+    --ease-moon-in-out: var(--motion-ease-inOut);
+    --ease-moon-expo: var(--motion-ease-expo);
+
+    --animate-fade-in: fade-in 0.7s ease-out forwards;
+
     @keyframes fade-in {
         from {
             opacity: 0;
@@ -61,114 +133,106 @@
             transform: translateY(0);
         }
     }
-    @keyframes meteor {
-        0% {
-            transform: rotate(215deg) translateX(0);
-            opacity: 1;
-        }
-        70% {
-            opacity: 1;
-        }
-        100% {
-            transform: rotate(215deg) translateX(-500px);
-            opacity: 0;
-        }
-    }
-    @keyframes gradient-move {
-        0% {
-            background-position: 0% 50%;
-        }
-        50% {
-            background-position: 100% 50%;
-        }
-        100% {
-            background-position: 0% 50%;
-        }
-    }
-    @keyframes grow {
-        from {
-            transform: scaleX(0);
-        }
-        to {
-            transform: scaleX(1);
-        }
-    }
-    @keyframes moonmind-glow {
-        0%,
-        100% {
-            box-shadow: 0 0 0 0 hsl(var(--glow) / 0.5);
-        }
-        50% {
-            box-shadow: 0 0 22px 4px hsl(var(--glow) / 0.8);
-        }
-    }
-    @keyframes blink {
-        0%,
-        100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0;
-        }
-    }
 }
 
 @layer base {
+    /* Light: cool grey-white paper, ink-navy text. */
     :root {
-        --background: 210 40% 98%;
-        --foreground: 222 47% 11%;
+        color-scheme: light;
 
-        --card: 0 0% 100%;
-        --card-foreground: 222 47% 11%;
+        --background: 216 26% 96%;
+        --foreground: 222 44% 14%;
 
-        --primary: 187 88% 33%;
-        --primary-foreground: 210 40% 98%;
+        --card: 216 33% 99%;
+        --card-foreground: 222 44% 14%;
 
-        --secondary: 210 40% 96%;
-        --secondary-foreground: 222 47% 11%;
+        --primary: 212 88% 42%;
+        --primary-foreground: 216 26% 98%;
 
-        --muted: 210 40% 96%;
-        --muted-foreground: 215 16% 47%;
+        --secondary: 216 22% 91%;
+        --secondary-foreground: 222 44% 14%;
 
-        --accent: 187 60% 92%;
-        --accent-foreground: 187 88% 22%;
+        --muted: 216 22% 91%;
+        /* A touch deeper than on solid paper: body text sits on glass. */
+        --muted-foreground: 218 20% 32%;
 
-        --gradient-end: 199 89% 48%;
+        --accent: 212 70% 92%;
+        --accent-foreground: 212 88% 30%;
 
-        /* Shared hover/attention glow — light blue (used site-wide). */
-        --glow: 208 100% 60%;
+        /* Warm light for live states only (running, sending). */
+        --earthshine: 28 95% 33%;
 
-        /* Progress-bar track (visible on the light card). */
-        --track: 214 30% 72%;
+        /* Stats ring/bar track. */
+        --track: 216 18% 80%;
 
-        --border: 214 32% 91%;
+        --border: 216 18% 85%;
+        --input: 216 12% 54%;
+        --ring: 212 88% 42%;
+
+        /* Glow: the buttery yellow of the moon seen from earth. `--glow-hi`
+           is the bright core of a button's travelling light. */
+        --glow: 45 96% 60%;
+        --glow-hi: 50 100% 86%;
+        /* The solid blue buttons' own halo (btn-glow-blue). */
+        --glow-blue: 212 95% 52%;
+
+        /* Small blue text (eyebrows, active and hover links, skill levels):
+           deeper than the buttons' fill so it keeps AA on glass. */
+        --ink: 212 92% 32%;
+
+        /* Light glass (see "Light glass" below). The stone shows through a
+           thin page wash; text columns sit in a feathered haze; cards are
+           glass on top of it. Phones and tablets fake the frost with a
+           denser haze; desktop blurs behind the large panels instead. */
+        --lunar-wash: 0.25;
+        --haze: 0.8;
+        --glass-top: 0.55;
+        --glass-bottom: 0.38;
+        --glass-edge: 0 0% 100%;
+        --glass-shade: 218 45% 28%;
+    }
+    @media (min-width: 1024px) and (pointer: fine) {
+        :root {
+            --haze: 0.75;
+        }
     }
 
+    /* Dark: deep blue-grey ink, cool moonlight text, pale lunar accent. */
     .dark {
-        --background: 222 47% 4%;
-        --foreground: 213 31% 91%;
+        color-scheme: dark;
 
-        --card: 222 47% 8%;
-        --card-foreground: 213 31% 91%;
+        --background: 220 24% 8%;
+        --foreground: 214 45% 95%;
 
-        --primary: 204 90% 44%;
-        --primary-foreground: 213 31% 96%;
+        --card: 220 20% 11%;
+        --card-foreground: 214 45% 95%;
 
-        --secondary: 217 33% 17%;
-        --secondary-foreground: 213 31% 91%;
+        --primary: 204 100% 76%;
+        --primary-foreground: 220 24% 8%;
 
-        --muted: 217 33% 17%;
-        --muted-foreground: 215 20% 65%;
+        --secondary: 220 16% 15%;
+        --secondary-foreground: 214 45% 95%;
 
-        --accent: 190 60% 20%;
-        --accent-foreground: 213 31% 91%;
+        --muted: 220 16% 15%;
+        --muted-foreground: 215 20% 72%;
 
-        --gradient-end: 174 76% 36%;
+        --accent: 206 45% 18%;
+        --accent-foreground: 214 45% 95%;
 
-        /* Same as secondary/60 in dark — keeps dark bars unchanged. */
-        --track: 217 33% 17%;
+        --earthshine: 38 100% 64%;
 
-        --border: 217 33% 20%;
+        --track: 220 16% 17%;
+
+        --border: 218 16% 19%;
+        --input: 216 12% 42%;
+        --ring: 204 100% 76%;
+
+        /* Lunar-blue glow; its bright core is the moon's buttery yellow. */
+        --glow: 204 100% 70%;
+        --glow-hi: 49 100% 82%;
+        --glow-blue: 204 100% 66%;
+
+        --ink: 204 100% 76%;
     }
 
     * {
@@ -177,6 +241,8 @@
 
     html {
         @apply scroll-smooth;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
 
     /* Tailwind v4 no longer defaults interactive elements to a pointer. */
@@ -190,22 +256,75 @@
     }
 
     body {
-        @apply bg-background text-foreground transition-colors duration-300;
+        @apply bg-background text-foreground font-sans antialiased;
         font-feature-settings:
             "rlig" 1,
             "calt" 1;
+        line-height: 1.65;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-optical-sizing: auto;
+        text-wrap: balance;
+    }
+
+    p {
+        text-wrap: pretty;
+    }
+
+    /* One focus ring for everything, in both themes. */
+    :focus-visible {
+        outline: 2px solid hsl(var(--ring));
+        outline-offset: 3px;
+    }
+
+    ::placeholder {
+        color: hsl(var(--muted-foreground));
+        opacity: 1;
+    }
+
+    /* iOS Safari zooms the page when a field under 16px is focused. */
+    @media (max-width: 1023px) {
+        input,
+        textarea,
+        select {
+            font-size: max(1rem, 1em);
+        }
+    }
+
+    ::selection {
+        background: hsl(var(--primary) / 0.28);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
     }
 }
 
 @utility container {
     margin-inline: auto;
-    padding-inline: 2rem;
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
 
     @media (width >= 640px) {
         max-width: 640px;
     }
     @media (width >= 768px) {
         max-width: 768px;
+        padding-left: max(2rem, env(safe-area-inset-left));
+        padding-right: max(2rem, env(safe-area-inset-right));
     }
     @media (width >= 1024px) {
         max-width: 1024px;
@@ -218,84 +337,337 @@
     }
 }
 
-@utility text-glow {
-    @apply relative;
-    text-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+/* Small mono label above sections and in the hero: "02 / SKILLS". */
+@utility eyebrow {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
 }
 
-@utility text-gradient {
-    @apply bg-clip-text;
-    background-image: linear-gradient(
-        to right,
-        hsl(var(--primary)),
-        hsl(var(--gradient-end))
+/* ---- Buttons ----
+   Hover and press never animate colour or shadow: a tint layer fades in on
+   opacity and the content nudges on transform. */
+@utility btn-base {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding-inline: 1.25rem;
+    border-radius: 6px;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: transform var(--motion-fast) var(--motion-ease-out);
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        background: currentColor;
+        opacity: 0;
+        transition: opacity var(--motion-fast) var(--motion-ease-out);
+    }
+    @media (hover: hover) {
+        &:hover::after {
+            opacity: 0.1;
+        }
+    }
+    &:active {
+        transform: translateY(1px);
+    }
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+@utility btn-primary {
+    @apply btn-base;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+}
+
+@utility btn-ghost {
+    @apply btn-base;
+    color: hsl(var(--foreground));
+    box-shadow: inset 0 0 0 1px hsl(var(--input));
+
+    & svg {
+        color: hsl(var(--primary));
+    }
+}
+
+/* Round icon button with a 44px target. */
+@utility icon-btn {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: currentColor;
+        opacity: 0;
+        transition: opacity var(--motion-fast) var(--motion-ease-out);
+    }
+    @media (hover: hover) {
+        &:hover::after {
+            opacity: 0.1;
+        }
+    }
+}
+
+
+
+/* ---- Backgrounds ---- */
+
+/* Dark: the star canvas. On desktop it drifts very slowly with scroll, driven
+   by a scroll timeline on the compositor — no JS per frame. */
+.stars-canvas {
+    height: calc(100lvh + var(--stars-drift, 0px));
+}
+@media (prefers-reduced-motion: no-preference) and (pointer: fine) and (min-width: 768px) {
+    @supports (animation-timeline: scroll()) {
+        .stars-canvas {
+            --stars-drift: 120px;
+            animation: stars-drift linear both;
+            animation-timeline: scroll(root block);
+        }
+    }
+}
+@keyframes stars-drift {
+    to {
+        transform: translate3d(0, calc(var(--stars-drift) * -1), 0);
+    }
+}
+
+/* ---- Light: a sunlit lunar day ----
+   LightModeBackground stacks: the surface texture (behind a parallax and a
+   drift wrapper), a "sunlight" gradient, and a paper wash. The paper colour
+   underneath is the fallback until the texture has loaded. */
+.lunar {
+    background: hsl(var(--background));
+}
+.lunar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 900ms ease-out;
+}
+.lunar[data-loaded] .lunar-img {
+    opacity: 1;
+}
+/* Sunlight: warm-white from one side, a faint cool shade on the other. */
+.lunar-sun {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 170vmax;
+    height: 170vmax;
+    margin: -85vmax 0 0 -85vmax;
+    background: linear-gradient(
+        112deg,
+        hsl(45 100% 98% / 0.38) 0%,
+        hsl(45 100% 98% / 0) 42%,
+        hsl(220 40% 20% / 0) 62%,
+        hsl(220 40% 20% / 0.12) 100%
     );
-    color: transparent;
+    opacity: 0;
+    transition: opacity 900ms ease-out;
+}
+.lunar[data-loaded] .lunar-sun {
+    opacity: 1;
+}
+/* A thin, even paper wash (--lunar-wash): the stone stays present. Text gets
+   its own haze (below). */
+.lunar-wash {
+    position: absolute;
+    inset: 0;
+    background: hsl(var(--background) / var(--lunar-wash));
 }
 
-@utility card-hover {
-    @apply transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg;
+/* Desktop only, and only with motion: a very slow drift, the light swinging
+   across the craters, and a little scroll parallax. Transform only. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) and (min-width: 768px) {
+    .lunar-drift {
+        animation: lunar-drift 90s ease-in-out infinite alternate;
+    }
+    .lunar-sun {
+        animation: lunar-sun 75s ease-in-out infinite alternate;
+    }
+    @supports (animation-timeline: scroll()) {
+        .lunar-parallax {
+            animation: lunar-parallax linear both;
+            animation-timeline: scroll(root block);
+        }
+    }
+}
+@keyframes lunar-drift {
+    from {
+        transform: translate3d(-1.5%, -1%, 0) scale(1.02);
+    }
+    to {
+        transform: translate3d(1.5%, 1%, 0) scale(1.06);
+    }
+}
+@keyframes lunar-sun {
+    from {
+        transform: rotate(-28deg);
+    }
+    to {
+        transform: rotate(28deg);
+    }
+}
+@keyframes lunar-parallax {
+    to {
+        transform: translate3d(0, -4%, 0);
+    }
 }
 
-@utility glass {
-    background-color: hsl(var(--card) / 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: 0 8px 32px hsl(var(--foreground) / 0.08);
+/* Haze behind text, light mode only. Each section's content column and the
+   hero's text column sit in a feathered paper haze (--haze), dense enough
+   that body text keeps AA over the darkest crater shadow while the stone
+   still shows through; it shows fully in the margins, between sections and
+   around the hero moon. */
+:root:not(.dark) main > section:not(#hero) > .container,
+:root:not(.dark) .paper-scrim {
+    position: relative;
+    isolation: isolate;
+}
+:root:not(.dark) main > section:not(#hero) > .container::before,
+:root:not(.dark) .paper-scrim::before {
+    content: "";
+    position: absolute;
+    inset: -2.5rem -1.25rem;
+    z-index: -1;
+    background: hsl(var(--background) / var(--haze));
+    pointer-events: none;
+    mask-image:
+        linear-gradient(to right, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent),
+        linear-gradient(to bottom, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+    mask-composite: intersect;
+}
+@media (min-width: 768px) {
+    :root:not(.dark) main > section:not(#hero) > .container::before,
+    :root:not(.dark) .paper-scrim::before {
+        inset: -3rem -3rem;
+        mask-image:
+            linear-gradient(to right, transparent, #000 3rem, #000 calc(100% - 3rem), transparent),
+            linear-gradient(to bottom, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+    }
 }
 
-@utility bg-gradient-primary {
+/* The hero's text column fades out over a wider band on its right, towards
+   the moon, instead of ending in a visible edge. */
+@media (min-width: 1024px) {
+    :root:not(.dark) #hero .paper-scrim::before {
+        inset: -3rem -9rem -3rem -3rem;
+        mask-image:
+            linear-gradient(to right, transparent, #000 3rem, #000 calc(100% - 12rem), transparent),
+            linear-gradient(to bottom, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+    }
+}
+
+/* ---- Light glass ----
+   Cards and bars: a vertical paper gradient (--glass-top to --glass-bottom)
+   over the haze, a 1px edge lighter than the glass, and a cool, soft shadow.
+   Nothing here animates. */
+:root:not(.dark) .surface {
+    background-color: transparent;
     background-image: linear-gradient(
-        to right,
-        hsl(var(--primary)),
-        hsl(var(--gradient-end))
+        to bottom,
+        hsl(var(--card) / var(--glass-top)),
+        hsl(var(--card) / var(--glass-bottom))
     );
+    border-color: hsl(var(--glass-edge) / 0.6);
+    box-shadow:
+        inset 0 1px 0 hsl(var(--glass-edge) / 0.7),
+        0 1px 2px hsl(var(--glass-shade) / 0.06),
+        0 14px 32px -16px hsl(var(--glass-shade) / 0.28);
 }
 
-/* Standard button hover glow (light blue). Use as `hover:btn-glow`. */
-@utility btn-glow {
-    box-shadow: 0 0 18px 2px hsl(var(--glow) / 0.65);
-}
-
-@utility gradient-border {
-    @apply relative rounded-md;
-    background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
-    background-clip: padding-box;
-    border: 1px solid transparent;
-}
-
-@utility cosmic-button {
-    @apply px-6 py-2 rounded-full text-primary-foreground font-medium
-         transition-all duration-300 hover:shadow-[0_0_18px_hsl(var(--glow)/0.65)]
-         hover:scale-105 active:scale-95;
+/* The navbars stay glass on the stone even at the top of the page, dense
+   enough on phones (no blur) that text scrolling under them stays out of
+   the way. */
+:root:not(.dark) .nav-surface {
+    opacity: 1;
+    background-color: transparent;
     background-image: linear-gradient(
-        to right,
-        hsl(var(--primary)),
-        hsl(var(--gradient-end))
+        to bottom,
+        hsl(var(--background) / 0.94),
+        hsl(var(--background) / 0.86)
     );
+    border-color: hsl(var(--glass-edge) / 0.6);
+    box-shadow: 0 10px 24px -20px hsl(var(--glass-shade) / 0.4);
+    backdrop-filter: none;
+}
+:root:not(.dark) .nav-bar {
+    background-color: transparent;
+    background-image: linear-gradient(
+        to top,
+        hsl(var(--background) / 0.95),
+        hsl(var(--background) / 0.88)
+    );
+    border-color: hsl(var(--glass-edge) / 0.6);
+    box-shadow:
+        inset 0 1px 0 hsl(var(--glass-edge) / 0.7),
+        0 -10px 24px -20px hsl(var(--glass-shade) / 0.4);
 }
 
-@utility star {
-    @apply absolute rounded-full bg-white;
-    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.4);
+/* Desktop only (fine pointer, 1024px+): real frost. A light blur behind the
+   navbar and the large panels marked .glass-blur (the three Stats cards and
+   the contact form), so at most four blur at once. Phones and tablets keep
+   the denser haze instead. */
+@media (min-width: 1024px) and (pointer: fine) {
+    :root:not(.dark) .glass-blur {
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
+    :root:not(.dark) .nav-surface {
+        background-image: linear-gradient(
+            to bottom,
+            hsl(var(--background) / 0.88),
+            hsl(var(--background) / 0.8)
+        );
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+    }
 }
 
-@utility meteor {
-    @apply absolute bg-linear-to-r from-white via-white to-transparent rounded-full;
-    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.3);
+/* ---- Hero ---- */
+/* Stroke widths are in viewBox units (480) and step with the rendered size so
+   the lines stay ~1.2-1.6px. Not `non-scaling-stroke`: that makes anime.js
+   read each path's transform matrix on every frame of the draw, which forces
+   layout per path per frame. */
+.hero-moon-line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4; /* 15rem wide: ≈ 1.2px */
+    stroke-linecap: round;
 }
-
-@utility animated-gradient-light {
-    background: linear-gradient(-45deg, #cfe9f5, #e7f3d1, #faeece);
-    background-size: 180% 180%;
-    animation: var(--animate-gradient);
+@media (min-width: 640px) {
+    .hero-moon-line {
+        stroke-width: 1.9; /* 20-24rem: ≈ 1.3-1.5px */
+    }
 }
-#root {
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0;
-    text-align: center;
+@media (min-width: 1024px) {
+    .hero-moon-line {
+        stroke-width: 1.45; /* up to 34rem: ≈ 1.3-1.6px */
+    }
 }
 
 /* Markdown rendering inside Moonmind assistant messages. */
@@ -309,8 +681,8 @@
     margin-bottom: 0;
 }
 .chat-markdown p {
-    margin: 0.5em 0;
-    line-height: 1.55;
+    margin: 0.6em 0;
+    line-height: 1.6;
 }
 .chat-markdown ul,
 .chat-markdown ol {
@@ -329,11 +701,17 @@
 .chat-markdown a {
     color: hsl(var(--primary));
     text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+.chat-markdown li::marker {
+    color: hsl(var(--muted-foreground));
 }
 .chat-markdown h1,
 .chat-markdown h2,
 .chat-markdown h3,
 .chat-markdown h4 {
+    font-family: var(--font-heading);
     font-weight: 600;
     margin: 0.7em 0 0.35em;
     line-height: 1.3;
@@ -345,15 +723,17 @@
     font-size: 1.08em;
 }
 .chat-markdown code {
-    background: hsl(var(--muted) / 0.7);
+    font-family: var(--font-mono);
+    background: hsl(var(--muted));
     padding: 0.1em 0.35em;
     border-radius: 0.3em;
     font-size: 0.85em;
 }
 .chat-markdown pre {
-    background: hsl(var(--muted) / 0.7);
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
     padding: 0.7em 0.8em;
-    border-radius: 0.5em;
+    border-radius: 0.6em;
     overflow-x: auto;
     margin: 0.6em 0;
 }
@@ -362,10 +742,10 @@
     padding: 0;
 }
 .chat-markdown blockquote {
-    border-left: 2px solid hsl(var(--primary) / 0.5);
-    padding-left: 0.75em;
-    margin: 0.5em 0;
-    opacity: 0.9;
+    border-left: 2px solid hsl(var(--primary) / 0.6);
+    padding-left: 0.85em;
+    margin: 0.6em 0;
+    color: hsl(var(--muted-foreground));
 }
 .chat-markdown table {
     border-collapse: collapse;
@@ -374,37 +754,44 @@
 .chat-markdown th,
 .chat-markdown td {
     border: 1px solid hsl(var(--border));
-    padding: 0.3em 0.55em;
+    padding: 0.35em 0.6em;
+}
+.chat-markdown th {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    font-weight: 500;
+    text-align: left;
+    background: hsl(var(--muted) / 0.6);
 }
 .chat-markdown strong {
     font-weight: 600;
 }
 
-/* Smaller overall type on mobile so text reads better. */
-@media (max-width: 640px) {
-    html {
-        font-size: 87.5%;
-    }
-}
-
 /* ---- MoonMind chat (scoped: .mm-* and .mm-chat descendants) ---- */
 
-/* Collapsible step list: animates height without measuring it in JS. */
+/* Collapsible step list. The height snaps (animating it would be layout on
+   every frame); the contents fade and settle instead. */
 .mm-collapse {
     display: grid;
     grid-template-rows: 0fr;
-    opacity: 0;
-    transition:
-        grid-template-rows 200ms ease,
-        opacity 200ms ease;
 }
 .mm-collapse[data-open] {
     grid-template-rows: 1fr;
-    opacity: 1;
 }
 .mm-collapse > * {
     overflow: hidden;
     min-height: 0;
+}
+.mm-collapse > * > * {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+        opacity var(--motion-base) var(--motion-ease-out),
+        transform var(--motion-base) var(--motion-ease-out);
+}
+.mm-collapse[data-open] > * > * {
+    opacity: 1;
+    transform: none;
 }
 
 /* Smooth follow-scroll for the message list (reduced motion turns it off). */
@@ -466,39 +853,295 @@
     transform: rotate(90deg);
 }
 
-.mm-shimmer {
-    background: linear-gradient(
-        90deg,
-        hsl(var(--muted-foreground)) 0%,
-        hsl(var(--foreground)) 50%,
-        hsl(var(--muted-foreground)) 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: mm-shimmer 1.6s linear infinite;
+/* Thinking: a warm moon-glow. The steps header gets a soft light sweeping
+   across it behind the label, and an orb that breathes and ripples. Blurred
+   layers moving on transform/opacity only (compositor). */
+.mm-chat {
+    --mm-think: 47 100% 72%;
 }
-
-@keyframes mm-shimmer {
+:root:not(.dark) .mm-chat {
+    --mm-think: 44 96% 56%;
+}
+/* The glow spreads softly; the steps card clips it to its rounded edge. */
+.mm-thinking {
+    position: relative;
+    isolation: isolate;
+}
+.mm-thinking::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -60%;
+    left: 0;
+    width: 35%;
+    height: 220%;
+    border-radius: 9999px;
+    background: hsl(var(--mm-think) / 0.4);
+    filter: blur(14px);
+    opacity: 0;
+    animation: mm-sweep 2.2s ease-in-out infinite;
+}
+@keyframes mm-sweep {
+    0% {
+        transform: translateX(-110%);
+        opacity: 0;
+    }
+    20%,
+    80% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(300%);
+        opacity: 0;
+    }
+}
+.mm-orb {
+    position: relative;
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: hsl(var(--mm-think));
+    box-shadow: 0 0 6px hsl(var(--mm-think) / 0.9);
+}
+.mm-orb-lg {
+    width: 10px;
+    height: 10px;
+}
+.mm-orb::before,
+.mm-orb::after {
+    content: "";
+    position: absolute;
+    border-radius: 9999px;
+    pointer-events: none;
+}
+/* The halo breathes. */
+.mm-orb::before {
+    inset: -5px;
+    background: hsl(var(--mm-think));
+    filter: blur(5px);
+    opacity: 0.45;
+    animation: mm-breathe 1.1s ease-in-out infinite alternate;
+}
+/* A ring ripples outwards. */
+.mm-orb::after {
+    inset: 0;
+    box-shadow: inset 0 0 0 1px hsl(var(--mm-think));
+    animation: mm-ripple 1.6s ease-out infinite;
+}
+@keyframes mm-breathe {
     from {
-        background-position: 200% 0;
+        opacity: 0.2;
+        transform: scale(0.8);
     }
     to {
-        background-position: -200% 0;
+        opacity: 0.6;
+        transform: scale(1.15);
+    }
+}
+@keyframes mm-ripple {
+    from {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(3.2);
+    }
+}
+
+/* Live pipeline (MoonmindSteps): each stage fades up and its connector
+   draws in once, as it arrives; the running stage's dot breathes. */
+.mm-stage {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+}
+@keyframes mm-stage-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+}
+.mm-connector {
+    display: inline-block;
+    width: 0.9rem;
+    height: 1px;
+    margin-inline: 0.45rem;
+    background: hsl(var(--muted-foreground) / 0.6);
+    transform-origin: left center;
+    animation: mm-draw var(--motion-base) var(--motion-ease-out) both;
+}
+@keyframes mm-draw {
+    from {
+        transform: scaleX(0);
+    }
+}
+.mm-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+}
+.mm-dot[data-state="running"] {
+    background: hsl(var(--earthshine));
+    box-shadow: 0 0 6px hsl(var(--earthshine) / 0.8);
+    animation: mm-pulse 900ms ease-in-out infinite alternate;
+}
+@keyframes mm-pulse {
+    to {
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+}
+
+/* Expanded steps (MoonmindSteps): the pipeline's connect-the-dots, run
+   vertically. One rail down the left made of each row's segment, a dot per
+   step, nested steps branching off to their own dot. Opening the panel draws
+   it in: rows rise, rail segments and branches draw, a step at a time. */
+.mm-trace-row {
+    --dot-top: 0.55rem;
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.2rem 0 0.2rem calc(1.1rem + var(--depth, 0) * 0.9rem);
+}
+.mm-trace-row > .mm-dot {
+    position: absolute;
+    left: calc(var(--depth, 0) * 0.9rem);
+    top: var(--dot-top);
+}
+.mm-trace-row::before,
+.mm-trace-row[data-nested]::after {
+    content: "";
+    position: absolute;
+    background: hsl(var(--muted-foreground) / 0.45);
+}
+.mm-trace-row::before {
+    left: 2.5px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+.mm-trace-row:first-child::before {
+    top: calc(var(--dot-top) + 3px);
+}
+.mm-trace-row:last-child::before {
+    bottom: auto;
+    height: calc(var(--dot-top) + 3px);
+}
+.mm-trace-row:only-child::before {
+    display: none;
+}
+.mm-trace-row[data-nested]::after {
+    left: 3px;
+    top: calc(var(--dot-top) + 3px);
+    width: calc(var(--depth) * 0.9rem - 3px);
+    height: 1px;
+}
+.mm-trace .mm-dot[data-state="done"] {
+    background: hsl(var(--primary));
+}
+.mm-trace .mm-dot[data-state="warning"] {
+    background: hsl(var(--earthshine));
+}
+.mm-trace .mm-dot[data-kind="tool"] {
+    background: hsl(var(--muted));
+    box-shadow: inset 0 0 0 1px hsl(var(--muted-foreground));
+}
+.mm-collapse[data-open] .mm-trace-row {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+}
+.mm-collapse[data-open] .mm-trace-row::before {
+    transform-origin: top;
+    animation: mm-draw-y var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+}
+.mm-collapse[data-open] .mm-trace-row[data-nested]::after {
+    transform-origin: left;
+    animation: mm-draw var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms + 80ms);
+}
+@keyframes mm-draw-y {
+    from {
+        transform: scaleY(0);
+    }
+}
+
+/* Sources: chips stagger in when the disclosure opens. */
+.mm-sources[open] .mm-chip {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(var(--i, 0) * 40ms);
+}
+/* The nudge's ring: one soft pulse out from the Moonmind button when the
+   bubble appears (transform + opacity, run by MoonmindNudge). */
+.mm-nudge-ring {
+    box-shadow: 0 0 0 2px hsl(var(--glow) / 0.9);
+}
+/* The intro card's sheen: a soft diagonal band in the glow colour that
+   crosses the card once (MoonmindNudge animates it; hidden until then). */
+.mm-nudge-sheen {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 45%;
+    opacity: 0;
+    pointer-events: none;
+    background: linear-gradient(
+        105deg,
+        transparent 15%,
+        hsl(var(--glow) / 0.14) 50%,
+        transparent 85%
+    );
+}
+/* Its countdown line: drains from right to left over the card's lifetime. */
+.mm-nudge-countdown {
+    background: linear-gradient(to right, hsl(var(--primary) / 0.75), hsl(var(--glow) / 0.9));
+}
+.mm-nudge-ask:hover {
+    background: hsl(var(--primary) / 0.05);
+}
+
+/* Starter questions settle in one after another under the greeting. */
+.mm-starter {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+    animation-delay: calc(120ms + var(--i, 0) * 50ms);
+}
+.mm-sources > summary {
+    list-style: none;
+}
+.mm-sources > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* The launcher fades back in under the panel as it closes. */
+.mm-launcher {
+    transition:
+        opacity var(--motion-base) var(--motion-ease-out),
+        transform var(--motion-base) var(--motion-ease-out);
+    @starting-style {
+        opacity: 0;
+        transform: scale(0.8);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .mm-collapse,
-    .mm-chevron {
+    .mm-collapse > * > *,
+    .mm-chevron,
+    .mm-launcher {
         transition: none;
     }
-    .mm-shimmer {
-        background: none;
-        -webkit-background-clip: border-box;
-        background-clip: border-box;
-        color: hsl(var(--muted-foreground));
+    .mm-thinking::before,
+    .mm-orb::before,
+    .mm-orb::after,
+    .mm-collapse[data-open] .mm-trace-row,
+    .mm-collapse[data-open] .mm-trace-row::before,
+    .mm-collapse[data-open] .mm-trace-row[data-nested]::after,
+    .mm-stage,
+    .mm-connector,
+    .mm-dot,
+    .mm-sources[open] .mm-chip,
+    .mm-starter {
         animation: none;
     }
     /* Scoped to the chat only — nothing else on the site is affected. */
@@ -520,15 +1163,9 @@
 
 /* ---- Animated stats (scoped: .stats-*) ---- */
 
-/* The ring fills by transitioning its dash offset — no per-frame JS. */
-.stats-ring-progress {
-    transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Difficulty bars match their own numbers (1200ms), not the ring. */
-.stats-bar-fill {
-    transition: width 1200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
+/* The ring's dash offset and the bars' scaleX are written by the count
+   driver on the same frames as their numbers, so they need no transitions.
+   The bars scale rather than resize, so filling never triggers layout. */
 
 /* Reserve the final width so the card cannot jitter as digits arrive. */
 .stats-number {
@@ -547,9 +1184,6 @@
     .stats-card:hover .stats-ring-sweep {
         animation: stats-ring-sweep 700ms ease-out;
     }
-    .stats-card:hover .stats-ring-progress {
-        filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.55));
-    }
 }
 
 @keyframes stats-ring-sweep {
@@ -567,16 +1201,461 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .stats-ring-progress,
-    .stats-bar-fill {
-        transition: none;
-    }
     .stats-card:hover .stats-ring-sweep,
     .stats-ring-sweep {
         animation: none;
         opacity: 0;
     }
-    .stats-card:hover .stats-ring-progress {
-        filter: none;
+}
+
+/* ---- Moonmind panel on phones ----
+   Sized from the visual viewport (useVisualViewportVars), so when the
+   on-screen keyboard opens the panel shrinks with it and the input stays
+   visible. Clears the top bar and the docked bottom nav when it is closed. */
+@media (max-width: 639px) {
+    .mm-panel {
+        left: max(0.75rem, env(safe-area-inset-left));
+        right: max(0.75rem, env(safe-area-inset-right));
+        top: calc(var(--vv-top, 0px) + env(safe-area-inset-top) + 4.5rem);
+        height: calc(
+            var(--vv-height, 100dvh) - env(safe-area-inset-top) - 4.5rem -
+                env(safe-area-inset-bottom) - 4.75rem
+        );
     }
+    /* Keyboard up: the bars are out of the way, use the whole visible area. */
+    .mm-panel[data-keyboard="open"] {
+        top: calc(var(--vv-top, 0px) + 0.5rem);
+        height: calc(var(--vv-height, 100dvh) - 1rem);
+    }
+}
+
+/* Hero entrance hold: the animated parts stay hidden from the first paint
+   until HeroSection sets their start states (one frame later). Only present
+   when motion is allowed; the description is never held. */
+[data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
+    opacity: 0;
+}
+
+/* ---- Glow buttons ----
+   Main calls to action carry a light that travels around their border and a
+   soft halo that breathes. Markup: add `btn-glow` and a <GlowBeam /> child.
+   The beam is a conic gradient spinning (transform) inside a clipped layer,
+   covered by an inset face so only a 2px ring shows; the halo is a static
+   blur whose opacity breathes. Transform and opacity only: both run on the
+   compositor. */
+/* In the components layer so per-button utilities (e.g. a different
+   --glow-face) can override these defaults. */
+@layer components {
+    .btn-glow {
+        position: relative;
+        isolation: isolate;
+        --glow-face: hsl(var(--background));
+        --glow-halo: 0.5;
+    }
+    .btn-primary.btn-glow {
+        --glow-face: hsl(var(--primary));
+    }
+    .btn-glow::before {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        z-index: -3;
+        border-radius: inherit;
+        background: hsl(var(--glow));
+        filter: blur(16px);
+        opacity: var(--glow-halo);
+        pointer-events: none;
+        animation: glow-breathe 3.2s ease-in-out infinite alternate;
+    }
+    :root:not(.dark) .btn-glow {
+        --glow-halo: 0.42;
+    }
+    .glow-beam {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        border-radius: inherit;
+        overflow: hidden;
+        pointer-events: none;
+    }
+    .glow-beam::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: max(220%, 10rem);
+        aspect-ratio: 1;
+        background: conic-gradient(
+            transparent 0deg 200deg,
+            hsl(var(--glow) / 0.35) 250deg,
+            hsl(var(--glow)) 295deg,
+            hsl(var(--glow-hi)) 318deg,
+            hsl(var(--glow)) 335deg,
+            transparent 355deg
+        );
+        transform: translate(-50%, -50%) rotate(0deg);
+        animation: glow-spin 4.5s linear infinite;
+    }
+    .glow-beam::after {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        border-radius: inherit;
+        background: var(--glow-face);
+    }
+}
+
+@keyframes glow-spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+@keyframes glow-breathe {
+    from {
+        opacity: calc(var(--glow-halo) * 0.55);
+        transform: scale(0.96);
+    }
+    to {
+        opacity: var(--glow-halo);
+        transform: scale(1.04);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn-glow::before,
+    .glow-beam::before {
+        animation: none;
+    }
+}
+
+/* ---- Sky motion: a few twinkling stars (dark mode, desktop) ----
+   Transform/opacity keyframes on the compositor; nothing here runs JS.
+   Meteors are drawn on the star canvas instead (lib/meteors.js). Hidden
+   entirely with reduced motion. */
+.sky {
+    --sky-tint: 204 100% 88%;
+}
+.twinkle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: hsl(var(--sky-tint));
+    box-shadow: 0 0 4px hsl(var(--sky-tint) / 0.9);
+    opacity: 0.15;
+    animation: twinkle var(--dur, 4s) ease-in-out var(--delay, 0s) infinite
+        alternate;
+}
+@keyframes twinkle {
+    to {
+        opacity: 0.9;
+        transform: scale(1.4);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .sky {
+        display: none;
+    }
+}
+
+/* ---- Sections ---- */
+.section-pad {
+    padding-block: clamp(5rem, 12vw, 9rem);
+}
+
+/* Scroll entrances (useReveal): held until each element's turn. Only
+   rendered while motion is allowed. */
+[data-reveal-pending] [data-reveal] {
+    opacity: 0;
+}
+
+/* Accent outline that fades in on hover and keyboard focus (opacity only).
+   Replaces the old scale-on-hover. */
+.card-ring {
+    position: relative;
+}
+.card-ring::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    box-shadow:
+        inset 0 0 0 1px hsl(var(--primary)),
+        0 0 24px -8px hsl(var(--glow) / 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-fast) var(--motion-ease-out);
+}
+@media (hover: hover) {
+    .card-ring:hover::after {
+        opacity: 1;
+    }
+}
+.card-ring:focus-within::after {
+    opacity: 1;
+}
+
+/* Skills: their own scroll area, no scrollbar, soft edges. Wheel, touch and
+   keyboard (it is focusable) all scroll it; once it reaches an end the page
+   takes over. */
+.skills-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 1.25rem,
+        #000 calc(100% - 3.5rem),
+        transparent 100%
+    );
+}
+.skills-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Printing shows everything, whether or not it has scrolled into view. */
+@media print {
+    [data-reveal-pending] [data-reveal],
+    [data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
+        opacity: 1 !important;
+    }
+}
+
+/* Ambient motion waits for `html.ambient` (enableAmbientMotion in motion.js),
+   so the meteors, twinkles and button glows never compete with the first
+   paint. They fade in when it arrives. */
+:root:not(.ambient) .sky,
+:root:not(.ambient) .glow-beam,
+:root:not(.ambient) .btn-glow::before {
+    display: none;
+}
+.sky,
+.glow-beam {
+    transition: opacity 600ms ease-out;
+    @starting-style {
+        opacity: 0;
+    }
+}
+
+/* ---- Interactive hero moon (HeroMoonControl) ---- */
+.moon-slider {
+    cursor: grab;
+}
+.moon-slider:active {
+    cursor: grabbing;
+}
+.moon-slider:focus-visible {
+    outline-offset: 6px;
+}
+.moon-control [data-glow] {
+    transition: opacity var(--motion-base) var(--motion-ease-out);
+}
+@media (hover: hover) {
+    .moon-slider:hover [data-glow] {
+        opacity: 0.95;
+    }
+}
+.moon-slider:focus-visible [data-glow] {
+    opacity: 0.95;
+}
+.moon-hint {
+    transition: opacity var(--motion-slow) var(--motion-ease-out);
+}
+/* The caption sits on a small plate of page colour, feathered by its soft
+   shadow: on wide screens it is outside the text haze, over bare stone
+   (light, where a crater shadow can be near-black) or stars (dark). Keeps it
+   at AA against the worst pixel under it. Static. */
+.moon-caption {
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.75rem;
+    --plate: 0.75;
+    background: hsl(var(--background) / var(--plate));
+    box-shadow: 0 0 10px 6px hsl(var(--background) / calc(var(--plate) * 0.6));
+}
+:root:not(.dark) .moon-caption {
+    --plate: 0.9;
+}
+.moon-hint[data-hidden] {
+    opacity: 0;
+}
+
+/* ---- 3D hero moon (HeroMoon3D + lib/moonSphere.js) ----
+   The disc shows a flat moon-grey circle until the canvas has drawn its
+   first frame, then only the canvas. A thin accent rim glow sits on top; a
+   halo (dark) or a soft cool cast shadow (light, stronger so the moon does not
+   wash out on paper) sits behind. All static: nothing here animates. */
+.moon3d {
+    --moon-flat: 220 9% 52%;
+    --moon-halo: 204 100% 70%;
+}
+:root:not(.dark) .moon3d {
+    --moon-flat: 220 8% 66%;
+}
+.moon3d-disc {
+    background: hsl(var(--moon-flat));
+}
+.moon3d-disc[data-ready] {
+    background: transparent;
+}
+.moon3d-disc::before,
+.moon3d-disc::after {
+    content: "";
+    position: absolute;
+    border-radius: 9999px;
+    pointer-events: none;
+}
+.moon3d-disc::before {
+    inset: -16%;
+    z-index: -1;
+    background: radial-gradient(
+        closest-side,
+        hsl(var(--moon-halo) / 0.28),
+        hsl(var(--moon-halo) / 0.08) 62%,
+        transparent
+    );
+}
+:root:not(.dark) .moon3d-disc::before {
+    inset: -10%;
+    transform: translate(5%, 7%);
+    background: radial-gradient(
+        closest-side,
+        hsl(218 40% 22% / 0.42),
+        hsl(218 40% 22% / 0.12) 70%,
+        transparent
+    );
+}
+.moon3d-disc::after {
+    inset: 0;
+    box-shadow:
+        inset 0 0 0 1px hsl(var(--primary) / 0.35),
+        0 0 16px 1px hsl(var(--primary) / 0.28);
+}
+
+/* ---- Blue buttons: their own glow (btn-glow-blue + BlueSheen) ----
+   Separate from the dark button's btn-glow, with its own keyframes. A cool
+   halo breathes around the button: a radial gradient on ::before, masked to
+   the ring outside the button so it never tints the face, reaching ~18px
+   beyond the edge at its peak. Hover and keyboard focus brighten it and send
+   one sheen across; pressing tightens it. Only opacity and transform
+   animate; nothing blurs. */
+@layer components {
+    .btn-glow-blue {
+        position: relative;
+        isolation: isolate;
+        --blue-halo: 1;
+    }
+    .btn-glow-blue::before {
+        content: "";
+        position: absolute;
+        inset: -18px;
+        z-index: -1;
+        padding: 18px;
+        border-radius: 24px;
+        pointer-events: none;
+        background: radial-gradient(
+            closest-side,
+            hsl(var(--glow-blue) / calc(0.7 * var(--blue-halo))) 0%,
+            hsl(var(--glow-blue) / calc(0.5 * var(--blue-halo))) 62%,
+            hsl(var(--glow-blue) / 0) 100%
+        );
+        mask:
+            linear-gradient(#000 0 0) content-box exclude,
+            linear-gradient(#000 0 0);
+        -webkit-mask:
+            linear-gradient(#000 0 0) content-box xor,
+            linear-gradient(#000 0 0);
+        opacity: 0.5;
+        animation: blue-breathe 2.8s ease-in-out infinite alternate;
+    }
+    .btn-glow-blue:is(:hover, :focus-visible) {
+        --blue-halo: 1.45;
+    }
+    .btn-glow-blue:active::before {
+        animation: none;
+        opacity: 0.85;
+        transform: scale(0.97);
+    }
+    .blue-sheen {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        overflow: hidden;
+        pointer-events: none;
+    }
+    .blue-sheen::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -55%;
+        width: 45%;
+        background: linear-gradient(
+            100deg,
+            transparent,
+            hsl(0 0% 100% / 0.38),
+            transparent
+        );
+        transform: translateX(0);
+    }
+    .btn-glow-blue:is(:hover, :focus-visible) .blue-sheen::before {
+        animation: blue-sheen 850ms var(--motion-ease-out) 1 both;
+    }
+}
+@keyframes blue-breathe {
+    from {
+        opacity: 0.45;
+        transform: scale(1);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+@keyframes blue-sheen {
+    to {
+        transform: translateX(380%);
+    }
+}
+/* Like the other glows, it waits for ambient motion (after load). */
+:root:not(.ambient) .btn-glow-blue::before {
+    display: none;
+}
+/* Reduced motion: a steady, visible halo; no breathing, no sweep. Hover and
+   focus still brighten it. */
+@media (prefers-reduced-motion: reduce) {
+    .btn-glow-blue::before {
+        animation: none;
+        opacity: 0.7;
+    }
+    .btn-glow-blue:is(:hover, :focus-visible) .blue-sheen::before {
+        animation: none;
+    }
+    :root:not(.ambient) .btn-glow-blue::before {
+        display: block;
+    }
+}
+
+/* ---- Idle cost (useOffscreenPause) ----
+   Looping decorations in the page flow lose their animation while they are
+   off-screen (it restarts just before they scroll back in, so nothing
+   visibly jumps; removed rather than paused so it no longer counts as a
+   running animation), and every animation holds still while the tab is
+   hidden, resuming from the same point. */
+[data-offscreen].btn-glow::before,
+[data-offscreen] .glow-beam::before,
+[data-offscreen].btn-glow-blue::before {
+    animation: none;
+}
+:root[data-tab-hidden] *,
+:root[data-tab-hidden] *::before,
+:root[data-tab-hidden] *::after {
+    animation-play-state: paused !important;
+}
+
+/* After 30s without input (lib/idleFreeze.js) the always-on decorative loops
+   hold where they are and carry on at the next input. */
+:root[data-idle] :is(.btn-glow, .btn-glow-blue)::before,
+:root[data-idle] .glow-beam::before,
+:root[data-idle] :is(.lunar-drift, .lunar-sun, .twinkle) {
+    animation-play-state: paused;
 }

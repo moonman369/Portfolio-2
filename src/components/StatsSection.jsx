@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/utils";
 import { useInView } from "../hooks/useInView";
-import { useCountUp } from "../hooks/useCountUp";
-import {
-  useFinePointer,
-  usePrefersReducedMotion,
-} from "../hooks/usePrefersReducedMotion";
+import { useReveal } from "../hooks/useReveal";
+import { useCountDriver } from "../hooks/useCountDriver";
 import {
   Award,
   Cpu,
@@ -23,6 +20,7 @@ import * as Md from "react-icons/md";
 import { CERTIFICATES, GITHUB_USERNAME } from "../context/constants";
 import { RiClaudeFill } from "react-icons/ri";
 import { GrOracle } from "react-icons/gr";
+import SectionHeading from "./SectionHeading";
 import { BsClaude } from "react-icons/bs";
 
 // ---- Config (Vite env vars; unset => that fetch is skipped) ----
@@ -47,19 +45,18 @@ const GITHUB_PROFILE_URL = "https://github.com/moonman369";
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // ---- Animation config ----
-// Hovering a stat replays its count-up. Off: hover stays decorative.
-const HOVER_REPLAYS_COUNT = false;
+// Every number counts through one shared driver (useCountDriver): on first
+// reveal once its data is in, on later data (from the shown value), and again
+// from 0 when hovered (mouse) or tapped (touch). The ring and bars move with
+// their numbers.
 // Re-animate when the section scrolls back into view. Off: animate once.
 const REPLAY_ON_REENTER = false;
 
-const COUNT_DURATION_MS = 1200; // every number except the rank
+const COUNT_DURATION_MS = 1200; // every number except the rank and ring
 const RANK_DURATION_MS = 900; // the rank settles a little quicker
 const RANK_QUANTIZE = 500; // rank ticks in 500s — try 100 or 1000
-const RING_DURATION_MS = 900; // keep in step with .stats-ring-progress
-const BAR_STAGGER_MS = 120; // Easy, then Medium, then Hard
-const CARD_STAGGER_MS = 80; // GitHub rows cascade in DOM order
-const HOVER_REST_MS = 200; // the pointer must settle before a replay
-const HOVER_COOLDOWN_MS = 2000; // and the stat must have been still this long
+const RING_DURATION_MS = 900;
+const STAGGER_MS = 70; // numbers within a card start this far apart
 
 // ---- localStorage cache (replaces the legacy 30-day cookies) ----
 const readCache = (key) => {
@@ -160,113 +157,62 @@ const GITHUB_COLORS = {
   stars: "rgb(235, 196, 25)",
 };
 
-// Delays a trigger so a group of elements cascades instead of firing at once.
-const useStaggeredActive = (active, delayMs = 0) => {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (!active) return undefined;
-    const timer = setTimeout(() => setReady(true), delayMs);
-    return () => {
-      clearTimeout(timer);
-      setReady(false);
-    };
-  }, [active, delayMs]);
-
-  return active && ready;
-};
-
-// The gated hover-replay path. Shipped off; flipping HOVER_REPLAYS_COUNT makes
-// a deliberate rest over one stat replay that stat, and nothing else.
-const useHoverReplay = ({ doneAtRef, onReplay }) => {
-  const finePointer = useFinePointer();
-  const reducedMotion = usePrefersReducedMotion();
-  const timerRef = useRef(0);
-
-  useEffect(() => () => clearTimeout(timerRef.current), []);
-
-  if (!HOVER_REPLAYS_COUNT || !finePointer || reducedMotion) return {};
-
-  return {
-    onPointerEnter: () => {
-      // Only once the entry animation has finished.
-      if (!doneAtRef.current) return;
-      clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        if (Date.now() - doneAtRef.current >= HOVER_COOLDOWN_MS) onReplay();
-      }, HOVER_REST_MS);
-    },
-    // Leaving early cancels the pending replay.
-    onPointerLeave: () => clearTimeout(timerRef.current),
-  };
-};
-
-// One counting number. Renders today's plain value until its data is in and
-// the trigger fires, and is hidden from screen readers — `srLabel` carries the
-// real figure instead, once, with no live region.
+// One counting number. The animated text is hidden from screen readers;
+// `srLabel` (or the surrounding sr-only text) carries the final figure, once.
 const AnimatedNumber = ({
   value,
   active,
+  delay = 0,
   duration = COUNT_DURATION_MS,
   quantize = 1,
   className,
   srLabel,
 }) => {
-  const [replayKey, setReplayKey] = useState(0);
-  const display = useCountUp(value, { active, duration, quantize, replayKey });
-
-  // When the count finished, so hover knows whether a replay is allowed.
-  const doneAtRef = useRef(null);
-  useEffect(() => {
-    const settled = display !== null && display === value;
-    doneAtRef.current = settled ? (doneAtRef.current ?? Date.now()) : null;
-  }, [display, value]);
-
-  const hover = useHoverReplay({
-    doneAtRef,
-    onReplay: () => setReplayKey((key) => key + 1),
+  const [ref, handlers] = useCountDriver(value, {
+    active,
+    delay,
+    duration,
+    quantize,
   });
-
   const fallback = Number.isFinite(value) ? value : 0;
-  const shown = display ?? fallback;
 
   return (
     <>
       <span
+        ref={ref}
         aria-hidden="true"
         className={cn("stats-number", className)}
         // Hold the final width from the start so counting cannot shift layout.
         style={{ minWidth: `${String(fallback).length}ch` }}
-        {...hover}
-      >
-        {shown}
-      </span>
+        {...handlers}
+      />
       {srLabel != null && <span className="sr-only">{srLabel}</span>}
     </>
   );
 };
 
-const CircularProgress = ({ percentage, solved, total, active }) => {
+const CircularProgress = ({ percentage, solved, total, active, delay = 0 }) => {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
-  const reducedMotion = usePrefersReducedMotion();
   const hasValue = Number.isFinite(percentage);
   const clamped = Math.max(0, Math.min(100, percentage || 0));
+  const ringRef = useRef(null);
 
-  // Empty unless the ring has been triggered. This has to be the *initial*
-  // render, not something an effect applies afterwards, or the ring flashes
-  // full for a frame before animating.
-  const filled = active || reducedMotion;
-  const offset = filled
-    ? circumference - (clamped / 100) * circumference
-    : circumference;
-
-  // The percentage counts in tenths so the hook can stay integer-only.
-  const tenths = useCountUp(hasValue ? Math.round(clamped * 10) : null, {
-    active,
-    duration: RING_DURATION_MS,
-  });
-  const shown = ((tenths ?? 0) / 10).toFixed(1);
+  // The percentage counts in tenths (integers), and the ring moves with it.
+  const [textRef, handlers] = useCountDriver(
+    hasValue ? Math.round(clamped * 10) : null,
+    {
+      active,
+      delay,
+      duration: RING_DURATION_MS,
+      format: (tenths) => `${(tenths / 10).toFixed(1)}%`,
+      onValue: (tenths) =>
+        ringRef.current?.setAttribute(
+          "stroke-dashoffset",
+          String(circumference - (tenths / 1000) * circumference),
+        ),
+    },
+  );
 
   const label = hasValue
     ? `Solved ${solved} of ${total} problems, ${clamped.toFixed(1)} percent`
@@ -280,6 +226,7 @@ const CircularProgress = ({ percentage, solved, total, active }) => {
       className="shrink-0"
       role="img"
       aria-label={label}
+      {...handlers}
     >
       <circle
         cx="70"
@@ -299,6 +246,7 @@ const CircularProgress = ({ percentage, solved, total, active }) => {
         className="stats-ring-sweep stroke-primary"
       />
       <circle
+        ref={ringRef}
         cx="70"
         cy="70"
         r={radius}
@@ -306,41 +254,58 @@ const CircularProgress = ({ percentage, solved, total, active }) => {
         strokeLinecap="round"
         className="stats-ring-progress fill-none stroke-primary"
         strokeDasharray={circumference}
-        strokeDashoffset={offset}
+        strokeDashoffset={circumference}
         transform="rotate(-90 70 70)"
       />
       <text
+        ref={textRef}
         x="70"
         y="70"
         textAnchor="middle"
         dominantBaseline="central"
-        className="fill-foreground font-semibold"
-        fontSize="20"
+        className="fill-foreground font-mono"
+        fontSize="19"
         aria-hidden="true"
         style={{ fontVariantNumeric: "tabular-nums" }}
-      >
-        {shown}%
-      </text>
+      />
     </svg>
   );
 };
 
 const DifficultyBar = ({ label, solved, total, color, active, delay }) => {
-  const started = useStaggeredActive(active, delay);
-  const reducedMotion = usePrefersReducedMotion();
   const hasValue = Number.isFinite(solved) && Number.isFinite(total);
-  const pct = hasValue && total ? (solved / total) * 100 : 0;
-  const filled = started || reducedMotion;
+  const barRef = useRef(null);
+  // Only the solved half counts; the bar fills with it.
+  const [ref, handlers] = useCountDriver(solved, {
+    active,
+    delay,
+    onValue: (v) => {
+      if (barRef.current) {
+        barRef.current.style.transform = `scaleX(${hasValue && total ? v / total : 0})`;
+      }
+    },
+  });
+  const fallback = Number.isFinite(solved) ? solved : 0;
 
   return (
     <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="font-medium" style={{ color }}>
+      <div className="flex items-baseline justify-between text-sm mb-2">
+        <span className="inline-flex items-center gap-2 font-medium text-foreground">
+          <span
+            aria-hidden="true"
+            className="size-2 rounded-full"
+            style={{ backgroundColor: color }}
+          />
           {label}
         </span>
-        <span className="text-muted-foreground">
-          {/* Only the solved half counts; the total is shown straight away. */}
-          <AnimatedNumber value={solved} active={started} />
+        <span className="font-mono text-muted-foreground" {...handlers}>
+          <span
+            ref={ref}
+            aria-hidden="true"
+            className="stats-number"
+            style={{ minWidth: `${String(fallback).length}ch` }}
+          />
+          {/* The total is shown straight away. */}
           <span aria-hidden="true"> / {total ?? 0}</span>
           <span className="sr-only">
             {solved ?? 0} of {total ?? 0} solved
@@ -348,33 +313,32 @@ const DifficultyBar = ({ label, solved, total, color, active, delay }) => {
         </span>
       </div>
       <div
-        className="w-full h-2 rounded-full overflow-hidden"
+        className="w-full h-1.5 rounded-full overflow-hidden"
         style={{ backgroundColor: "hsl(var(--track) / 0.6)" }}
       >
+        {/* Scales rather than resizing, so the fill never triggers layout. */}
         <div
-          className="stats-bar-fill h-2 rounded-full"
-          style={{
-            width: `${filled ? pct : 0}%`,
-            backgroundColor: color,
-          }}
+          ref={barRef}
+          className="stats-bar-fill h-full w-full origin-left rounded-full"
+          style={{ transform: "scaleX(0)", backgroundColor: color }}
         />
       </div>
     </div>
   );
 };
 
-const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => {
-  const started = useStaggeredActive(active, delay);
-
+const GitHubStat = ({ icon, label, value, color, active, delay }) => {
+  const Icon = icon;
   return (
-    <li className="flex items-center gap-3">
-      <Icon className="h-5 w-5 shrink-0" style={{ color }} />
-      <p className="text-sm">
+    <li className="flex items-center gap-3 border-b border-border py-3 first:pt-0">
+      <Icon className="h-5 w-5 shrink-0" style={{ color }} aria-hidden="true" />
+      <p className="flex flex-1 items-baseline justify-between gap-3 text-sm text-muted-foreground">
         {label}:{" "}
-        <span className="font-semibold text-primary">
+        <span className="font-mono text-xl text-foreground">
           <AnimatedNumber
             value={value}
-            active={started}
+            active={active}
+            delay={delay}
             srLabel={String(value ?? 0)}
           />
         </span>
@@ -384,6 +348,7 @@ const GitHubStat = ({ icon: Icon, label, value, color, active, delay }) => {
 };
 
 const StatsSection = () => {
+  const { ref: revealRef, pending: revealPending } = useReveal();
   const [leetcodeStats, setLeetcodeStats] = useState(
     () => readCache("leetcodeCache") ?? {},
   );
@@ -463,29 +428,35 @@ const StatsSection = () => {
   ];
 
   return (
-    <section id="stats" className="py-24 px-4 relative">
-      <div className="container mx-auto max-w-6xl">
+    <section
+      id="stats"
+      ref={revealRef}
+      data-reveal-pending={revealPending || undefined}
+      className="section-pad relative text-left"
+    >
+      <div className="container max-w-6xl">
         {/* <p className="text-center text-primary font-medium mb-2">
           Platforms I use
         </p>*/}
-        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
-          My <span className="text-gradient">Stats</span>
-        </h2>
+        <SectionHeading index="03" label="Stats">
+          My Stats
+        </SectionHeading>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
           {/* LeetCode */}
           <a
             ref={leetcodeRef}
             href={LEETCODE_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="stats-card glass rounded-lg p-6 card-hover text-left block"
+            data-reveal
+            className="surface glass-blur stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-7">
               {Si.SiLeetcode && (
-                <Si.SiLeetcode className="h-7 w-7 text-primary" />
+                <Si.SiLeetcode className="h-7 w-7 text-primary" aria-hidden="true" />
               )}
-              <h3 className="text-xl font-semibold">LeetCode Stats</h3>
+              <h3 className="font-heading text-xl font-semibold">LeetCode Stats</h3>
             </div>
 
             <div className="flex items-center gap-6 mb-6">
@@ -494,24 +465,27 @@ const StatsSection = () => {
                 solved={solved}
                 total={totalQuestions}
                 active={leetcodeActive}
+                delay={0}
               />
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Solved</p>
-                  <p className="text-2xl font-bold text-primary">
+                  <p className="eyebrow text-muted-foreground">Solved</p>
+                  <p className="mt-1 font-mono text-3xl text-primary">
                     <AnimatedNumber
                       value={solved}
                       active={leetcodeActive}
+                      delay={0}
                       srLabel={String(solved ?? 0)}
                     />
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Rank</p>
-                  <p className="text-lg font-semibold">
+                  <p className="eyebrow text-muted-foreground">Rank</p>
+                  <p className="mt-1 font-mono text-xl text-foreground">
                     <AnimatedNumber
                       value={ranking}
                       active={leetcodeActive}
+                      delay={STAGGER_MS}
                       duration={RANK_DURATION_MS}
                       quantize={RANK_QUANTIZE}
                       srLabel={String(ranking ?? 0)}
@@ -528,7 +502,7 @@ const StatsSection = () => {
                 total={leetcodeStats?.totalEasy}
                 color="#22c55e"
                 active={leetcodeActive}
-                delay={0}
+                delay={STAGGER_MS * 2}
               />
               <DifficultyBar
                 label="Medium"
@@ -536,7 +510,7 @@ const StatsSection = () => {
                 total={leetcodeStats?.totalMedium}
                 color="#f59e0b"
                 active={leetcodeActive}
-                delay={BAR_STAGGER_MS}
+                delay={STAGGER_MS * 3}
               />
               <DifficultyBar
                 label="Hard"
@@ -544,7 +518,7 @@ const StatsSection = () => {
                 total={leetcodeStats?.totalHard}
                 color="#ef4444"
                 active={leetcodeActive}
-                delay={BAR_STAGGER_MS * 2}
+                delay={STAGGER_MS * 4}
               />
             </div>
           </a>
@@ -555,27 +529,31 @@ const StatsSection = () => {
             href={GITHUB_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="stats-card glass rounded-lg p-6 card-hover text-left block"
+            data-reveal
+            className="surface glass-blur stats-card card-ring rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left block"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <Github className="h-7 w-7 text-primary" />
-              <h3 className="text-xl font-semibold">GitHub Stats</h3>
+            <div className="flex items-center gap-3 mb-7">
+              <Github className="h-7 w-7 text-primary" aria-hidden="true" />
+              <h3 className="font-heading text-xl font-semibold">GitHub Stats</h3>
             </div>
 
-            <ul className="space-y-4 mb-6">
+            <ul className="mb-6">
               {githubItems.map((item, index) => (
                 <GitHubStat
                   key={item.label}
                   {...item}
                   active={githubActive}
                   // Cascade down the list rather than firing all at once.
-                  delay={index * CARD_STAGGER_MS}
+                  delay={index * STAGGER_MS}
                 />
               ))}
             </ul>
 
             <img
-              className="w-full rounded-md"
+              className="w-full h-auto rounded-md"
+              width="340"
+              height="200"
+              decoding="async"
               src={GITHUB_SUMMARY_CARD}
               alt="GitHub repositories per language"
               loading="lazy"
@@ -583,29 +561,33 @@ const StatsSection = () => {
           </a>
 
           {/* Certificates */}
-          <article className="glass rounded-lg p-6 card-hover text-left">
-            <div className="flex items-center gap-3 mb-6">
-              <Award className="h-7 w-7 text-primary" />
-              <h3 className="text-xl font-semibold">Certificates</h3>
+          <article
+            data-reveal
+            className="surface glass-blur rounded-xl border border-border bg-card/85 p-6 md:p-7 text-left"
+          >
+            <div className="flex items-center gap-3 mb-7">
+              <Award className="h-7 w-7 text-primary" aria-hidden="true" />
+              <h3 className="font-heading text-xl font-semibold">Certificates</h3>
             </div>
 
-            <ul className="space-y-3">
+            <ul>
               {CERTIFICATES.map((cert) => {
                 const Icon = CERT_ICONS[cert.icon] || Award;
                 return (
-                  <li key={cert.title}>
+                  <li key={cert.title} className="border-b border-border last:border-b-0">
                     <a
                       href={cert.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sm text-foreground/90 hover:text-primary transition-colors group"
+                      className="group flex min-h-11 items-center gap-3 py-2 text-sm text-foreground hover:text-ink"
                     >
                       <Icon
+                        aria-hidden="true"
                         className="h-5 w-5 shrink-0"
                         style={{ color: CERT_COLORS[cert.icon] }}
                       />
                       <span className="flex-1">{cert.title}</span>
-                      <ExternalLink className="h-4 w-4 opacity-60 group-hover:opacity-100 shrink-0" />
+                      <ExternalLink className="h-4 w-4 opacity-60 group-hover:opacity-100 shrink-0" aria-hidden="true" />
                     </a>
                   </li>
                 );

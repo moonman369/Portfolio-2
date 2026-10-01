@@ -1,31 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, Send } from "lucide-react";
-import { BiBrain } from "react-icons/bi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
-import { useMoonmind } from "../context/MoonmindContext";
+import { MOONMIND_WELCOME, useMoonmind } from "../context/MoonmindContext";
+import {
+  MOONMIND_STARTERS,
+  MOONMIND_STARTERS_LABEL,
+} from "../context/constants";
 import MoonmindSteps from "./MoonmindSteps";
+import MoonMark from "./MoonMark";
 
 const MAX_INPUT_HEIGHT = 128;
 // How close to the bottom still counts as "following along".
 const STICKY_THRESHOLD_PX = 80;
 
+// Thinking: the same glowing orb as the steps header (see .mm-orb). Part of
+// the running state, the one place a loop is allowed; still with reduced
+// motion.
 const TypingDots = () => (
-  <span className="flex gap-1 py-1">
-    <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.3s]" />
-    <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.15s]" />
-    <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" />
+  <span className="flex py-2.5 pl-1" aria-hidden="true">
+    <span className="mm-orb mm-orb-lg" />
   </span>
 );
 
 // Shown once per group of consecutive assistant messages, not on every one.
 const AssistantIdentity = () => (
-  <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
-    <span className="grid place-items-center w-5 h-5 rounded-full bg-gradient-primary text-primary-foreground">
-      <BiBrain className="text-[11px]" />
-    </span>
-    <span className="font-medium">Moonmind</span>
+  <div className="flex items-center gap-2 mb-1.5 font-mono text-xs text-muted-foreground">
+    <MoonMark size={14} className="text-primary" />
+    <span>Moonmind</span>
   </div>
 );
 
@@ -35,21 +38,23 @@ const MoonmindSources = ({ documents = [] }) => {
   if (!documents.length) return null;
 
   return (
-    <details className="mt-2 rounded-lg border border-border/40 bg-muted/20 text-[11px]">
-      <summary className="px-2 py-1 select-none text-muted-foreground hover:text-foreground transition-colors">
+    <details className="mm-sources mt-3 text-xs">
+      <summary className="inline-flex min-h-8 items-center gap-2 rounded-full px-3 font-mono text-muted-foreground ring-1 ring-inset ring-border select-none hover:text-foreground">
         Sources · {documents.length}
       </summary>
-      <ul className="px-2 pb-1.5 space-y-0.5">
+      {/* Chips stagger in when the disclosure opens (see .mm-sources). */}
+      <ul className="mt-2 flex flex-wrap gap-1.5">
         {documents.map((doc, i) => (
           <li
             key={doc.id ?? i}
-            className="flex items-start gap-1.5 text-muted-foreground"
+            style={{ "--i": i }}
+            className="mm-chip inline-flex max-w-full items-start gap-1.5 rounded-md bg-muted/60 px-2 py-1 text-muted-foreground"
           >
-            <FileText size={11} className="shrink-0 mt-[3px]" />
+            <FileText size={12} className="shrink-0 mt-[2px]" aria-hidden="true" />
             <span className="break-words">
               {doc.title || doc.id || "Untitled document"}
               {doc.category && (
-                <span className="ml-1.5 text-muted-foreground/60">
+                <span className="ml-1.5 font-mono text-muted-foreground">
                   {doc.category}
                 </span>
               )}
@@ -61,12 +66,41 @@ const MoonmindSources = ({ documents = [] }) => {
   );
 };
 
+// Starter questions under the greeting of an empty chat. A tap sends the
+// question through the same path as typing it; nothing is sent until then.
+// They go once the conversation has a user message, and are disabled while
+// a reply is loading.
+const StarterChips = ({ disabled, onPick }) => (
+  <div
+    role="group"
+    aria-label={MOONMIND_STARTERS_LABEL}
+    className="mm-starters flex flex-wrap gap-2 pt-1"
+  >
+    {MOONMIND_STARTERS.map((question, i) => (
+      <button
+        key={question}
+        type="button"
+        disabled={disabled}
+        onClick={() => onPick(question)}
+        style={{ "--i": i }}
+        className="mm-starter min-h-11 rounded-full px-4 text-left text-sm text-foreground ring-1 ring-inset ring-primary/35 bg-primary/8 hover:bg-primary/15 disabled:opacity-50"
+      >
+        {question}
+      </button>
+    ))}
+  </div>
+);
+
 const markdownComponents = {
-  a: ({ node: _node, children, ...props }) => (
-    <a {...props} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
+  a: ({ children, ...props }) => {
+    // react-markdown passes its AST node too; it is not an HTML attribute.
+    const { node: _node, ...anchorProps } = props;
+    return (
+      <a {...anchorProps} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  },
 };
 
 // Shared conversation body (message list + input). Reused by the floating
@@ -144,6 +178,15 @@ const MoonmindChat = ({ className }) => {
     sendMessage(text);
   };
 
+  // A starter goes the same way as a typed question.
+  const sendStarter = (question) => {
+    if (loading) return;
+    stickyRef.current = true;
+    sendMessage(question);
+  };
+  const onlyGreeting =
+    messages.length === 1 && messages[0].id === MOONMIND_WELCOME.id;
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -170,7 +213,7 @@ const MoonmindChat = ({ className }) => {
               className={cn("flex", isUser ? "justify-end" : "justify-start")}
             >
               {isUser ? (
-                <div className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-primary/10 border border-primary/20 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-primary/12 ring-1 ring-inset ring-primary/25 text-[0.9375rem] leading-relaxed text-foreground whitespace-pre-wrap break-words">
                   {m.content}
                 </div>
               ) : (
@@ -186,12 +229,14 @@ const MoonmindChat = ({ className }) => {
                       key={m.runId ?? m.id}
                       steps={m.steps}
                       isRunning={isRunning}
-                      className={m.content ? "mb-2" : ""}
+                      route={m.route}
+                      status={m.status}
+                      className={m.content ? "mb-3" : ""}
                     />
                   )}
 
                   {m.content ? (
-                    <div className="chat-markdown text-sm leading-relaxed break-words">
+                    <div className="chat-markdown text-[0.9375rem] leading-relaxed text-foreground break-words">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={markdownComponents}
@@ -209,6 +254,10 @@ const MoonmindChat = ({ className }) => {
             </div>
           );
         })}
+
+        {onlyGreeting && (
+          <StarterChips disabled={loading} onPick={sendStarter} />
+        )}
       </div>
 
       {/* Refresh confirmation — inline, never window.confirm */}
@@ -216,9 +265,9 @@ const MoonmindChat = ({ className }) => {
         <div
           role="alertdialog"
           aria-label="Start a new chat"
-          className="shrink-0 border-t border-border/50 bg-muted/30 px-3 py-2.5 flex flex-wrap items-center gap-2"
+          className="shrink-0 border-t border-border bg-muted/50 px-4 py-2 flex flex-wrap items-center gap-2"
         >
-          <p className="flex-1 min-w-[10rem] text-xs text-muted-foreground">
+          <p className="flex-1 min-w-[10rem] text-sm text-foreground">
             Start a new chat? This clears the current conversation.
           </p>
           <div className="flex items-center gap-2 shrink-0">
@@ -226,9 +275,8 @@ const MoonmindChat = ({ className }) => {
               ref={cancelRef}
               onClick={cancelRefresh}
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs border border-border",
-                "hover:bg-muted/60 transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                "min-h-11 px-4 rounded-md text-sm font-medium text-foreground",
+                "ring-1 ring-inset ring-input hover:bg-muted",
               )}
             >
               Cancel
@@ -236,9 +284,8 @@ const MoonmindChat = ({ className }) => {
             <button
               onClick={confirmRefresh}
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs bg-gradient-primary text-primary-foreground",
-                "transition-all hover:btn-glow",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                "min-h-11 px-4 rounded-md text-sm font-medium",
+                "bg-primary text-primary-foreground hover:opacity-90",
               )}
             >
               Clear
@@ -248,8 +295,8 @@ const MoonmindChat = ({ className }) => {
       )}
 
       {/* Input (fixed) */}
-      <div className="shrink-0 border-t border-border/50 p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-border bg-background/60 px-2 py-1.5 focus-within:border-primary/50 transition-colors">
+      <div className="shrink-0 border-t border-border p-3">
+        <div className="flex items-end gap-2 rounded-2xl border border-input bg-background pl-2 pr-1.5 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
           <textarea
             ref={inputRef}
             value={input}
@@ -257,19 +304,21 @@ const MoonmindChat = ({ className }) => {
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder="Ask Moonmind anything…"
-            className="mm-chat-input flex-1 resize-none bg-transparent px-1.5 py-1 text-sm leading-relaxed focus:outline-hidden placeholder:text-muted-foreground/70"
+            className="mm-chat-input flex-1 self-center resize-none bg-transparent px-2 py-1.5 text-base leading-relaxed text-foreground focus:outline-hidden placeholder:text-muted-foreground"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
             aria-label="Send message"
             className={cn(
-              "shrink-0 p-2 rounded-xl bg-gradient-primary text-primary-foreground transition-all",
-              "disabled:opacity-40 enabled:hover:btn-glow",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+              "shrink-0 grid place-items-center size-11 rounded-xl",
+              "bg-primary text-primary-foreground",
+              "transition-transform duration-(--motion-fast) ease-moon-out",
+              "enabled:hover:-translate-y-px enabled:active:translate-y-0",
+              "disabled:opacity-40",
             )}
           >
-            <Send size={16} />
+            <Send size={18} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -1,127 +1,218 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { createMeteorShower } from "../lib/meteors";
+import { MAX_DPR, paintStarfield } from "../lib/starfield";
+import { whenAmbient } from "../lib/motion";
+import { isIdle, subscribeIdle } from "../lib/idleFreeze";
+import {
+  useMediaQuery,
+  usePrefersReducedMotion,
+} from "../hooks/usePrefersReducedMotion";
+import SkyMotion from "./SkyMotion";
 
-// Real stars follow the blackbody sequence you see in astrophotos:
-// hot blue/blue-white, white, warm yellow-white, orange, and cool red —
-// with a violet accent. Color dominates; pure white shows up occasionally.
-const STAR_COLORS = [
-  "155, 176, 255", // hot blue (O/B type)
-  "180, 200, 255", // blue-white (A type)
-  "224, 233, 255", // pale blue
-  "255, 255, 255", // white (occasional)
-  "255, 244, 232", // warm white (G type)
-  "255, 214, 165", // orange (K type)
-  "255, 160, 120", // deep orange
-  "255, 122, 122", // red (M type)
-  "204, 153, 255", // violet
-  "176, 148, 255", // deep violet
-];
+// The dark sky: a sparse, mostly static star field on one <canvas>, with
+// meteors drawn onto the same canvas from a fixed pool (lib/meteors.js).
+//
+// Where supported the canvas is handed to a worker (lib/sky.worker.js), which
+// paints the stars and runs the meteors off the main thread: a canvas
+// animated from the main thread forces a main-thread frame every time it
+// draws, and every running CSS animation pays for those frames too. Elsewhere
+// the same code runs here.
+//
+// Meteors run only once ambient motion is on, while the hero is on screen and
+// the tab is visible, and never with reduced motion. Six twinkling stars
+// (lib/twinkles.js) are drawn in the worker too, on desktop, once ambient
+// motion is on and while the tab is visible; without a worker they stay the
+// CSS twinkles of SkyMotion. On desktop the canvas drifts very slowly with
+// scroll through a CSS scroll timeline (see .stars-canvas), on the
+// compositor.
 
-const randomAccent = () =>
-  STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
+// A canvas can be transferred only once, and StrictMode runs effects twice:
+// the worker is kept per canvas element and ended when the canvas leaves.
+const workers = new WeakMap();
+
+const skyInWorker =
+  typeof HTMLCanvasElement !== "undefined" &&
+  typeof HTMLCanvasElement.prototype.transferControlToOffscreen === "function" &&
+  typeof Worker !== "undefined";
+
+const sizeOf = (canvas) => {
+  const { width, height } = canvas.getBoundingClientRect();
+  return {
+    width,
+    height,
+    viewportHeight: window.innerHeight,
+    dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
+  };
+};
+
+// The same four operations, in a worker or on this thread.
+const createSky = (canvas) => {
+  if (skyInWorker) {
+    let worker = workers.get(canvas);
+    if (!worker) {
+      worker = new Worker(new URL("../lib/sky.worker.js", import.meta.url), {
+        type: "module",
+      });
+      const offscreen = canvas.transferControlToOffscreen();
+      worker.postMessage({ type: "init", canvas: offscreen, size: sizeOf(canvas) }, [
+        offscreen,
+      ]);
+      workers.set(canvas, worker);
+    }
+    return {
+      config: (options) => worker.postMessage({ type: "config", ...options }),
+      run: (running, drain) => worker.postMessage({ type: "run", running, drain }),
+      twinkle: (running) => worker.postMessage({ type: "twinkle", running }),
+      resize: () => worker.postMessage({ type: "resize", size: sizeOf(canvas) }),
+      dispose: () => {
+        worker.postMessage({ type: "run", running: false });
+        worker.postMessage({ type: "twinkle", running: false });
+        setTimeout(() => {
+          if (canvas.isConnected) return; // StrictMode re-run, not unmount
+          worker.terminate();
+          workers.delete(canvas);
+        }, 0);
+      },
+    };
+  }
+
+  // Main-thread fallback.
+  const layer = document.createElement("canvas");
+  let size = sizeOf(canvas);
+  paintStarfield({ canvas, layer, ...size });
+  let shower = null;
+  let allowed = false;
+  let running = false;
+  const apply = () => {
+    if (shower && allowed && running) shower.start();
+    else shower?.stop();
+  };
+  return {
+    config: ({ phone, meteors }) => {
+      shower?.stop();
+      shower = createMeteorShower({ canvas, starLayer: layer, phone });
+      shower.resize(size);
+      allowed = meteors;
+      apply();
+    },
+    run: (value, drain) => {
+      running = value;
+      if (!value && drain) shower?.drain();
+      else apply();
+    },
+    // Here the twinkles are SkyMotion's CSS stars.
+    twinkle: () => {},
+    resize: () => {
+      shower?.stop();
+      size = sizeOf(canvas);
+      paintStarfield({ canvas, layer, ...size });
+      shower?.resize(size);
+      apply();
+    },
+    dispose: () => shower?.stop(),
+  };
+};
 
 const StarBackground = () => {
-  const [stars, setStars] = useState([]);
-  const [meteors, setMeteors] = useState([]);
-
-  const generateStars = () => {
-    const starsCount = Math.floor(
-      (window.innerWidth * window.innerHeight) / 8500,
-    );
-
-    const newStars = [];
-
-    for (let i = 0; i < starsCount; i++) {
-      newStars.push({
-        id: i,
-        size: Math.random() * 3 + 1,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        opacity: Math.random() * 0.4 + 0.6,
-        animationDuration: Math.random() * 4 + 2,
-        color: randomAccent(),
-      });
-    }
-
-    setStars(newStars);
-  };
-
-  const generateMeteors = () => {
-    const meteorsCount = 8;
-    const newMeteors = [];
-
-    for (let i = 0; i < meteorsCount; i++) {
-      newMeteors.push({
-        id: i,
-        size: Math.random() * 2 + 1,
-        // Spread across the whole viewport, not just the top strip.
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        delay: Math.random() * 15,
-        animationDuration: Math.random() * 3 + 3,
-        color: randomAccent(),
-      });
-    }
-
-    setMeteors(newMeteors);
-  };
+  const canvasRef = useRef(null);
+  const reducedMotion = usePrefersReducedMotion();
+  const phone = useMediaQuery("(pointer: coarse), (max-width: 767px)");
 
   useEffect(() => {
-    generateStars();
-    generateMeteors();
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
 
-    const handleResize = () => {
-      generateStars();
+    const sky = createSky(canvas);
+    sky.config({
+      phone,
+      meteors: !reducedMotion,
+      twinkles: !reducedMotion && !phone,
+    });
+
+    // Meteors run only while all of these hold; twinkles need all but the
+    // hero. After 30s without input (lib/idleFreeze.js) no new meteors start
+    // (the ones in flight finish) and the twinkles hold still.
+    const state = {
+      ambient: false,
+      heroVisible: true,
+      tabVisible: true,
+      awake: !isIdle(),
+    };
+    let lastRunning = null;
+    let lastTwinkling = null;
+    const update = () => {
+      const running =
+        state.ambient && state.heroVisible && state.tabVisible && state.awake;
+      if (running !== lastRunning) {
+        lastRunning = running;
+        sky.run(running, !state.awake);
+      }
+      const twinkling = state.ambient && state.tabVisible && state.awake;
+      if (twinkling !== lastTwinkling) {
+        lastTwinkling = twinkling;
+        sky.twinkle(twinkling);
+      }
     };
 
-    window.addEventListener("resize", handleResize);
+    const cancelAmbient = whenAmbient(() => {
+      state.ambient = true;
+      update();
+    });
+
+    const onVisibility = () => {
+      state.tabVisible = document.visibilityState === "visible";
+      update();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    const unsubscribeIdle = subscribeIdle((idle) => {
+      state.awake = !idle;
+      update();
+    });
+
+    // Pages without a hero (/moonmind, 404) count as "hero visible".
+    const hero = document.getElementById("hero");
+    const observer =
+      hero && typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver(([entry]) => {
+            state.heroVisible = entry.isIntersecting;
+            update();
+          })
+        : null;
+    observer?.observe(hero);
+
+    // Only a width change is a real resize. Phones change height constantly
+    // as the address bar shows and hides; the canvas is sized to the large
+    // viewport so it never needs redrawing for that.
+    let lastWidth = window.innerWidth;
+    let timer = 0;
+    const onResize = () => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      clearTimeout(timer);
+      timer = setTimeout(() => sky.resize(), 150);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      cancelAmbient();
+      unsubscribeIdle();
+      observer?.disconnect();
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("resize", onResize);
+      sky.dispose();
     };
-  }, []);
+  }, [reducedMotion, phone]);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {stars.map((star) => (
-        <div
-          key={star.id}
-          className="star animate-pulse-subtle"
-          style={{
-            width: `${star.size}px`,
-            height: `${star.size}px`,
-            top: `${star.y}%`,
-            left: `${star.x}%`,
-            opacity: star.opacity,
-            animationDuration: `${star.animationDuration}s`,
-            // Colored core with a brighter matching glow.
-            backgroundColor: `rgb(${star.color})`,
-            boxShadow: `0 0 ${star.size * 3}px ${star.size}px rgba(${star.color}, 0.85)`,
-          }}
-        />
-      ))}
-
-      {meteors.map((meteor) => (
-        <div
-          key={meteor.id}
-          className="meteor animate-meteor"
-          style={{
-            width: `${meteor.size * 35}px`,
-            height: `${meteor.size}px`,
-            top: `${meteor.y}%`,
-            left: `${meteor.x}%`,
-            animationDelay: `${meteor.delay}s`,
-            animationDuration: `${meteor.animationDuration}s`,
-            // Hidden until the animation starts, so meteors don't sit frozen
-            // as flat horizontal bars during their initial delay. The keyframes
-            // begin at opacity: 1, so each one appears only as it streaks.
-            opacity: 0,
-            // Bright colored head fading through white into a transparent tail.
-            background: `linear-gradient(to right, rgb(${meteor.color}), rgba(255, 255, 255, 0.7), transparent)`,
-            boxShadow: `0 0 14px 2px rgba(${meteor.color}, 0.65)`,
-          }}
-        />
-      ))}
-    </div>
+    <>
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="stars-canvas fixed inset-x-0 top-0 w-full pointer-events-none z-0"
+      />
+      {!skyInWorker && <SkyMotion />}
+    </>
   );
 };
 

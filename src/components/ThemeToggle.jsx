@@ -8,15 +8,14 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className={cn(
-        "p-2 rounded-full transition-colors duration-300",
-        "focus:outline-hidden cursor-pointer",
-      )}
+      aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
+      title={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
+      className={cn("icon-btn text-foreground")}
     >
       {isDarkMode ? (
-        <Sun className="h-6 w-6 text-yellow-300" />
+        <Sun className="h-5 w-5" aria-hidden="true" />
       ) : (
-        <Moon className="h-6 w-6 text-blue-800" />
+        <Moon className="h-5 w-5" aria-hidden="true" />
       )}
     </button>
   );
