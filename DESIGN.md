@@ -1489,6 +1489,48 @@ behaviour unchanged:
 All part checks were re-run after this (panel and page, both themes, phone
 and desktop): same results.
 
+### After: measured against the mock (desktop 1280×800 and phone 375×812)
+
+| Check | Before | After |
+| --- | --- | --- |
+| Long answer, its message's top vs the top of the list | ~340px above the view | 12px below the top (panel, phone, page); the pill lands it at 12px |
+| `scrollTop` sampled every 30ms for 1.5s after expand / minimize | 15-18 distinct values sweeping from 0 | 1 value, 0 changes (both ways, desktop and phone); 300px up stays 300px up |
+| Current step name in the DOM while running | up to 3 times | once (checked at three points of a run) |
+| Trace rows under 300ms / durations under 0.1s | "12ms", "32ms" rows | none |
+| Smallest chat text / input | 11px / 16px | 12px / 16px |
+| Tap targets under 44px in the chat | steps header 36px, Sources 32px, input 38px | none (320, 375, 1280px; panel and page; both themes) |
+| Horizontal scroll at 320 / 375px | none | none |
+| Input focused when the panel opens on touch | yes | no (the dialog is focused) |
+| Continuous animations while running / idle | sweep, orb (3 layers), pipeline dot | 2 (loader pulse, skeleton breath) / 0; none with reduced motion; paused in a hidden tab |
+| axe-core contrast + ARIA (panel and page, both themes) | not measured | 0 violations |
+| Chat chunk (lazy) | 167.90 kB, 51.64 kB gzip | 175.47 kB, 54.26 kB gzip (+2.62 kB) |
+| `/moonmind` page chunk | 2.19 kB, 0.97 kB gzip | 2.60 kB, 1.18 kB gzip |
+| Initial JS | 423.00 kB, 143.73 kB gzip | 427.65 kB, 145.55 kB gzip (+1.82 kB: the panel's dialog logic, the loader, the new constants); budget 170 kB |
+| CSS | 73.85 kB, 14.93 kB gzip | 75.22 kB, 15.15 kB gzip |
+
+- **Behaviour checks** (all with the mock): send by typing + Enter,
+  Shift+Enter (newline, nothing sent), the Send button and a starter chip;
+  500, offline and timeout with Try again; New chat (empty: no confirm;
+  confirm bar, Escape, Start new chat, focus, Undo, expiry, new message);
+  expand → minimize → panel with the conversation, direct visit → minimize,
+  back and forward; Copy; Jump to latest; reduced motion (no CSS or JS
+  animation in the chat, no view transition, instant jumps; everything
+  still works). Reload mid-run: does not resume (see Suggestions).
+- **Long tasks, one full question and answer at 4x CPU** (5 alternating
+  runs; this machine's load drifts a lot, so only medians): before, the
+  longest task 190ms (phone) / 137ms (desktop); after 237 / 326ms; total
+  blocking 420 / 302ms before, 370 / 513ms after. Both builds are far from
+  "no task over 50ms". What remains after the fixes above: sending (~110-130ms
+  at 4x, was 150-210) and the answer itself: rendering a 1,500-character
+  markdown answer (~70-300ms) and its first layout and paint (~140-380ms,
+  mostly text layout; `text-wrap: pretty` and layout containment were
+  measured and make no difference). See Suggestions.
+- **Lighthouse mobile** (home page; the chat is lazy), 3 runs alternating
+  with the previous build: Performance 62 / 73 / 66 before, 62 / 75 / 64
+  after; Accessibility 100 both; CLS 0 both. The machine benchmarked
+  237-689 during these runs (earlier rounds scored 90+ at ~1,400-1,600), so
+  the ≥ 90 budget could not be confirmed here for either build.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
@@ -1522,3 +1564,9 @@ and desktop): same results.
   finishes on the server. Storing the in-flight `runId` and polling it again
   on load (then showing "Reconnecting…" while it does) would fix it; that
   changes what is stored and the run lifecycle, so it was left out.
+- **A long Moonmind answer still costs one long render and one long layout**
+  (~0.1-0.4s each at 4x CPU, about the same as before). Parsing markdown
+  in a worker (the answer arrives whole, so it can be parsed off the main
+  thread before it is shown) or rendering it a few blocks per frame would
+  bring both under 50ms; either is a structural change to how answers are
+  rendered, so it was left out.
