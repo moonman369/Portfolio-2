@@ -13,6 +13,11 @@ import SocialLinks from "./SocialLinks";
 const fieldClass =
   "block w-full h-12 rounded-md border border-input bg-background px-4 text-base text-foreground focus:border-primary";
 
+// Autofill hints: name and email carry `autocomplete` so phones can offer
+// the visitor's saved details; email also gets the email keyboard, no
+// auto-capitalisation and no spellcheck; the message capitalises
+// sentences. The honeypot keeps its own `autocomplete="off"`.
+
 // Web3Forms delivers submissions to the email tied to this access key.
 const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
 
@@ -200,6 +205,8 @@ const ContactSection = () => {
                   type="text"
                   id="name"
                   name="name"
+                  autoComplete="name"
+                  autoCapitalize="words"
                   required
                   className={fieldClass}
                   placeholder="Jane Doe"
@@ -217,6 +224,10 @@ const ContactSection = () => {
                   type="email"
                   id="email"
                   name="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   required
                   className={fieldClass}
                   placeholder="jane@example.com"
@@ -233,6 +244,7 @@ const ContactSection = () => {
                 <textarea
                   id="message"
                   name="message"
+                  autoCapitalize="sentences"
                   required
                   rows={5}
                   className={cn(fieldClass, "h-auto py-3 resize-none")}

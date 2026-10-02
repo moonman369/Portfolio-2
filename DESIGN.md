@@ -1130,6 +1130,28 @@ they wrapped onto two left-aligned rows of different widths.
 - Stats, Skills, About and Contact heights are unchanged (1739, 853, 1502,
   1371px at 375).
 
+### Part D. Contact form: autofill hints
+
+| Field | Added |
+| --- | --- |
+| `#name` (text) | `autocomplete="name"`, `autocapitalize="words"` |
+| `#email` (email) | `autocomplete="email"`, `inputmode="email"`, `autocapitalize="none"`, `spellcheck="false"` |
+| `#message` (textarea) | `autocapitalize="sentences"` (no `autocomplete`) |
+| honeypot checkbox | unchanged (`autocomplete="off"`, `tabindex="-1"`, hidden) |
+
+- Labels: all three fields already had a visible `<label for>` matching
+  their `id` ("Your Name", "Your Email", "Your Message"); nothing to fix.
+  The honeypot has no label by design (hidden, `aria-hidden`).
+- No change to ids, names, classes, placeholders, validation, the
+  Web3Forms request, the toasts or the "not configured" notice; no visual
+  change.
+- Chrome's Issues panel (CDP `Audits`) reports no form or autofill issue on
+  the page. (Its other entries are unrelated: a lazy-load note on the
+  external GitHub stats card, and CORS errors because the stats API on
+  :8000 was not running locally.) Whether Chrome offers saved details can't
+  be shown headless (no profile data; the autofill service does not run), so
+  that check is for a real browser.
+
 ## 12. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
