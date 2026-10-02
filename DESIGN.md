@@ -1079,6 +1079,57 @@ they wrapped onto two left-aligned rows of different widths.
   375×812 (it ends 23px above the card); it is still skipped at 360×640 and
   375×667, where it would cover the buttons or icons.
 
+### Part C. Projects: a shorter list on phones
+
+| At 375px | Before | Collapsed | Expanded |
+| --- | --- | --- | --- |
+| Projects section | 5,068px (12 cards, 335-387px each) | 2,618px (6 cards + button) | 4,655px |
+| Whole page | 11,591px | 9,140px | 11,177px |
+| Card image | 207px (16:10) | 168px | 168px |
+
+- **What shows:** under 640px, the first `PROJECTS_MOBILE_INITIAL_COUNT`
+  (6) projects in their current order; nothing is renamed, reordered or
+  removed (numbers, links and the internal `/moonmind` link included). From
+  640px all 12 show and there is no button; 640, 768 and 1280px are
+  pixel-identical to the previous build (full page, both themes).
+- **How:** CSS only. Cards past the count carry `data-extra`; under 40rem
+  (Tailwind's `sm`, the breakpoint that also hides the button)
+  `#projects-grid:not([data-expanded="true"]) > [data-extra]` is
+  `display: none`. The DOM stays complete, and resizing across 640px in
+  either state needs no code (checked: collapsed and expanded, 375 → 800 →
+  375px). Their lazy images are not fetched while hidden: scrolling the
+  whole collapsed page fetched the 6 shown images and none of the other 6;
+  expanding and scrolling fetched all 6.
+- **Image height on phones:** with full-height images the collapsed section
+  was ~2,860px, over the ~2,700px target, so (the optional step) the image
+  box is 168px tall on phones (`object-fit: cover`, same files and
+  `sizes`); 16:10 from 640px.
+- **The button:** under the grid, full width, 48px, 16px label, the ghost
+  style (no glow) with a chevron that turns over when expanded. A real
+  `<button type="button">` with `aria-expanded` and
+  `aria-controls="projects-grid"`. Labels: `PROJECTS_SHOW_MORE_LABEL` with
+  the count filled in ("Show 6 more projects") and
+  `PROJECTS_SHOW_FEWER_LABEL` ("Show fewer projects"). Only rendered when
+  there are more projects than the count; `sm:hidden` from 640px.
+- **Expanding:** the cards appear above the button (it moved from 381px to
+  2,419px on screen) and the page does not scroll (`scrollY` unchanged, no
+  scroll events). Focus moves to the first new card's heading
+  (`tabIndex={-1}`) with `preventScroll` for a tap or click; from the
+  keyboard (click `detail` 0) focus is allowed to bring the heading on screen
+  so the focus is visible. "6 more projects shown"
+  (`PROJECTS_SHOWN_ANNOUNCEMENT`) goes into a visually hidden
+  `role="status"`, cleared on collapse.
+- **Collapsing:** focus stays on the button; if the section's top is then
+  above the screen it is scrolled back to (smooth, instant under reduced
+  motion, as set on `<html>`), heading 121px from the top, clear of the top
+  bar.
+- **Motion:** the new cards rise in through the section's existing scroll
+  entrance (`useReveal`), which never saw them while hidden; once only.
+  Reduced motion: they just appear.
+- **State:** memory only; a reload starts collapsed.
+- Stats, Skills, About and Contact heights are unchanged (1739, 853, 1502,
+  1371px at 375).
+
 ## 12. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

@@ -1422,6 +1422,15 @@
     opacity: 0;
 }
 
+/* Projects on phones (ProjectSection): only the first cards until "Show
+   more". `display: none`, so their lazy images are not fetched until shown.
+   40rem is Tailwind's `sm`, the same breakpoint that hides the button. */
+@media (width < 40rem) {
+    #projects-grid:not([data-expanded="true"]) > [data-extra] {
+        display: none;
+    }
+}
+
 /* Accent outline that fades in on hover and keyboard focus (opacity only).
    Replaces the old scale-on-hover. */
 .card-ring {

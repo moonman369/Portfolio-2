@@ -1,7 +1,16 @@
-import { ArrowRight, ExternalLink, Github } from "lucide-react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { ArrowRight, ChevronDown, ExternalLink, Github } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { PROJECTS, GITHUB_URL } from "../context/constants";
+import {
+  PROJECTS,
+  PROJECTS_MOBILE_INITIAL_COUNT,
+  PROJECTS_SHOW_FEWER_LABEL,
+  PROJECTS_SHOW_MORE_LABEL,
+  PROJECTS_SHOWN_ANNOUNCEMENT,
+  GITHUB_URL,
+} from "../context/constants";
 import { useReveal } from "../hooks/useReveal";
 import {
   PROJECT_IMAGE_HEIGHT,
@@ -13,6 +22,16 @@ import SectionHeading from "./SectionHeading";
 
 // The first projects get more room.
 const FEATURED_COUNT = 2;
+
+// Phones show the first PROJECTS_MOBILE_INITIAL_COUNT cards and a button for
+// the rest. The hiding is CSS (index.css, `#projects-grid`): cards past the
+// count carry `data-extra` and are `display: none` under 640px unless the
+// grid is `data-expanded="true"`. So the DOM stays complete, resizing across
+// 640px needs no code, and the hidden cards' lazy images are not fetched
+// until they show. "Expanded" lives in memory only.
+const EXTRA_COUNT = Math.max(0, PROJECTS.length - PROJECTS_MOBILE_INITIAL_COUNT);
+const SHOW_MORE_LABEL = PROJECTS_SHOW_MORE_LABEL.replace("{count}", EXTRA_COUNT);
+const SHOWN_ANNOUNCEMENT = PROJECTS_SHOWN_ANNOUNCEMENT.replace("{count}", EXTRA_COUNT);
 
 // Rendered widths: featured cards are half the row on large screens, the
 // rest a third; two columns on tablets; full width on phones.
@@ -52,6 +71,37 @@ const linkIconClass =
 
 const ProjectSection = () => {
   const { ref, pending } = useReveal();
+  const [expanded, setExpanded] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
+  const firstExtraHeadingRef = useRef(null);
+
+  // Showing more: the new cards appear above the button (which moves down;
+  // the page does not scroll), focus moves to the first new card's heading
+  // and a polite status says how many were added. They rise in through the
+  // section's scroll entrance, which has not seen them yet. Showing fewer:
+  // focus stays on the button; if the top of the section is then above the
+  // screen, it is brought back into view (smooth unless reduced motion, as
+  // set on <html>).
+  const toggle = (event) => {
+    if (!expanded) {
+      flushSync(() => {
+        setExpanded(true);
+        setAnnouncement(SHOWN_ANNOUNCEMENT);
+      });
+      // A tap or click (detail > 0) must not scroll the page; from the
+      // keyboard, let focus bring the heading on screen so it can be seen.
+      firstExtraHeadingRef.current?.focus({ preventScroll: event.detail > 0 });
+      return;
+    }
+    flushSync(() => {
+      setExpanded(false);
+      setAnnouncement("");
+    });
+    const section = ref.current;
+    if (section && section.getBoundingClientRect().top < 0) {
+      section.scrollIntoView({ block: "start" });
+    }
+  };
 
   return (
     <section
@@ -69,19 +119,28 @@ const ProjectSection = () => {
           Featured Projects
         </SectionHeading>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5 lg:gap-6">
+        <div
+          id="projects-grid"
+          data-expanded={expanded}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-5 lg:gap-6"
+        >
           {PROJECTS.map((project, index) => {
             const featured = index < FEATURED_COUNT;
+            const extra = index >= PROJECTS_MOBILE_INITIAL_COUNT;
+            const firstExtra = index === PROJECTS_MOBILE_INITIAL_COUNT;
             return (
               <article
                 key={project.id}
                 data-reveal
+                data-extra={extra || undefined}
                 className={cn(
                   "surface card-ring group flex flex-col overflow-hidden rounded-xl border border-border bg-card/85",
                   featured ? "lg:col-span-3" : "lg:col-span-2",
                 )}
               >
-                <div className="relative aspect-[16/10] overflow-hidden border-b border-border bg-muted">
+                {/* 168px tall on phones (cropped by object-cover), so the
+                    list is shorter; 16:10 from 640px. */}
+                <div className="relative aspect-[16/10] max-sm:aspect-auto max-sm:h-[10.5rem] overflow-hidden border-b border-border bg-muted">
                   {project.image ? (
                     <ProjectImage
                       image={project.image}
@@ -110,6 +169,8 @@ const ProjectSection = () => {
 
                 <div className="flex flex-1 flex-col gap-4 p-5 md:p-6">
                   <h3
+                    ref={firstExtra ? firstExtraHeadingRef : undefined}
+                    tabIndex={firstExtra ? -1 : undefined}
                     className={cn(
                       "font-heading font-semibold text-foreground",
                       featured ? "text-h3" : "text-lg leading-snug",
@@ -156,6 +217,31 @@ const ProjectSection = () => {
             );
           })}
         </div>
+
+        {EXTRA_COUNT > 0 && (
+          <div className="mt-5 sm:hidden">
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={expanded}
+              aria-controls="projects-grid"
+              className="btn-ghost w-full"
+            >
+              {expanded ? PROJECTS_SHOW_FEWER_LABEL : SHOW_MORE_LABEL}
+              <ChevronDown
+                size={18}
+                aria-hidden="true"
+                className={cn(
+                  "transition-transform duration-(--motion-base) ease-moon-out",
+                  expanded && "rotate-180",
+                )}
+              />
+            </button>
+            <p role="status" className="sr-only">
+              {announcement}
+            </p>
+          </div>
+        )}
 
         <div data-reveal className="mt-12">
           <a

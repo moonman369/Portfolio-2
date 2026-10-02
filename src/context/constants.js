@@ -380,3 +380,13 @@ export const MOON_CAPTION_VIEWING_SHORT = "{phase}";
 export const HERO_CTA_RESUME_SHORT = "Résumé";
 // Accessible name of the hero résumé button (contains either visible label).
 export const HERO_CTA_RESUME_ARIA_LABEL = "Download résumé";
+
+// ---- Shorter Projects list on phones (round 5) ----
+// Under 640px the Projects grid shows this many cards (in PROJECTS order)
+// and a button for the rest; from 640px every project shows.
+export const PROJECTS_MOBILE_INITIAL_COUNT = 6;
+// {count} is the number of hidden projects.
+export const PROJECTS_SHOW_MORE_LABEL = "Show {count} more projects";
+export const PROJECTS_SHOW_FEWER_LABEL = "Show fewer projects";
+// Announced (politely) when the hidden projects are shown.
+export const PROJECTS_SHOWN_ANNOUNCEMENT = "{count} more projects shown";
