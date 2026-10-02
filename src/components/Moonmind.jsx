@@ -19,20 +19,18 @@ import {
   MOONMIND_SUBTITLE_SHORT,
 } from "../context/constants";
 import GlowBeam from "./GlowBeam";
+import MoonLoader from "./MoonLoader";
 import MoonMark from "./MoonMark";
 import MoonmindNudge from "./MoonmindNudge";
 
 // The launcher's size: the panel grows out of it and shrinks back into it.
 const LAUNCHER_PX = 56;
 
-// Shown for the moment it takes to fetch the chat chunk the first time.
+// Shown for the moment it takes to fetch the chat chunk the first time:
+// the chat's one loader, at its first phase.
 const ChatLoading = () => (
   <div role="status" className="flex-1 min-h-0 grid place-items-center">
-    <span className="flex gap-1" aria-hidden="true">
-      <span className="w-1.5 h-1.5 rounded-full bg-primary/70" />
-      <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-      <span className="w-1.5 h-1.5 rounded-full bg-primary/30" />
-    </span>
+    <MoonLoader pulse className="text-primary" />
     <span className="sr-only">Loading Moonmind</span>
   </div>
 );

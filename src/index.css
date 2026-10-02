@@ -901,26 +901,20 @@
     transform: rotate(90deg);
 }
 
-/* Running status (MoonmindSteps): one small amber dot beside the current
-   step's name, pulsing on transform and opacity. No blur, no text effect.
-   The pipeline's current dot is plain amber (static). */
-.mm-status-dot {
-    flex-shrink: 0;
-    width: 7px;
-    height: 7px;
-    border-radius: 9999px;
-    background: hsl(var(--earthshine));
-    animation: mm-status-pulse 1.6s ease-in-out infinite alternate;
+/* Running status (MoonmindSteps): the moon loader (MoonLoader) beside the
+   current step's name. Its shadow slides on transform as stages finish;
+   the mark pulses gently on opacity, the chat's one running indicator (the
+   other continuous animation is the skeleton's breath). No blur, no text
+   effect. The panel fades in once after the 300ms hold. The pipeline's
+   current dot is plain amber (static). */
+.mm-steps-live {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
 }
-@keyframes mm-status-pulse {
-    from {
-        opacity: 1;
-        transform: scale(1);
-    }
-    to {
-        opacity: 0.4;
-        transform: scale(0.7);
-    }
+.mm-loader-shadow {
+    transition: transform var(--motion-base) var(--motion-ease-out);
+}
+.mm-loader-pulse {
+    animation: mm-breath 1.6s ease-in-out infinite alternate;
 }
 
 /* Live pipeline (MoonmindSteps): each stage fades up and its connector
@@ -1097,7 +1091,8 @@
     .mm-launcher {
         transition: none;
     }
-    .mm-status-dot,
+    .mm-loader-pulse,
+    .mm-steps-live,
     .mm-collapse[data-open] .mm-trace-row,
     .mm-collapse[data-open] .mm-trace-row::before,
     .mm-collapse[data-open] .mm-trace-row[data-nested]::after,
@@ -1110,12 +1105,11 @@
     .mm-skeleton {
         animation: none;
     }
-    /* Scoped to the chat only — nothing else on the site is affected. */
-    .mm-chat .animate-spin,
-    .mm-chat .animate-bounce,
-    .mm-chat .animate-fade-in,
     .mm-launcher {
         animation: none;
+    }
+    .mm-loader-shadow {
+        transition: none;
     }
     .mm-chat-scroll,
     .mm-chat * {

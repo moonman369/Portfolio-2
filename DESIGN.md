@@ -1311,6 +1311,36 @@ Presentation only: step data, order and live behaviour are unchanged
 - **Collapsed header after the run:** chevron, "Thought for 9s", the chip on
   the right; 44px tall (was 36px); `aria-expanded` / `aria-controls` kept.
 
+### Part 4. One loader: the moon
+
+- **`MoonLoader`** (`components/MoonLoader.jsx`, 18px): the site's moon mark
+  (the navbar/header outline ring) with its lit disc masked by a shadow disc
+  that slides sideways on `transform: translateX` (300ms ease-out) as the
+  phase grows. SVG only: no path morphing, no `filter`, no `box-shadow`.
+- **Phase:** the API does not send how many steps a run will take, so the
+  "unknown total" rule applies: one phase per finished top-level stage
+  through 0.2 → 0.45 → 0.7 → 0.85, holding on the last until the answer
+  lands. Measured on a knowledge run: shadow offset 3.6 → 3.6 → 12.6 →
+  15.3px at 0.45s, 3.5s, 6.5s and 10.5s.
+- **Where:** it *is* the status line's indicator, in amber (earthshine),
+  left of the current step's name. It replaces the Part 3 dot rather than
+  sitting beside it (one idea per element); its gentle opacity pulse is the
+  "dot pulse". It is also the panel's placeholder while the chat chunk
+  loads (it replaced the three static dots).
+- **First 300ms:** nothing. Then the steps panel fades in once with
+  "Thinking…" and the moon at its first phase if no step has arrived, else
+  the current step.
+- **Removed:** the orb and sweep (Part 3), the three dots, and the dead
+  `.mm-chat .animate-spin/-bounce/-fade-in` reduced-motion rules (nothing in
+  the chat uses them). Every remaining `.mm-*` animation has its
+  reduced-motion rule.
+- **Cost:** while a run is going the chat runs exactly two continuous
+  animations (the loader's pulse and the skeleton's breath, both opacity);
+  none when idle or after the answer; none under reduced motion (static half
+  moon, no pulse, no slide). A hidden tab pauses them: `/moonmind` now sets
+  `data-tab-hidden` too (`useOffscreenPause`), as the home page did. The
+  panel unmounts when closed, so a closed chat runs nothing.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

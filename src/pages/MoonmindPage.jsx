@@ -4,6 +4,7 @@ import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
+import { useOffscreenPause } from "../hooks/useOffscreenPause";
 import {
   MOONMIND_SUBTITLE,
   MOONMIND_SUBTITLE_SHORT,
@@ -18,6 +19,9 @@ const MoonmindPage = () => {
   const { refreshChat, refreshPending } = useMoonmind();
   const navigate = useNavigate();
   const location = useLocation();
+  // A hidden tab pauses every animation here too (the loader, the skeleton,
+  // the background), as on the home page.
+  useOffscreenPause();
 
   // Return to wherever the chat was expanded from (preserving scroll/section).
   // A direct load or a reload of /moonmind carries no internal state and has

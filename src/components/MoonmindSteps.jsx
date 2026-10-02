@@ -11,10 +11,22 @@ import {
   MOONMIND_DETAILS_LABEL,
   MOONMIND_ROUTE_LABELS,
 } from "../context/constants";
+import MoonLoader from "./MoonLoader";
 
 // Nothing shows for the first moments of a run, so a quick one never
 // flashes the panel.
 const HOLD_MS = 300;
+
+// The loader's phase. The API does not say how many steps a run will take,
+// so the moon moves through four phases, one per finished top-level stage,
+// and holds on the last until the answer lands.
+const LOADER_PHASES = [0.2, 0.45, 0.7, 0.85];
+const loaderPhase = (rows) => {
+  const finished = rows.filter(
+    (row) => row.depth === 0 && row.kind === "node" && row.state !== "running",
+  ).length;
+  return LOADER_PHASES[Math.min(finished, LOADER_PHASES.length - 1)];
+};
 
 // While running, under the status line: the top-level stages as a small
 // pipeline. Finished stages are grey with their names; the current one is
@@ -70,8 +82,10 @@ const TraceRow = ({ row, index }) => (
 // to one line; the list opens only when the visitor activates the toggle,
 // and each message keeps its own state.
 //
-//   running    one status line: a pulsing amber dot and the current step's
-//              name, once; the pipeline below it
+//   running    one status line: the moon loader (amber, pulsing gently,
+//              filling as stages finish) and the current step's name,
+//              once; the pipeline below it. Fades in after 300ms with
+//              "Thinking…" if no step has arrived yet.
 //   finished   chevron, "Thought for Ns", and the route in plain words
 //   open       the top-level steps with their durations; sub-steps behind
 //              "Details". Rows under 300ms fold into their parent.
@@ -100,6 +114,7 @@ const MoonmindSteps = ({ steps = [], isRunning = false, route, status, className
     <div
       className={cn(
         "mm-steps rounded-xl border border-border bg-muted/40 text-xs",
+        isRunning && "mm-steps-live",
         className,
       )}
     >
@@ -118,7 +133,9 @@ const MoonmindSteps = ({ steps = [], isRunning = false, route, status, className
           aria-hidden="true"
           className={cn("mm-chevron shrink-0", open && "mm-chevron-open")}
         />
-        {isRunning && <span aria-hidden="true" className="mm-status-dot" />}
+        {isRunning && (
+          <MoonLoader phase={loaderPhase(rows)} pulse className="text-earthshine" />
+        )}
         <span className={cn("flex-1 truncate", isRunning && "text-foreground")}>
           {label}
         </span>
