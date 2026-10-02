@@ -390,3 +390,20 @@ export const PROJECTS_SHOW_MORE_LABEL = "Show {count} more projects";
 export const PROJECTS_SHOW_FEWER_LABEL = "Show fewer projects";
 // Announced (politely) when the hidden projects are shown.
 export const PROJECTS_SHOWN_ANNOUNCEMENT = "{count} more projects shown";
+
+// ---- Moonmind chat redesign ----
+// Header subtitle: the full line where it fits, the short one where it would
+// otherwise be cut off (narrow headers).
+export const MOONMIND_SUBTITLE = "Ayan's portfolio assistant";
+export const MOONMIND_SUBTITLE_SHORT = "AI assistant";
+// The message list (role="log") and its pill for answers that arrived while
+// the reader was scrolled up.
+export const MOONMIND_LOG_LABEL = "Conversation";
+export const MOONMIND_JUMP_LATEST = "Jump to latest";
+// Per-answer copy action.
+export const MOONMIND_COPY_LABEL = "Copy answer";
+export const MOONMIND_COPIED = "Copied";
+// Visually hidden status: what a screen reader hears while a run is going,
+// instead of every step update.
+export const MOONMIND_STATUS_WORKING = "Working…";
+export const MOONMIND_STATUS_READY = "Answer ready";

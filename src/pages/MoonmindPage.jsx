@@ -4,6 +4,10 @@ import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
+import {
+  MOONMIND_SUBTITLE,
+  MOONMIND_SUBTITLE_SHORT,
+} from "../context/constants";
 import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
 import MoonmindChat from "../components/MoonmindChat";
@@ -38,12 +42,15 @@ const MoonmindPage = () => {
           <span className="grid place-items-center size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
             <MoonMark size={24} />
           </span>
-          <div className="flex-1 min-w-0">
+          {/* The subtitle is never cut off: the full line where it fits,
+              the short one in a narrow header (container query). */}
+          <div className="@container flex-1 min-w-0">
             <h1 className="font-heading text-2xl font-semibold leading-tight text-foreground">
               Moonmind AI
             </h1>
-            <p className="font-mono text-xs text-muted-foreground truncate">
-              Ayan's portfolio assistant
+            <p className="font-mono text-xs text-muted-foreground">
+              <span className="@max-[12rem]:hidden">{MOONMIND_SUBTITLE}</span>
+              <span className="@min-[12rem]:hidden">{MOONMIND_SUBTITLE_SHORT}</span>
             </p>
           </div>
 

@@ -1152,7 +1152,88 @@ they wrapped onto two left-aligned rows of different widths.
   be shown headless (no profile data; the autofill service does not run), so
   that check is for a real browser.
 
-## 12. Suggestions (skipped because they would change behaviour)
+## 12. Moonmind chat redesign: smooth, simple, clear
+
+Presentation only: the backend contract (`moonmindApi.js`, `moonmindRun.js`,
+endpoints, headers, payloads, polling, run/step/message shapes, storage keys
+and formats) is untouched, and so are Enter / Shift+Enter, the auto-growing
+input and its cap, sticky follow-scroll, the per-message steps toggle, the
+sources list and the starter chips' send path. Tested against a scripted
+mock of `POST /runs` and `GET /runs/:id` (Playwright request interception;
+the app's API code is not edited for tests).
+
+**Before**, as measured on the live site (desktop and 375px), plus the same
+checks re-run against the previous build with the mock:
+
+| | Before |
+| --- | --- |
+| Long answer (1,491 chars, 840px in a 516px list) | lands at the bottom; its start 340px above the view |
+| Screen readers | no `role="log"`, no live region: an answer is never announced |
+| Longest starter chip at 375px | two lines squeezed into a 44px pill |
+| Header subtitle in the panel | cut off ("Ayan's portfolio assist…") |
+| Per-message actions | none |
+| Knowledge run | ~12.0s click to answer; steps 3.0 + 3.0 (2.8 retrieving) + 3.4s; "Thought for 9s"; ~3s unaccounted |
+| Agent / capabilities / stats | ~10s / ~2s / ~4s |
+| Answer arrival | all at once (111 → 914 chars between two samples 250ms apart); empty until then |
+| While running | current step shown twice (header + last pipeline row); the mock check finds "Writing the answer" 3 times in the DOM (header, pipeline, the hidden list) |
+| Header shimmer | blurred amber smear behind the words |
+| Expanded steps | "Preparing the search 32ms", "Collecting results 34ms"; parent and child durations overlap |
+| Route chip | internal names (knowledge, agent, stats, capabilities) |
+| Step text | 11-12px mono |
+| First 300ms of a run | nothing |
+| Expand to full page | route swaps in ~11ms, no transition; the thread rewinds to the top and scrolls down for ~1s (0 → 993 → 1121); mock: 15 distinct `scrollTop` values in 1.5s desktop, 18 on a phone |
+| Minimize after a direct visit | goes to `/` with the panel closed |
+| "Refresh chat" (↻) | actually starts a new chat; "Clear" is the loudest button; focus drops to `<body>` after clearing |
+| Input on first load of `/moonmind` | once 128px tall for one line (not reproducible) |
+| Opening the panel on a phone | focuses the input (keyboard covers the starter chips) |
+| Panel on phones | `role="dialog"`, no `aria-modal`; the page behind scrolls and is reachable |
+| Chat chunk | 167.90 kB (51.64 kB gzip); page chunk 2.19 kB (0.97 kB) |
+
+### Part 1. Messages and composer
+
+- **Answer arrival** (`MoonmindChat`, layout effect): an assistant message
+  from a run is seen first without text and then with it. At that moment:
+  following along and the answer under 60% of the list's height, stay at
+  the bottom (as before); following along and longer, scroll so the message
+  starts 12px below the top of the list (250ms ease-out tween, instant with
+  reduced motion) and stop following the bottom; scrolled up, nothing moves
+  and a **"Jump to latest ↓"** pill (44px, centred above the composer) takes
+  them to the start of the newest answer; it hides once they reach the
+  bottom. Messages already complete when the list mounts never count, so
+  switching views or reopening moves nothing. Measured (mock, 1,491-char
+  answer): the answer's message starts 12px below the top in the desktop
+  panel (822px answer in a 458px list) and on a phone (522px list); the pill
+  lands it at 12px too.
+- **No CSS smooth scrolling** on the list any more (it caused the
+  rewind-and-glide on remount); programmatic moves are instant or the short
+  tween in `lib/moonmindScroll.js`, which the reader's wheel or touch
+  cancels. `overscroll-behavior: contain`, `scrollbar-gutter: stable`.
+- **Assistant text:** open layout, 65ch, line height 1.6, `text-wrap:
+  pretty`; 0.75em between paragraphs and lists, 1.1em above headings
+  (balanced). The "Moonmind" identity line stays once per group.
+- **User bubble:** one tint (`primary/12`), one radius (`rounded-2xl`), no
+  ring, right-aligned, 85% max.
+- **Copy:** under each finished answer (not the greeting, not errors), a
+  44px icon button "Copy answer" that copies the rendered text (no markdown
+  marks); its icon turns to a check and "Copied" shows for 1.5s, announced
+  through the chat's hidden status. Mouse/trackpad: fades in on hover or
+  focus of its message. Touch: always there, muted.
+- **Starter chips:** `min-height: 44px`, 10px block padding, `text-wrap:
+  balance`, a 1.5rem radius so two-line chips read as one pill (59px tall
+  at 375px for the longest).
+- **Header subtitle:** `MOONMIND_SUBTITLE` where it fits, else
+  `MOONMIND_SUBTITLE_SHORT` ("AI assistant"), chosen by a container query on
+  the title block, so it is never cut. The panel (both sizes) shows the
+  short one; the full page the full one.
+- **Accessibility:** the list is `role="log"`, `aria-live="polite"`,
+  `aria-relevant="additions"`, labelled "Conversation". The steps panel and
+  the actions row inside it are `aria-live="off"`, so step updates are not
+  read; a separate visually hidden `role="status"` says "Working…" when a run
+  starts and "Answer ready" when it ends (and "Copied").
+- **Composer:** `enterkeyhint="send"`; 16px; Send stays 44×44 and at 40%
+  opacity when empty.
+
+## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

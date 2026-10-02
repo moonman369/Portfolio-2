@@ -1,19 +1,30 @@
-import { useEffect, useRef, useState } from "react";
-import { FileText, Send } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ArrowDown, Check, Copy, FileText, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
 import { MOONMIND_WELCOME, useMoonmind } from "../context/MoonmindContext";
 import {
+  MOONMIND_COPIED,
+  MOONMIND_COPY_LABEL,
+  MOONMIND_JUMP_LATEST,
+  MOONMIND_LOG_LABEL,
   MOONMIND_STARTERS,
   MOONMIND_STARTERS_LABEL,
+  MOONMIND_STATUS_READY,
+  MOONMIND_STATUS_WORKING,
 } from "../context/constants";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { messageTop, scrollListTo } from "../lib/moonmindScroll";
 import MoonmindSteps from "./MoonmindSteps";
 import MoonMark from "./MoonMark";
 
 const MAX_INPUT_HEIGHT = 128;
 // How close to the bottom still counts as "following along".
 const STICKY_THRESHOLD_PX = 80;
+// An answer taller than this share of the list is read from its start.
+const LONG_ANSWER_SHARE = 0.6;
+const COPIED_MS = 1500;
 
 // Thinking: the same glowing orb as the steps header (see .mm-orb). Part of
 // the running state, the one place a loop is allowed; still with reduced
@@ -66,10 +77,80 @@ const MoonmindSources = ({ documents = [] }) => {
   );
 };
 
+// Copy an answer as plain text: the rendered text, not the markdown.
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Older browsers, or no clipboard permission.
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    return ok;
+  }
+};
+
+// Under a finished answer: a quiet Copy button. On desktop it shows on hover
+// or focus of its message; on touch it is always there (see .mm-actions).
+// "Copied" is announced through the chat's status, not from here, so the log
+// never reads it out as part of a message.
+const AnswerActions = ({ onCopied }) => {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = setTimeout(() => setCopied(false), COPIED_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const copy = async (event) => {
+    const answer = event.currentTarget
+      .closest("[data-msg-id]")
+      ?.querySelector(".chat-markdown");
+    if (!answer || !(await copyText(answer.innerText.trim()))) return;
+    setCopied(true);
+    onCopied();
+  };
+
+  return (
+    <div
+      aria-live="off"
+      data-active={copied || undefined}
+      className="mm-actions -ml-2.5 mt-1 flex items-center"
+    >
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={MOONMIND_COPY_LABEL}
+        title={MOONMIND_COPY_LABEL}
+        className="icon-btn text-muted-foreground hover:text-foreground"
+      >
+        {copied ? (
+          <Check size={16} aria-hidden="true" />
+        ) : (
+          <Copy size={16} aria-hidden="true" />
+        )}
+      </button>
+      {copied && (
+        <span aria-hidden="true" className="font-mono text-xs text-muted-foreground">
+          {MOONMIND_COPIED}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // Starter questions under the greeting of an empty chat. A tap sends the
 // question through the same path as typing it; nothing is sent until then.
 // They go once the conversation has a user message, and are disabled while
-// a reply is loading.
+// a reply is loading. A long one wraps onto a second line inside a taller
+// pill rather than squeezing into a 44px one.
 const StarterChips = ({ disabled, onPick }) => (
   <div
     role="group"
@@ -83,7 +164,7 @@ const StarterChips = ({ disabled, onPick }) => (
         disabled={disabled}
         onClick={() => onPick(question)}
         style={{ "--i": i }}
-        className="mm-starter min-h-11 rounded-full px-4 text-left text-sm text-foreground ring-1 ring-inset ring-primary/35 bg-primary/8 hover:bg-primary/15 disabled:opacity-50"
+        className="mm-starter min-h-11 rounded-3xl px-4 py-2.5 text-left text-sm leading-snug text-balance text-foreground ring-1 ring-inset ring-primary/35 bg-primary/8 hover:bg-primary/15 disabled:opacity-50"
       >
         {question}
       </button>
@@ -103,6 +184,9 @@ const markdownComponents = {
   },
 };
 
+const findMessage = (list, id) =>
+  list?.querySelector(`[data-msg-id="${CSS.escape(String(id))}"]`);
+
 // Shared conversation body (message list + input). Reused by the floating
 // panel and the full-page view so they share one conversation via context.
 const MoonmindChat = ({ className }) => {
@@ -114,6 +198,7 @@ const MoonmindChat = ({ className }) => {
     cancelRefresh,
     confirmRefresh,
   } = useMoonmind();
+  const reducedMotion = usePrefersReducedMotion();
   const [input, setInput] = useState("");
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -121,11 +206,23 @@ const MoonmindChat = ({ className }) => {
   // Only auto-scroll while the reader is at the bottom; never yank the view
   // away from someone scrolled up reading.
   const stickyRef = useRef(true);
+  // An answer that arrived while the reader was scrolled up: the pill takes
+  // them to its start.
+  const [jumpTo, setJumpTo] = useState(null);
+  // The visually hidden status: "Working…", "Answer ready", "Copied".
+  const [status, setStatus] = useState("");
+  // Cleared first, so the same words twice are read twice.
+  const announce = (text) => {
+    requestAnimationFrame(() => {
+      setStatus("");
+      setTimeout(() => setStatus(text), 50);
+    });
+  };
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
       const el = scrollRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
+      if (el) scrollListTo(el, el.scrollHeight);
     });
   };
 
@@ -134,7 +231,57 @@ const MoonmindChat = ({ className }) => {
     if (!el) return;
     stickyRef.current =
       el.scrollHeight - el.scrollTop - el.clientHeight < STICKY_THRESHOLD_PX;
+    if (stickyRef.current) setJumpTo(null);
   };
+
+  const scrollToMessage = (id) => {
+    const list = scrollRef.current;
+    const message = findMessage(list, id);
+    if (!message) return;
+    scrollListTo(list, messageTop(list, message), { smooth: !reducedMotion });
+  };
+
+  // An answer arriving. Each assistant message from a run is seen first
+  // without its text and then with it; that moment is the arrival. Messages
+  // already complete when the list mounts never count, so switching views or
+  // reopening the panel moves nothing.
+  //   following along, short answer   stay at the bottom (as before)
+  //   following along, long answer    show it from its start, 12px below
+  //                                   the top of the list
+  //   scrolled up                     leave them be; offer the pill
+  const textSeenRef = useRef(null);
+  useLayoutEffect(() => {
+    const seen = textSeenRef.current;
+    textSeenRef.current = new Map(messages.map((m) => [m.id, Boolean(m.content)]));
+    if (!seen) return;
+    const arrived = messages.findLast(
+      (m) => m.role === "assistant" && m.content && seen.get(m.id) === false,
+    );
+    const list = scrollRef.current;
+    if (!arrived || !list) return;
+    if (!stickyRef.current) {
+      requestAnimationFrame(() => setJumpTo(arrived.id));
+      return;
+    }
+    const message = findMessage(list, arrived.id);
+    const answer = message?.querySelector(".chat-markdown");
+    if (!answer || answer.offsetHeight < list.clientHeight * LONG_ANSWER_SHARE) {
+      return;
+    }
+    // Read it from the top. No longer following the bottom, so the
+    // follow-scroll below leaves it there.
+    stickyRef.current = false;
+    scrollListTo(list, messageTop(list, message), { smooth: !reducedMotion });
+  }, [messages, reducedMotion]);
+
+  // Screen readers hear the final answer (through the log) and two short
+  // statuses, never each step.
+  const wasLoadingRef = useRef(loading);
+  useEffect(() => {
+    if (loading === wasLoadingRef.current) return;
+    wasLoadingRef.current = loading;
+    announce(loading ? MOONMIND_STATUS_WORKING : MOONMIND_STATUS_READY);
+  }, [loading]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -175,6 +322,7 @@ const MoonmindChat = ({ className }) => {
     if (!text || loading) return;
     setInput("");
     stickyRef.current = true;
+    setJumpTo(null);
     sendMessage(text);
   };
 
@@ -196,69 +344,108 @@ const MoonmindChat = ({ className }) => {
 
   return (
     <div className={cn("mm-chat flex flex-col min-h-0", className)}>
-      {/* Messages */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="mm-chat-scroll flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3"
-      >
-        {messages.map((m, i) => {
-          const isRunning = m.status === "running";
-          const isUser = m.role === "user";
-          const startsGroup = !isUser && messages[i - 1]?.role !== m.role;
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        {/* Messages. A log: screen readers hear what is added (questions
+            and final answers); the steps panel inside opts out and the
+            run's progress goes to the status below instead. */}
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-label={MOONMIND_LOG_LABEL}
+          className="mm-chat-scroll flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3"
+        >
+          {messages.map((m, i) => {
+            const isRunning = m.status === "running";
+            const isUser = m.role === "user";
+            const startsGroup = !isUser && messages[i - 1]?.role !== m.role;
+            const finishedAnswer =
+              !isUser &&
+              Boolean(m.content) &&
+              !isRunning &&
+              m.status !== "failed" &&
+              m.id !== MOONMIND_WELCOME.id;
 
-          return (
-            <div
-              key={m.id ?? i}
-              className={cn("flex", isUser ? "justify-end" : "justify-start")}
-            >
-              {isUser ? (
-                <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-primary/12 ring-1 ring-inset ring-primary/25 text-[0.9375rem] leading-relaxed text-foreground whitespace-pre-wrap break-words">
-                  {m.content}
-                </div>
-              ) : (
-                <div className="w-full max-w-[65ch] min-w-0">
-                  {startsGroup && <AssistantIdentity />}
+            return (
+              <div
+                key={m.id ?? i}
+                data-msg-id={m.id}
+                className={cn("mm-msg flex", isUser ? "justify-end" : "justify-start")}
+              >
+                {isUser ? (
+                  <div className="max-w-[85%] px-4 py-2.5 rounded-2xl bg-primary/12 text-[0.9375rem] leading-relaxed text-foreground whitespace-pre-wrap break-words">
+                    {m.content}
+                  </div>
+                ) : (
+                  <div className="w-full max-w-[65ch] min-w-0">
+                    {startsGroup && <AssistantIdentity />}
 
-                  {/* Thinking steps: shown for every message produced by a
-                      run in this tab, and for restored messages that still
-                      carry steps. Keyed by runId so state can never carry
-                      over into a new conversation. */}
-                  {(m.live || m.steps?.length > 0) && (
-                    <MoonmindSteps
-                      key={m.runId ?? m.id}
-                      steps={m.steps}
-                      isRunning={isRunning}
-                      route={m.route}
-                      status={m.status}
-                      className={m.content ? "mb-3" : ""}
-                    />
-                  )}
+                    {/* Thinking steps: shown for every message produced by
+                        a run in this tab, and for restored messages that
+                        still carry steps. Keyed by runId so state can never
+                        carry over into a new conversation. */}
+                    {(m.live || m.steps?.length > 0) && (
+                      <div aria-live="off">
+                        <MoonmindSteps
+                          key={m.runId ?? m.id}
+                          steps={m.steps}
+                          isRunning={isRunning}
+                          route={m.route}
+                          status={m.status}
+                          className={m.content ? "mb-3" : ""}
+                        />
+                      </div>
+                    )}
 
-                  {m.content ? (
-                    <div className="chat-markdown text-[0.9375rem] leading-relaxed text-foreground break-words">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={markdownComponents}
-                      >
-                        {m.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    isRunning && !m.live && <TypingDots />
-                  )}
+                    {m.content ? (
+                      <div className="chat-markdown text-[0.9375rem] text-foreground break-words">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={markdownComponents}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      isRunning && !m.live && <TypingDots />
+                    )}
 
-                  <MoonmindSources documents={m.documents} />
-                </div>
-              )}
-            </div>
-          );
-        })}
+                    <MoonmindSources documents={m.documents} />
+                    {finishedAnswer && (
+                      <AnswerActions onCopied={() => announce(MOONMIND_COPIED)} />
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-        {onlyGreeting && (
-          <StarterChips disabled={loading} onPick={sendStarter} />
+          {onlyGreeting && (
+            <StarterChips disabled={loading} onPick={sendStarter} />
+          )}
+        </div>
+
+        {/* An answer arrived while the reader was scrolled up. */}
+        {jumpTo && (
+          <button
+            type="button"
+            onClick={() => {
+              scrollToMessage(jumpTo);
+              setJumpTo(null);
+            }}
+            className="mm-jump absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-card px-4 text-sm font-medium text-foreground shadow-lg ring-1 ring-inset ring-border hover:text-ink"
+          >
+            {MOONMIND_JUMP_LATEST}
+            <ArrowDown size={16} aria-hidden="true" />
+          </button>
         )}
       </div>
+
+      <p role="status" className="sr-only">
+        {status}
+      </p>
 
       {/* Refresh confirmation — inline, never window.confirm */}
       {refreshPending && (
@@ -303,6 +490,7 @@ const MoonmindChat = ({ className }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
+            enterKeyHint="send"
             placeholder="Ask Moonmind anything…"
             className="mm-chat-input flex-1 self-center resize-none bg-transparent px-2 py-1.5 text-base leading-relaxed text-foreground focus:outline-hidden placeholder:text-muted-foreground"
           />

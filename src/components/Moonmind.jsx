@@ -14,6 +14,10 @@ import {
   usePrefersReducedMotion,
 } from "../hooks/usePrefersReducedMotion";
 import { useMoonmindNudge } from "../hooks/useMoonmindNudge";
+import {
+  MOONMIND_SUBTITLE,
+  MOONMIND_SUBTITLE_SHORT,
+} from "../context/constants";
 import GlowBeam from "./GlowBeam";
 import MoonMark from "./MoonMark";
 import MoonmindNudge from "./MoonmindNudge";
@@ -155,12 +159,15 @@ const Moonmind = () => {
             <span className="grid place-items-center size-9 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
               <MoonMark size={20} />
             </span>
-            <div className="flex-1 min-w-0">
+            {/* The subtitle is never cut off: the full line where it fits,
+                the short one in a narrow header (container query). */}
+            <div className="@container flex-1 min-w-0">
               <p className="font-heading font-semibold leading-tight">
                 Moonmind AI
               </p>
-              <p className="font-mono text-xs text-muted-foreground leading-tight truncate">
-                Ayan's portfolio assistant
+              <p className="font-mono text-xs text-muted-foreground leading-tight">
+                <span className="@max-[12rem]:hidden">{MOONMIND_SUBTITLE}</span>
+                <span className="@min-[12rem]:hidden">{MOONMIND_SUBTITLE_SHORT}</span>
               </p>
             </div>
 
