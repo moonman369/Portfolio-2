@@ -6,15 +6,19 @@ import { waapi } from "animejs/waapi";
 import { cn } from "../lib/utils";
 import { MOONMIND_WELCOME, useMoonmind } from "../context/MoonmindContext";
 import {
+  MOONMIND_CHAT_CLEARED,
   MOONMIND_COPIED,
   MOONMIND_COPY_LABEL,
   MOONMIND_JUMP_LATEST,
   MOONMIND_LOG_LABEL,
+  MOONMIND_NEW_CHAT_STARTED,
+  MOONMIND_START_NEW_CHAT,
   MOONMIND_STARTERS,
   MOONMIND_STARTERS_LABEL,
   MOONMIND_STATUS_READY,
   MOONMIND_STATUS_WORKING,
   MOONMIND_TRY_AGAIN,
+  MOONMIND_UNDO,
   MOONMIND_WAIT_LONG,
   MOONMIND_WAIT_SLOW,
 } from "../context/constants";
@@ -244,6 +248,11 @@ const markdownComponents = {
   },
 };
 
+// Touch screens: focusing the input would open the on-screen keyboard.
+const coarsePointer = () =>
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 const findMessage = (list, id) =>
   list?.querySelector(`[data-msg-id="${CSS.escape(String(id))}"]`);
 
@@ -257,6 +266,8 @@ const MoonmindChat = ({ className }) => {
     refreshPending,
     cancelRefresh,
     confirmRefresh,
+    canUndo,
+    undoRefresh,
   } = useMoonmind();
   const reducedMotion = usePrefersReducedMotion();
   const [input, setInput] = useState("");
@@ -387,13 +398,48 @@ const MoonmindChat = ({ className }) => {
     if (stickyRef.current) scrollToBottom();
   }, [messages, loading]);
 
-  // Auto-grow the textarea up to a cap, then let it scroll.
-  useEffect(() => {
+  // Auto-grow the textarea up to a cap, then let it scroll. Empty, it is
+  // its natural one line (no measuring: a placeholder measured before the
+  // layout or the fonts settle once made it 128px tall). Measured again
+  // once the fonts are ready.
+  const fitInput = () => {
     const el = inputRef.current;
     if (!el) return;
+    if (!el.value) {
+      el.style.height = "";
+      return;
+    }
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, MAX_INPUT_HEIGHT)}px`;
-  }, [input]);
+  };
+  useEffect(fitInput, [input]);
+  useEffect(() => {
+    let live = true;
+    document.fonts?.ready.then(() => live && fitInput());
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  // After "Start new chat": focus the input on desktop; on touch, the
+  // greeting (so the keyboard stays down); and say so. Undo puts focus back
+  // in the same way, on the conversation it restored.
+  const [cleared, setCleared] = useState(0);
+  const startNewChat = () => {
+    confirmRefresh();
+    setCleared((n) => n + 1);
+  };
+  useEffect(() => {
+    if (!cleared) return;
+    if (coarsePointer()) findMessage(scrollRef.current, MOONMIND_WELCOME.id)?.focus();
+    else inputRef.current?.focus();
+    announce(MOONMIND_NEW_CHAT_STARTED);
+  }, [cleared]);
+  const undo = () => {
+    undoRefresh();
+    if (coarsePointer()) scrollRef.current?.focus();
+    else inputRef.current?.focus();
+  };
 
   // Context callbacks are new objects on every render; keep the latest in a ref
   // so the listener below is bound once per open, not once per poll.
@@ -452,6 +498,7 @@ const MoonmindChat = ({ className }) => {
           aria-live="polite"
           aria-relevant="additions"
           aria-label={MOONMIND_LOG_LABEL}
+          tabIndex={-1}
           className="mm-chat-scroll flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3"
         >
           {messages.map((m, i) => {
@@ -478,6 +525,7 @@ const MoonmindChat = ({ className }) => {
               <div
                 key={m.id ?? i}
                 data-msg-id={m.id}
+                tabIndex={m.id === MOONMIND_WELCOME.id ? -1 : undefined}
                 className={cn("mm-msg flex", isUser ? "justify-end" : "justify-start")}
               >
                 {isUser ? (
@@ -576,27 +624,43 @@ const MoonmindChat = ({ className }) => {
           <p className="flex-1 min-w-[10rem] text-sm text-foreground">
             Start a new chat? This clears the current conversation.
           </p>
+          {/* Cancel first and clearly visible; the destructive choice is a
+              plain primary button that says what it does. */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               ref={cancelRef}
               onClick={cancelRefresh}
               className={cn(
                 "min-h-11 px-4 rounded-md text-sm font-medium text-foreground",
-                "ring-1 ring-inset ring-input hover:bg-muted",
+                "bg-background ring-1 ring-inset ring-input hover:bg-muted",
               )}
             >
               Cancel
             </button>
             <button
-              onClick={confirmRefresh}
+              onClick={startNewChat}
               className={cn(
-                "min-h-11 px-4 rounded-md text-sm font-medium",
+                "min-h-11 px-4 rounded-md text-sm font-normal",
                 "bg-primary text-primary-foreground hover:opacity-90",
               )}
             >
-              Clear
+              {MOONMIND_START_NEW_CHAT}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Just cleared: a few seconds to change their mind. */}
+      {canUndo && (
+        <div className="shrink-0 flex items-center justify-center gap-1 border-t border-border px-4 text-sm text-muted-foreground">
+          <span>{MOONMIND_CHAT_CLEARED}</span>
+          <button
+            type="button"
+            onClick={undo}
+            className="min-h-11 rounded-md px-2 font-medium text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary"
+          >
+            {MOONMIND_UNDO}
+          </button>
         </div>
       )}
 

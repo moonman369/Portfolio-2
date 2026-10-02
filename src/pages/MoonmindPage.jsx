@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Minimize2, RotateCcw } from "lucide-react";
+import { Minimize2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
@@ -16,10 +16,11 @@ import StarBackground from "../components/StarBackground";
 import LightModeBackground from "../components/LightModeBackground";
 import MoonmindChat from "../components/MoonmindChat";
 import MoonMark from "../components/MoonMark";
+import MoonmindNewChat from "../components/MoonmindNewChat";
 
 const MoonmindPage = () => {
   const { isDarkMode } = useTheme();
-  const { open, refreshChat, refreshPending } = useMoonmind();
+  const { open, refreshPending } = useMoonmind();
   const reducedMotion = usePrefersReducedMotion();
   const navigate = useNavigate();
   const location = useLocation();
@@ -88,15 +89,7 @@ const MoonmindPage = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={refreshChat}
-              disabled={refreshPending}
-              aria-label="Refresh chat"
-              title="Refresh chat"
-              className={headerActionClass}
-            >
-              <RotateCcw size={17} aria-hidden="true" />
-            </button>
+            <MoonmindNewChat />
             <button
               onClick={minimize}
               aria-label="Minimize to portfolio"

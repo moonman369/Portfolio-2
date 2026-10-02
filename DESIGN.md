@@ -1382,6 +1382,43 @@ Presentation only: step data, order and live behaviour are unchanged
 - Checked with and without reduced motion: 1 view transition per switch
   with motion, 0 without; same results otherwise.
 
+### Part 6. New chat, undo, reload
+
+- **"New chat"** (`MOONMIND_NEW_CHAT_LABEL`, `aria-label` and `title`) with
+  a compose icon (`SquarePen`) in both headers, one shared component
+  (`MoonmindNewChat`). With only the greeting it is dimmed (40%) and
+  `aria-disabled` (still focusable, does nothing, no confirmation); while
+  the confirmation is open it is `disabled`, as before.
+- **Confirmation:** the same inline bar and copy ("Start a new chat? This
+  clears the current conversation."), Escape cancels, focus starts on
+  Cancel. Buttons: "Cancel" (on the page colour with a visible ring, medium
+  weight) and "Start new chat" (`MOONMIND_START_NEW_CHAT`, a plain primary
+  button at normal weight; it was "Clear", the loudest thing in the bar).
+- **After clearing:** focus goes to the input on desktop; on touch
+  (`pointer: coarse`) to the greeting (`tabindex="-1"`), so the keyboard
+  stays down. "New chat started" is announced politely.
+- **Undo:** "Chat cleared. Undo" above the composer for 6s. Undo restores
+  the previous messages and session id exactly (checked: the stored JSON
+  and the session id are byte-identical afterwards), from values kept in
+  memory only (`undoRef` in the context). They are dropped after 6s, or as
+  soon as a new message is sent; nothing is written back after that
+  (storage checked at 6.4s and 7.4s: both keys absent). A reply still in
+  flight when the chat was cleared is not restored (its run was cancelled;
+  restoring its placeholder would leave it waiting forever). The next run
+  after a new chat sends no `sessionId`, as before.
+- **Reload mid-run (verified, not changed):** with a ~15s mocked run,
+  reloading at 5s does **not** resume it: no further polls are sent, and
+  the restored conversation ends with the question and no answer (the
+  in-flight placeholder is never stored, and there is no resume path).
+  The live-site observation was a fast run that had finished before the
+  reload. Reported under Suggestions; "Reconnecting…" is not shown
+  because nothing reconnects.
+- **Input height:** empty, the input has no measured height at all (its
+  natural one line); text is measured on change and again once
+  `document.fonts.ready` resolves. With the fonts delayed 1.5s on a first
+  load of `/moonmind` it is 38px before and after; it grows to the 128px cap
+  and returns to 38px when emptied.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
@@ -1409,3 +1446,9 @@ Presentation only: step data, order and live behaviour are unchanged
   step and the answer being available. A shorter interval, long-polling or
   streaming the answer would shorten it. That is a backend/API decision, so
   the interval is unchanged.
+- **Moonmind runs do not survive a reload.** The running placeholder (with
+  its `runId`) is filtered out before the conversation is saved, so a reload
+  mid-run leaves the question unanswered and stops polling, although the run
+  finishes on the server. Storing the in-flight `runId` and polling it again
+  on load (then showing "Reconnecting…" while it does) would fix it; that
+  changes what is stored and the run lifecycle, so it was left out.

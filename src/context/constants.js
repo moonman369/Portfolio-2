@@ -427,3 +427,10 @@ export const MOONMIND_ROUTE_LABELS = {
 };
 // The disclosure inside the expanded trace that shows the sub-steps.
 export const MOONMIND_DETAILS_LABEL = "Details";
+// "New chat" (was "Refresh chat"): the header action, its confirmation and
+// what follows it.
+export const MOONMIND_NEW_CHAT_LABEL = "New chat";
+export const MOONMIND_START_NEW_CHAT = "Start new chat";
+export const MOONMIND_NEW_CHAT_STARTED = "New chat started";
+export const MOONMIND_CHAT_CLEARED = "Chat cleared.";
+export const MOONMIND_UNDO = "Undo";

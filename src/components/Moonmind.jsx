@@ -1,5 +1,5 @@
 import { Suspense, useLayoutEffect, useRef, useState } from "react";
-import { Maximize2, RotateCcw, X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { waapi } from "animejs/waapi";
 import { createSpring } from "animejs/easings/spring";
@@ -22,6 +22,7 @@ import {
 import GlowBeam from "./GlowBeam";
 import MoonLoader from "./MoonLoader";
 import MoonMark from "./MoonMark";
+import MoonmindNewChat from "./MoonmindNewChat";
 import MoonmindNudge from "./MoonmindNudge";
 
 // The launcher's size: the panel grows out of it and shrinks back into it.
@@ -37,7 +38,7 @@ const ChatLoading = () => (
 );
 
 const Moonmind = () => {
-  const { isOpen, open, close, refreshChat, refreshPending } = useMoonmind();
+  const { isOpen, open, close } = useMoonmind();
   // The intro pop-up by the entry point, on every load (see MoonmindNudge).
   useMoonmindNudge({ isOpen });
   const navigate = useNavigate();
@@ -181,15 +182,7 @@ const Moonmind = () => {
             </div>
 
             <div className="flex items-center shrink-0">
-              <button
-                onClick={refreshChat}
-                disabled={refreshPending}
-                aria-label="Refresh chat"
-                title="Refresh chat"
-                className={headerActionClass}
-              >
-                <RotateCcw size={17} aria-hidden="true" />
-              </button>
+              <MoonmindNewChat />
               <button
                 onClick={expand}
                 aria-label="Expand to full page"
