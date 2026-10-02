@@ -1233,6 +1233,44 @@ checks re-run against the previous build with the mock:
 - **Composer:** `enterkeyhint="send"`; 16px; Send stays 44×44 and at 40%
   opacity when empty.
 
+### Part 2. Waiting for the response
+
+- **Poll interval (reported, not changed):** `POLL_INTERVAL_MS = 900` in
+  `moonmindApi.js`, polls strictly sequential (the next request waits for
+  the previous one, then 900ms), backoff 1/2/4/8s on transient errors, a
+  130s deadline from the click. So an answer can land up to ~0.9s plus one
+  round trip after the backend finished; see Suggestions for the ~3s gap.
+- **Reserved space:** after the 300ms hold (so a quick run never flashes it),
+  three soft lines (90/75/55%) under the trace where the answer will go,
+  breathing once every 2s (opacity on the group: one animation). The answer
+  replaces them in place: measured 12.0px below the steps panel for both.
+  The steps panel keeps its bottom margin while running for that reason.
+- **Answer entrance:** in the same layout effect that detects the arrival
+  (before the first paint of the text), each block of the answer
+  (paragraph, list, heading) fades in and rises 8px, 240ms, 40ms apart,
+  delays capped at 160ms: every block done by 400ms (measured: 12 blocks,
+  last ends at 400ms). No typewriter. Reduced motion: none.
+- **Reassurance:** one line between the trace and the skeleton, only when
+  waiting is long: "Still working. Searching takes a few seconds." from 6s,
+  replaced by "This is taking longer than usual." from 20s
+  (`MOONMIND_WAIT_SLOW`, `MOONMIND_WAIT_LONG`); counted from when the run
+  was first seen (kept per message in module scope, so a view switch keeps
+  the real start). Gone when the answer arrives. Measured: none at 5s, the
+  first at 6.6s, the second at 21s, never both.
+- **Errors** (detection unchanged; tested with mocked responses): a failed
+  answer shows only its sentence and a "Try again" button
+  (`MOONMIND_TRY_AGAIN`, 44px) on the last message, which resends the
+  previous question through the existing send path. No trace, sources or
+  copy on a failure (a timed-out run used to say "Thought for 1s" above the
+  timeout sentence). Not offered when the chat is not configured at all.
+  Checked: a 500 on `POST /runs` ("Sorry, something went wrong…"), offline
+  (requests aborted as disconnected; same sentence; Try again works once
+  back online), and the 130s deadline with a fake clock ("That one is taking
+  longer than expected…"). "Answer ready" is not announced after a failure;
+  the log reads the sentence.
+- The old `TypingDots` (the glowing orb for a running message with no live
+  steps) is gone; the waiting area covers it.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
@@ -1254,3 +1292,9 @@ checks re-run against the previous build with the mock:
   `theme` per site theme would change the request URL, so it is left alone.
 - `ScrollToTop` sets state from a raw scroll listener; it could share the
   navbar's single animation frame.
+- **Moonmind answers arrive ~3s after the trace ends** (live knowledge run:
+  ~12.0s waited, "Thought for 9s"). The client polls every 900ms after each
+  response, so up to ~1s of that is polling; the rest is between the last
+  step and the answer being available. A shorter interval, long-polling or
+  streaming the answer would shorten it. That is a backend/API decision, so
+  the interval is unchanged.

@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, Check, Copy, FileText, Send } from "lucide-react";
+import { ArrowDown, Check, Copy, FileText, RotateCw, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { waapi } from "animejs/waapi";
 import { cn } from "../lib/utils";
 import { MOONMIND_WELCOME, useMoonmind } from "../context/MoonmindContext";
 import {
@@ -13,8 +14,13 @@ import {
   MOONMIND_STARTERS_LABEL,
   MOONMIND_STATUS_READY,
   MOONMIND_STATUS_WORKING,
+  MOONMIND_TRY_AGAIN,
+  MOONMIND_WAIT_LONG,
+  MOONMIND_WAIT_SLOW,
 } from "../context/constants";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { isMoonmindConfigured } from "../lib/moonmindApi";
+import { EASE } from "../lib/motion";
 import { messageTop, scrollListTo } from "../lib/moonmindScroll";
 import MoonmindSteps from "./MoonmindSteps";
 import MoonMark from "./MoonMark";
@@ -25,15 +31,68 @@ const STICKY_THRESHOLD_PX = 80;
 // An answer taller than this share of the list is read from its start.
 const LONG_ANSWER_SHARE = 0.6;
 const COPIED_MS = 1500;
+// Nothing shows for the first moments of a run, so a quick one never
+// flashes a placeholder.
+const WAIT_HOLD_MS = 300;
+// The one reassurance line, only when waiting is long.
+const WAIT_NOTES = [
+  [20_000, MOONMIND_WAIT_LONG],
+  [6_000, MOONMIND_WAIT_SLOW],
+];
+// Answer entrance: each block fades and rises 8px, 40ms apart, all of it
+// within 400ms.
+const ENTER_MS = 240;
+const ENTER_STEP_MS = 40;
+const ENTER_MAX_DELAY_MS = 160;
 
-// Thinking: the same glowing orb as the steps header (see .mm-orb). Part of
-// the running state, the one place a loop is allowed; still with reduced
-// motion.
-const TypingDots = () => (
-  <span className="flex py-2.5 pl-1" aria-hidden="true">
-    <span className="mm-orb mm-orb-lg" />
-  </span>
-);
+// When each run was first seen running, by message id. Module scope, so a
+// view switch mid-run keeps counting from the real start.
+const runStartedAt = new Map();
+const startOf = (id) => {
+  if (!runStartedAt.has(id)) runStartedAt.set(id, Date.now());
+  return runStartedAt.get(id);
+};
+
+// While a run is going and before its text: one calm line if it is slow,
+// then the space the answer will take (three soft lines that breathe once
+// every 2s). The answer replaces them in place. Decorative for screen
+// readers, which hear the chat's status instead.
+const Waiting = ({ id }) => {
+  const [shown, setShown] = useState(
+    () => Date.now() - startOf(id) >= WAIT_HOLD_MS,
+  );
+  useEffect(() => {
+    if (shown) return undefined;
+    const timer = setTimeout(() => setShown(true), WAIT_HOLD_MS);
+    return () => clearTimeout(timer);
+  }, [shown]);
+  const [now, setNow] = useState(() => Date.now());
+  const elapsed = now - startOf(id);
+  const note = WAIT_NOTES.find(([after]) => elapsed >= after)?.[1];
+
+  useEffect(() => {
+    const next = WAIT_NOTES.map(([after]) => after)
+      .filter((after) => after > elapsed)
+      .sort((a, b) => a - b)[0];
+    if (next == null) return undefined;
+    const timer = setTimeout(() => setNow(Date.now()), next - elapsed + 20);
+    return () => clearTimeout(timer);
+  }, [elapsed]);
+
+  if (!shown) return null;
+  return (
+    <div aria-hidden="true" className="mm-waiting">
+      {note && (
+        <p className="mb-2.5 text-sm text-muted-foreground">{note}</p>
+      )}
+      <div className="mm-skeleton space-y-2.5 pb-1">
+        <span className="block h-3 w-[90%] rounded-full" />
+        <span className="block h-3 w-[75%] rounded-full" />
+        <span className="block h-3 w-[55%] rounded-full" />
+      </div>
+    </div>
+  );
+};
 
 // Shown once per group of consecutive assistant messages, not on every one.
 const AssistantIdentity = () => (
@@ -259,6 +318,20 @@ const MoonmindChat = ({ className }) => {
     );
     const list = scrollRef.current;
     if (!arrived || !list) return;
+    // The answer comes in block by block (paragraphs, lists, headings): a
+    // fade and an 8px rise, 40ms apart, done within 400ms. Never a
+    // typewriter; nothing with reduced motion. Before the first paint, so
+    // the text never shows before its entrance.
+    const blocks = findMessage(list, arrived.id)?.querySelector(".chat-markdown")?.children;
+    if (blocks?.length && !reducedMotion) {
+      waapi.animate(blocks, {
+        opacity: [0, 1],
+        transform: ["translateY(8px)", "translateY(0px)"],
+        duration: ENTER_MS,
+        delay: (_, index) => Math.min(index * ENTER_STEP_MS, ENTER_MAX_DELAY_MS),
+        ease: EASE.out,
+      });
+    }
     if (!stickyRef.current) {
       requestAnimationFrame(() => setJumpTo(arrived.id));
       return;
@@ -275,13 +348,15 @@ const MoonmindChat = ({ className }) => {
   }, [messages, reducedMotion]);
 
   // Screen readers hear the final answer (through the log) and two short
-  // statuses, never each step.
+  // statuses, never each step. A failure is read from the log on its own.
   const wasLoadingRef = useRef(loading);
+  const failed = messages[messages.length - 1]?.status === "failed";
   useEffect(() => {
     if (loading === wasLoadingRef.current) return;
     wasLoadingRef.current = loading;
-    announce(loading ? MOONMIND_STATUS_WORKING : MOONMIND_STATUS_READY);
-  }, [loading]);
+    if (loading) announce(MOONMIND_STATUS_WORKING);
+    else if (!failed) announce(MOONMIND_STATUS_READY);
+  }, [loading, failed]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -326,10 +401,11 @@ const MoonmindChat = ({ className }) => {
     sendMessage(text);
   };
 
-  // A starter goes the same way as a typed question.
-  const sendStarter = (question) => {
+  // A starter, or "Try again", goes the same way as a typed question.
+  const send = (question) => {
     if (loading) return;
     stickyRef.current = true;
+    setJumpTo(null);
     sendMessage(question);
   };
   const onlyGreeting =
@@ -367,6 +443,15 @@ const MoonmindChat = ({ className }) => {
               !isRunning &&
               m.status !== "failed" &&
               m.id !== MOONMIND_WELCOME.id;
+            // A failed last answer offers to ask the same question again
+            // (pointless when the chat is not configured at all).
+            const retryQuestion =
+              m.status === "failed" &&
+              i === messages.length - 1 &&
+              !loading &&
+              isMoonmindConfigured
+                ? messages.findLast((q, j) => j < i && q.role === "user")?.content
+                : null;
 
             return (
               <div
@@ -386,7 +471,10 @@ const MoonmindChat = ({ className }) => {
                         a run in this tab, and for restored messages that
                         still carry steps. Keyed by runId so state can never
                         carry over into a new conversation. */}
-                    {(m.live || m.steps?.length > 0) && (
+                    {/* A failed answer is only its sentence and "Try
+                        again". */}
+                    {(m.live || m.steps?.length > 0) &&
+                      m.status !== "failed" && (
                       <div aria-live="off">
                         <MoonmindSteps
                           key={m.runId ?? m.id}
@@ -394,7 +482,7 @@ const MoonmindChat = ({ className }) => {
                           isRunning={isRunning}
                           route={m.route}
                           status={m.status}
-                          className={m.content ? "mb-3" : ""}
+                          className={m.content || isRunning ? "mb-3" : ""}
                         />
                       </div>
                     )}
@@ -409,12 +497,22 @@ const MoonmindChat = ({ className }) => {
                         </ReactMarkdown>
                       </div>
                     ) : (
-                      isRunning && !m.live && <TypingDots />
+                      isRunning && <Waiting id={m.id} />
                     )}
 
                     <MoonmindSources documents={m.documents} />
                     {finishedAnswer && (
                       <AnswerActions onCopied={() => announce(MOONMIND_COPIED)} />
+                    )}
+                    {retryQuestion && (
+                      <button
+                        type="button"
+                        onClick={() => send(retryQuestion)}
+                        className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md px-4 text-sm font-medium text-foreground ring-1 ring-inset ring-input hover:bg-muted"
+                      >
+                        <RotateCw size={16} aria-hidden="true" />
+                        {MOONMIND_TRY_AGAIN}
+                      </button>
                     )}
                   </div>
                 )}
@@ -423,7 +521,7 @@ const MoonmindChat = ({ className }) => {
           })}
 
           {onlyGreeting && (
-            <StarterChips disabled={loading} onPick={sendStarter} />
+            <StarterChips disabled={loading} onPick={send} />
           )}
         </div>
 

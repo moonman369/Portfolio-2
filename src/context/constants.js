@@ -407,3 +407,9 @@ export const MOONMIND_COPIED = "Copied";
 // instead of every step update.
 export const MOONMIND_STATUS_WORKING = "Working…";
 export const MOONMIND_STATUS_READY = "Answer ready";
+// Shown under the trace only when a run is slow: the first after 6s, replaced
+// by the second after 20s.
+export const MOONMIND_WAIT_SLOW = "Still working. Searching takes a few seconds.";
+export const MOONMIND_WAIT_LONG = "This is taking longer than usual.";
+// Under a failed answer: resends the last question.
+export const MOONMIND_TRY_AGAIN = "Try again";

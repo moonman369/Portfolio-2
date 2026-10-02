@@ -858,6 +858,27 @@
     background: transparent;
 }
 
+/* Waiting (MoonmindChat): fades in after the 300ms hold; the answer's space
+   as three soft lines that breathe once every 2s (opacity only, one
+   animation on the group). The answer replaces them in place. */
+.mm-waiting {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+}
+.mm-skeleton > span {
+    background: hsl(var(--muted-foreground) / 0.16);
+}
+.mm-skeleton {
+    animation: mm-breath 2s ease-in-out infinite alternate;
+}
+@keyframes mm-breath {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.45;
+    }
+}
+
 /* The Copy action under an answer: always there (muted) on touch; on a mouse
    or trackpad it fades in while its message is hovered or focused, and
    stays while "Copied" shows. */
@@ -1169,7 +1190,9 @@
     .mm-connector,
     .mm-dot,
     .mm-sources[open] .mm-chip,
-    .mm-starter {
+    .mm-starter,
+    .mm-waiting,
+    .mm-skeleton {
         animation: none;
     }
     /* Scoped to the chat only — nothing else on the site is affected. */
