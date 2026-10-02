@@ -368,3 +368,10 @@ export const MOONMIND_INTRO_TEXT =
   "Ask me anything about Ayan's projects, skills and experience.";
 // How long it stays before going by itself (paused while hovered/focused).
 export const MOONMIND_INTRO_MS = 7000;
+
+// ---- Phone hero (round 5) ----
+// Short moon captions for screens under 400px wide: the same states as
+// MOON_CAPTION_TODAY / MOON_CAPTION_VIEWING without their first word (and
+// "lit"), so they stay on one line beside the name.
+export const MOON_CAPTION_TODAY_SHORT = "{phase} · {lit}%";
+export const MOON_CAPTION_VIEWING_SHORT = "{phase}";

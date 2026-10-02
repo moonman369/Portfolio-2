@@ -15,7 +15,9 @@ import {
 import {
   MOON_BACK_TO_TODAY,
   MOON_CAPTION_TODAY,
+  MOON_CAPTION_TODAY_SHORT,
   MOON_CAPTION_VIEWING,
+  MOON_CAPTION_VIEWING_SHORT,
   MOON_DRAG_HINT,
   MOON_PHASE_NAMES,
 } from "../context/constants";
@@ -379,12 +381,21 @@ const HeroMoonControl = ({ className }) => {
     };
   }, [reducedMotion, finePointer, today]);
 
-  const caption = view.away
-    ? fillCaption(MOON_CAPTION_VIEWING, { phase: MOON_PHASE_NAMES[view.index] })
-    : fillCaption(MOON_CAPTION_TODAY, {
+  // Under 400px wide the caption is the short variant, on one line.
+  const captionValues = view.away
+    ? { phase: MOON_PHASE_NAMES[view.index] }
+    : {
         phase: phaseName(today),
         lit: Math.round(illuminatedFraction(today) * 100),
-      });
+      };
+  const caption = fillCaption(
+    view.away ? MOON_CAPTION_VIEWING : MOON_CAPTION_TODAY,
+    captionValues,
+  );
+  const captionShort = fillCaption(
+    view.away ? MOON_CAPTION_VIEWING_SHORT : MOON_CAPTION_TODAY_SHORT,
+    captionValues,
+  );
 
   const backToToday = () => {
     backToTodayRef.current();
@@ -408,9 +419,16 @@ const HeroMoonControl = ({ className }) => {
       >
         {moon}
       </div>
-      {/* Centred directly under the disc, below the lower tick. */}
-      <div className="moon-caption pointer-events-none absolute left-1/2 top-[88%] -translate-x-1/2 flex w-max max-w-[9.5rem] sm:max-w-none flex-col items-center text-center font-mono text-[11px] leading-snug tracking-wide text-muted-foreground">
-        <p className="text-balance">{caption}</p>
+      {/* Centred directly under the disc, below the lower tick. Phones: at
+          least as wide as the moon plus 0.75rem a side and pinned to that
+          right edge, so the text stays centred under the disc while it fits
+          and grows to the left (never off the screen) when it is longer;
+          12px, one line. */}
+      <div className="moon-caption pointer-events-none absolute max-sm:-right-3 max-sm:min-w-[calc(100%+1.5rem)] sm:left-1/2 top-[88%] sm:-translate-x-1/2 flex w-max flex-col items-center text-center font-mono text-xs sm:text-[11px] leading-snug tracking-wide text-muted-foreground">
+        <p className="whitespace-nowrap sm:whitespace-normal sm:text-balance">
+          <span className="min-[400px]:hidden">{captionShort}</span>
+          <span className="max-[400px]:hidden">{caption}</span>
+        </p>
         {view.away ? (
           <button
             type="button"

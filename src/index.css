@@ -85,6 +85,10 @@
     --text-display: clamp(3.75rem, 1.6rem + 10.5vw, 9.5rem);
     --text-display--line-height: 0.9;
     --text-display--letter-spacing: -0.04em;
+    /* The hero name on phones (under 640px): ~43px at 375px, 64px cap. */
+    --text-name: clamp(2.5rem, 11.5vw, 4rem);
+    --text-name--line-height: 1.02;
+    --text-name--letter-spacing: -0.04em;
     --text-h2: clamp(2.25rem, 1.4rem + 3.6vw, 4.25rem);
     --text-h2--line-height: 1;
     --text-h2--letter-spacing: -0.03em;
@@ -1229,11 +1233,61 @@
     }
 }
 
-/* Hero entrance hold: the animated parts stay hidden from the first paint
-   until HeroSection sets their start states (one frame later). Only present
-   when motion is allowed; the description is never held. */
-[data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
+/* Hero entrance hold: the moon stays hidden from the first paint until
+   HeroSection sets its start states (one frame later). Only present when
+   motion is allowed. Fail-safe: if that never happens (slow or failed
+   script), the moon shows anyway after 1.5s. */
+[data-entrance="pending"] .hero-moon {
     opacity: 0;
+    animation: hero-hold-release 0s linear 1.5s forwards;
+}
+@keyframes hero-hold-release {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Phone hero moon width: ~128px at 375px, 112px at the smallest, 176px cap.
+   In px, so a larger text size grows the text and not the moon. */
+#hero {
+    --hero-moon-w: clamp(112px, 46vw - 44px, 176px);
+}
+/* Large text on a phone: once the screen is under 20em wide (never at the
+   default text size, where the narrowest phone is 320px = 20em; at 200%
+   text, every phone), the name no longer fits beside the moon, so the text
+   column starts below the moon block instead: from the moon's top (a
+   quarter of its width above the column) down to its caption (88%), the
+   caption with the 44px "back to today" button (~4.5rem), plus 1rem. */
+@media (max-width: 19.99em) {
+    #hero .paper-scrim {
+        padding-top: calc(var(--hero-moon-w) * 0.63 + 5.5rem);
+    }
+}
+
+/* Hero entrance for the handle and the social icons: a short rise with a
+   quick opacity ramp, on CSS alone (no JavaScript, so a slow script can
+   never leave them hidden). The name, role line, tagline and buttons are not
+   animated: they are final from the first paint. */
+@media (prefers-reduced-motion: no-preference) {
+    #hero [data-hero-rise] {
+        animation:
+            hero-rise var(--motion-slow, 600ms) var(--motion-ease-expo, ease-out) both,
+            hero-fade var(--motion-base, 300ms) var(--motion-ease-out, ease-out) both;
+        animation-delay: var(--rise-delay, 0ms);
+    }
+    #hero [data-hero-rise] ~ [data-hero-rise] {
+        --rise-delay: 120ms;
+    }
+}
+@keyframes hero-rise {
+    from {
+        transform: translateY(14px);
+    }
+}
+@keyframes hero-fade {
+    from {
+        opacity: 0;
+    }
 }
 
 /* ---- Glow buttons ----
@@ -1415,7 +1469,7 @@
 /* Printing shows everything, whether or not it has scrolled into view. */
 @media print {
     [data-reveal-pending] [data-reveal],
-    [data-entrance="pending"] :is([data-hero-rise], [data-hero-name], .hero-moon) {
+    [data-entrance="pending"] .hero-moon {
         opacity: 1 !important;
     }
 }

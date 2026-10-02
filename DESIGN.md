@@ -152,6 +152,7 @@ exactly as Fontsource ships them.
 | Step | Size | Line height | Tracking |
 | --- | --- | --- | --- |
 | Display (hero name) | `clamp(3.75rem, 1.6rem + 10.5vw, 9.5rem)` | 0.9 | -0.04em |
+| Name on phones (< 640px, `text-name`) | `clamp(2.5rem, 11.5vw, 4rem)` | 1.02 | -0.04em |
 | H2 (section) | `clamp(2.25rem, 1.4rem + 3.6vw, 4.25rem)` | 1.0 | -0.03em |
 | H3 | `clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem)` | 1.15 | -0.015em |
 | Lead | 1.125rem | 1.6 | 0 |
@@ -222,11 +223,13 @@ Each of these was measured with a Chrome trace at 4x CPU slowdown.
 - **No runtime `splitText` for the name.** It cost 160–240ms of main thread
   at load (it initialises `Intl.Segmenter` and rebuilds the DOM) to split two
   words that are already separate elements. The name is split in the markup
-  instead: one `overflow: clip` mask per line (padded so descenders are never
-  cut), and each line rises out of its mask on WAAPI. Same visual, ~0ms.
+  instead, one block per word. (Until round 5 each line rose out of an
+  `overflow: clip` mask on WAAPI; the name is now final from the first
+  paint, see §11.)
   Splitting per *character* was also rejected on quality grounds: per-character
   inline-blocks break kerning pairs like "Ay" at display size.
-- **The entrance starts the frame after the first paint.** CSS holds the
+- **The entrance starts the frame after the first paint.** (Since round 5
+  this is the moon only; see §11.) CSS holds the
   animated parts hidden (`[data-entrance="pending"]`, only rendered when motion
   is allowed), then `useAnimeScope({ afterPaint: true })` sets up the
   animations on a settled layout and releases the hold. Doing it in a layout
@@ -929,7 +932,103 @@ These supersede the matching points in Parts 1 and 2 above.
   from `/moonmind`; 375 and 320px in both themes; reduced motion is a fade;
   and the starter chips as before. Behaviour 35/35, idle 10/10, moon 22/22.
 
-## 11. Suggestions (skipped because they would change behaviour)
+## 11. Round 5: phone hero, hero buttons, shorter Projects list, contact autofill
+
+Phones are anything under 640px. Tablet (640px+) and desktop were checked
+pixel for pixel against the previous build (reduced motion, both themes,
+640×900, 768×1024, 1024×768, 1280×800): identical, apart from the button
+heights in Part B.
+
+### Part A. Type size and the first screen
+
+Before, measured at 375×812 (dark):
+
+| | Before | After |
+| --- | --- | --- |
+| Name | 65px (`text-display`), two lines | 43px (`text-name`, `clamp(2.5rem, 11.5vw, 4rem)`), line height 1.02; 40px at 320, 41.4 at 360, 44.9 at 390, 47.6 at 414, 64px from ~557px up |
+| Smallest hero text | 11px: moon caption (2 lines), "drag the moon", "my AI assistant" | 12px: moon caption (1 line), "drag the moon" |
+| Role line | 13px | 14px |
+| Eyebrow (handle) | 12px | 13px |
+| Tagline | 16px / 1.375 | 16px / 1.5 |
+| Top padding | `6.75rem` + centring; content 157-651px, moon 84px | `5.5rem` (top bar + 24px) and `5.25rem` at the bottom (bottom nav + 24px); content centred between them, the moon with it |
+| LCP | the tagline; the name painted 0.7-1.0s after first paint (4x CPU) | the tagline, painted in the same frame as the name (see below) |
+
+- **Phone type scale in the hero:** name (fluid), tagline 16px / 1.5, role
+  line 14px, eyebrow 13px, captions 12px, button labels 16px.
+- **Name:** one word per line beside the moon on every phone (on one line it
+  would have to sit below the moon's caption, leaving the space beside the
+  moon empty). `text-wrap: balance`; words never break. From 640px the
+  display size applies as before (so there is a step from 64px to ~93px at
+  640px; tablet is unchanged by design).
+- **Moon caption:** `MOON_CAPTION_TODAY_SHORT` ("last quarter · 68%") and
+  `MOON_CAPTION_VIEWING_SHORT` ("last quarter") under 400px; the full
+  versions from 400px. Both are rendered and one is `display: none`, so
+  there is no resize logic and only one is read. 12px, one line. On phones
+  the caption box is at least the moon's width plus 0.75rem a side and
+  pinned to that right edge, so it stays centred under the disc while it
+  fits and grows to the left (never off screen) when longer (e.g. the full
+  caption at 414px).
+- **Moon on phones:** `--hero-moon-w: clamp(112px, 46vw - 44px, 176px)`
+  (the old formula, floor raised from 108 to 112px; in px so a larger text
+  size grows the text, not the moon). It hangs from the content block
+  (`container` is `relative` on phones), rising by a quarter of its width so
+  its disc is level with the handle and its caption, including the 44px
+  "back to today" button, ends above the role line. Checked in both the
+  "today" and "away" states at 320-639px: no overlap, closest gap 7.7px
+  (375px, the button's box against "Engineer").
+- **Vertical rhythm:** the top bar ends at 64px, the bottom nav starts at
+  innerHeight - 57px. At 375×667 the content (moon tick to social icons) runs
+  ~87-569px (23px below the top bar, 41px above the bottom nav); at 375×812
+  ~159-641px (bottom nav 755px); 390×844 ~172-659px.
+- **First screen:**
+
+  | Size | Buttons end | Social icons end | Bottom nav |
+  | --- | --- | --- | --- |
+  | 320×568 | 504px | 572px (scroll) | 511px |
+  | 360×640 | 485px | 553px | 583px |
+  | 375×667 | 501px | 569px | 610px |
+  | 375×812 | 573px | 641px | 755px |
+  | 390×844 | 591px | 659px | 787px |
+  | 414×896 | 620px | 688px | 839px |
+
+  Measured with the "Ask Moonmind" second line hidden on phones (Part B
+  lays the buttons out side by side; these are the stacked numbers).
+- **Name at first paint / LCP.** The name, role line, tagline and buttons
+  are no longer part of the entrance: final colour, size and position from
+  the first paint. The handle and the social icons rise in on a CSS
+  animation (`hero-rise`: 14px of transform over 600ms, opacity over 300ms,
+  the icons 120ms later) that needs no JavaScript; the moon keeps its JS
+  draw, held by `[data-entrance="pending"] .hero-moon`, which now has a CSS
+  fail-safe (`hero-hold-release`, 1.5s) so a slow or failed script cannot
+  leave it hidden. Element Timing at 375×812, 4x CPU, 3 runs: before, the
+  name rendered 668-1020ms after FCP; after, at FCP (1840-2232ms, the same
+  timestamp as FCP and LCP).
+  **The LCP element on a phone is still the tagline,** not the name: Chrome
+  picks the largest text box, and at the requested 40-46px the name's lines
+  are ~4,000px² each against the tagline's ~22,000px². Making the name win
+  would need a larger name or a smaller tagline, so this is reported rather
+  than forced. On desktop (1280×800) the name is now the LCP element (it
+  was hidden at first paint before).
+- **Large text:** at 200% text size the name and moon used to collide
+  (also before this round). Under 20em wide (never at the default text size,
+  where the narrowest phone is 320px = 20em; at 200% text, every phone; also
+  any page zoom that takes a phone under 320 CSS px), the text column starts
+  below the moon block instead of beside it. Swept 100/125/150/175/200% text
+  (Chrome's default-font-size setting) at 320-639px and 200% page zoom, in
+  the "away" state: no text overlaps the moon or caption, nothing runs off
+  the screen.
+- **Moonmind intro card on phones:** its close button was already 44×44px.
+  On a phone it sits above the bottom nav, over the end of the hero: it
+  covered the social icons at 375×812 and 360×780 and the buttons at
+  375×667. It now checks, before it is shown (it stays `visibility: hidden`,
+  so it is not announced either), whether it would cover any child of a
+  `data-nudge-avoid` element on screen (the hero's text column), and if so
+  it is skipped for that load. When and how often it appears is otherwise
+  unchanged. Result: skipped at 375×667, 360×780, 375×812; shown at 390×844,
+  414×896, 768×1024, 1024×768 and 1280×800 (none of which it covers). If the
+  visitor has already scrolled past the hero, it shows as before.
+
+## 12. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
