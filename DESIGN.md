@@ -1463,6 +1463,32 @@ Presentation only: step data, order and live behaviour are unchanged
   uses `safe-area-inset-right`. The panel already used the insets on every
   side; the page header and composer keep the top and bottom ones.
 
+### Verification fixes (after the seven parts)
+
+Recording one full question and answer at 4x CPU showed the chat
+re-rendering, and re-parsing the markdown of every answer, on every poll
+(~1s), every keystroke and every status change (this was already so before
+the redesign; the new statuses made it more frequent). Three changes,
+behaviour unchanged:
+
+- **Markdown parsed once per answer** (`Markdown`, `memo` on the content):
+  polls no longer produce long tasks at all (before: 50-200ms each at 4x).
+- **The composer owns its text** (`Composer`): a keystroke re-renders the
+  input, not the conversation. Enter / Shift+Enter, the auto-grow and its
+  cap, and the fonts-ready measuring move with it unchanged.
+- **The answer's entrance is CSS** (`.mm-enter`: the same fade + 8px rise,
+  40ms apart, done within 400ms), and the arrival is measured and scrolled
+  in the next frame instead of inside React's commit. Measuring in the
+  commit had forced the new answer's layout into the same task (one
+  ~0.65-0.72s task at 4x instead of two ~0.3s ones). The follow-scroll
+  waits for that decision, so the list still never moves twice; the
+  entrance is marked done after 400ms so a re-render cannot cut it short,
+  and is remembered per answer (module scope) so a remount never replays
+  it.
+
+All part checks were re-run after this (panel and page, both themes, phone
+and desktop): same results.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

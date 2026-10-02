@@ -879,6 +879,31 @@
     }
 }
 
+/* A fresh answer comes in block by block: fade + 8px rise, 240ms, 40ms
+   apart, the last starting by 160ms (all done within 400ms). Transform and
+   opacity only; nothing with reduced motion. */
+.mm-enter > * {
+    animation: mm-enter 240ms var(--motion-ease-out) both;
+}
+.mm-enter > :nth-child(2) {
+    animation-delay: 40ms;
+}
+.mm-enter > :nth-child(3) {
+    animation-delay: 80ms;
+}
+.mm-enter > :nth-child(4) {
+    animation-delay: 120ms;
+}
+.mm-enter > :nth-child(n + 5) {
+    animation-delay: 160ms;
+}
+@keyframes mm-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
 /* The Copy action under an answer: always there (muted) on touch; on a mouse
    or trackpad it fades in while its message is hovered or focused, and
    stays while "Copied" shows. */
@@ -1131,7 +1156,8 @@
     .mm-sources[open] .mm-chip,
     .mm-starter,
     .mm-waiting,
-    .mm-skeleton {
+    .mm-skeleton,
+    .mm-enter > * {
         animation: none;
     }
     .mm-launcher {

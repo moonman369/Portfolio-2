@@ -1,8 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowDown, Check, Copy, FileText, RotateCw, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { waapi } from "animejs/waapi";
 import { cn } from "../lib/utils";
 import { MOONMIND_WELCOME, useMoonmind } from "../context/MoonmindContext";
 import {
@@ -24,7 +23,6 @@ import {
 } from "../context/constants";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { isMoonmindConfigured } from "../lib/moonmindApi";
-import { EASE } from "../lib/motion";
 import { messageTop, scrollListTo } from "../lib/moonmindScroll";
 import { listMemory, viewReady } from "../lib/moonmindView";
 import MoonmindSteps from "./MoonmindSteps";
@@ -44,16 +42,18 @@ const WAIT_NOTES = [
   [20_000, MOONMIND_WAIT_LONG],
   [6_000, MOONMIND_WAIT_SLOW],
 ];
-// Answer entrance: each block fades and rises 8px, 40ms apart, all of it
-// within 400ms.
-const ENTER_MS = 240;
-const ENTER_STEP_MS = 40;
-const ENTER_MAX_DELAY_MS = 160;
 
+// Answers seen waiting and then arriving, by message id: each plays its
+// entrance once, and a remount (switching views, reopening the panel) never
+// replays it.
+const seenRunning = new Set();
+const entered = new Set();
 // When each run was first seen running, by message id. Module scope, so a
 // view switch mid-run keeps counting from the real start.
 const runStartedAt = new Map();
+
 const startOf = (id) => {
+  seenRunning.add(id);
   if (!runStartedAt.has(id)) runStartedAt.set(id, Date.now());
   return runStartedAt.get(id);
 };
@@ -253,8 +253,103 @@ const coarsePointer = () =>
   typeof window.matchMedia === "function" &&
   window.matchMedia("(pointer: coarse)").matches;
 
+// An answer's text. Parsing markdown is the costliest thing the chat does,
+// so it happens once per answer: typing, polls and status changes
+// re-render the list but never re-parse a finished answer. A fresh answer
+// comes in block by block (`mm-enter`, CSS: a fade and an 8px rise, 40ms
+// apart, done within 400ms; never a typewriter; nothing with reduced
+// motion), from its first frame, with no script involved.
+const Markdown = memo(function Markdown({ content, entering }) {
+  return (
+    <div
+      className={cn(
+        "chat-markdown text-[0.9375rem] text-foreground break-words",
+        entering && "mm-enter",
+      )}
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+});
+
 const findMessage = (list, id) =>
   list?.querySelector(`[data-msg-id="${CSS.escape(String(id))}"]`);
+
+// The input and Send button. Its text lives here, so typing re-renders only
+// the composer, never the conversation above it. Enter sends, Shift+Enter is
+// a newline; the textarea grows to a cap and then scrolls. Empty, it is its
+// natural one line (no measuring: a placeholder measured before the layout
+// or the fonts settled once made it 128px tall); measured again once the
+// fonts are ready.
+const fitInput = (el) => {
+  if (!el) return;
+  if (!el.value) {
+    el.style.height = "";
+    return;
+  }
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, MAX_INPUT_HEIGHT)}px`;
+};
+
+const Composer = ({ inputRef, loading, onSend }) => {
+  const [input, setInput] = useState("");
+
+  useEffect(() => fitInput(inputRef.current), [input, inputRef]);
+  useEffect(() => {
+    let live = true;
+    document.fonts?.ready.then(() => live && fitInput(inputRef.current));
+    return () => {
+      live = false;
+    };
+  }, [inputRef]);
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput("");
+    onSend(text);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="shrink-0 border-t border-border p-3">
+      <div className="flex items-end gap-2 rounded-2xl border border-input bg-background pl-2 pr-1.5 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
+        <textarea
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={1}
+          enterKeyHint="send"
+          placeholder="Ask Moonmind anything…"
+          className="mm-chat-input flex-1 self-center min-h-11 resize-none bg-transparent px-2 py-[9px] text-base leading-relaxed text-foreground focus:outline-hidden placeholder:text-muted-foreground"
+        />
+        <button
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          aria-label="Send message"
+          className={cn(
+            "shrink-0 grid place-items-center size-11 rounded-xl",
+            "bg-primary text-primary-foreground",
+            "transition-transform duration-(--motion-fast) ease-moon-out",
+            "enabled:hover:-translate-y-px enabled:active:translate-y-0",
+            "disabled:opacity-40",
+          )}
+        >
+          <Send size={18} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Shared conversation body (message list + input). Reused by the floating
 // panel and the full-page view so they share one conversation via context.
@@ -270,7 +365,6 @@ const MoonmindChat = ({ className }) => {
     undoRefresh,
   } = useMoonmind();
   const reducedMotion = usePrefersReducedMotion();
-  const [input, setInput] = useState("");
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const cancelRef = useRef(null);
@@ -340,43 +434,47 @@ const MoonmindChat = ({ className }) => {
   //   following along, long answer    show it from its start, 12px below
   //                                   the top of the list
   //   scrolled up                     leave them be; offer the pill
+  // Measured in the next frame, not inside React's commit: rendering a long
+  // answer is costly already, and forcing its layout in the same task made
+  // one ~0.7s task (4x CPU) out of two ~0.3s ones. The follow-scroll waits
+  // for the decision (arrivingRef), so the list never moves twice.
   const textSeenRef = useRef(null);
+  const arrivingRef = useRef(null);
   useLayoutEffect(() => {
     const seen = textSeenRef.current;
     textSeenRef.current = new Map(messages.map((m) => [m.id, Boolean(m.content)]));
-    if (!seen) return;
+    if (!seen) return undefined;
     const arrived = messages.findLast(
       (m) => m.role === "assistant" && m.content && seen.get(m.id) === false,
     );
-    const list = scrollRef.current;
-    if (!arrived || !list) return;
-    // The answer comes in block by block (paragraphs, lists, headings): a
-    // fade and an 8px rise, 40ms apart, done within 400ms. Never a
-    // typewriter; nothing with reduced motion. Before the first paint, so
-    // the text never shows before its entrance.
-    const blocks = findMessage(list, arrived.id)?.querySelector(".chat-markdown")?.children;
-    if (blocks?.length && !reducedMotion) {
-      waapi.animate(blocks, {
-        opacity: [0, 1],
-        transform: ["translateY(8px)", "translateY(0px)"],
-        duration: ENTER_MS,
-        delay: (_, index) => Math.min(index * ENTER_STEP_MS, ENTER_MAX_DELAY_MS),
-        ease: EASE.out,
-      });
-    }
+    if (!arrived) return undefined;
+    // Marked once its entrance (400ms) is over, so a re-render meanwhile
+    // keeps the animation running.
+    setTimeout(() => entered.add(arrived.id), 450);
     if (!stickyRef.current) {
-      requestAnimationFrame(() => setJumpTo(arrived.id));
-      return;
+      const frame = requestAnimationFrame(() => setJumpTo(arrived.id));
+      return () => cancelAnimationFrame(frame);
     }
-    const message = findMessage(list, arrived.id);
-    const answer = message?.querySelector(".chat-markdown");
-    if (!answer || answer.offsetHeight < list.clientHeight * LONG_ANSWER_SHARE) {
-      return;
-    }
-    // Read it from the top. No longer following the bottom, so the
-    // follow-scroll below leaves it there.
-    stickyRef.current = false;
-    scrollListTo(list, messageTop(list, message), { smooth: !reducedMotion });
+    arrivingRef.current = arrived.id;
+    const frame = requestAnimationFrame(() => {
+      arrivingRef.current = null;
+      const list = scrollRef.current;
+      const message = findMessage(list, arrived.id);
+      const answer = message?.querySelector(".chat-markdown");
+      if (!answer) return;
+      if (answer.offsetHeight < list.clientHeight * LONG_ANSWER_SHARE) {
+        scrollListTo(list, list.scrollHeight);
+        return;
+      }
+      // Read it from the top. No longer following the bottom, so the
+      // follow-scroll leaves it there.
+      stickyRef.current = false;
+      scrollListTo(list, messageTop(list, message), { smooth: !reducedMotion });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      arrivingRef.current = null;
+    };
   }, [messages, reducedMotion]);
 
   // Screen readers hear the final answer (through the log) and two short
@@ -409,31 +507,8 @@ const MoonmindChat = ({ className }) => {
   }, []);
 
   useEffect(() => {
-    if (stickyRef.current) scrollToBottom();
+    if (stickyRef.current && !arrivingRef.current) scrollToBottom();
   }, [messages, loading]);
-
-  // Auto-grow the textarea up to a cap, then let it scroll. Empty, it is
-  // its natural one line (no measuring: a placeholder measured before the
-  // layout or the fonts settle once made it 128px tall). Measured again
-  // once the fonts are ready.
-  const fitInput = () => {
-    const el = inputRef.current;
-    if (!el) return;
-    if (!el.value) {
-      el.style.height = "";
-      return;
-    }
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, MAX_INPUT_HEIGHT)}px`;
-  };
-  useEffect(fitInput, [input]);
-  useEffect(() => {
-    let live = true;
-    document.fonts?.ready.then(() => live && fitInput());
-    return () => {
-      live = false;
-    };
-  }, []);
 
   // After "Start new chat": focus the input on desktop; on touch, the
   // greeting (so the keyboard stays down); and say so. Undo puts focus back
@@ -473,16 +548,7 @@ const MoonmindChat = ({ className }) => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [refreshPending]);
 
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    setInput("");
-    stickyRef.current = true;
-    setJumpTo(null);
-    sendMessage(text);
-  };
-
-  // A starter, or "Try again", goes the same way as a typed question.
+  // A typed question, a starter, or "Try again": all the same way.
   const send = (question) => {
     if (loading) return;
     stickyRef.current = true;
@@ -491,13 +557,6 @@ const MoonmindChat = ({ className }) => {
   };
   const onlyGreeting =
     messages.length === 1 && messages[0].id === MOONMIND_WELCOME.id;
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
 
   return (
     <div className={cn("mm-chat flex flex-col min-h-0", className)}>
@@ -571,14 +630,10 @@ const MoonmindChat = ({ className }) => {
                     )}
 
                     {m.content ? (
-                      <div className="chat-markdown text-[0.9375rem] text-foreground break-words">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={markdownComponents}
-                        >
-                          {m.content}
-                        </ReactMarkdown>
-                      </div>
+                      <Markdown
+                        content={m.content}
+                        entering={seenRunning.has(m.id) && !entered.has(m.id)}
+                      />
                     ) : (
                       isRunning && <Waiting id={m.id} />
                     )}
@@ -678,35 +733,7 @@ const MoonmindChat = ({ className }) => {
         </div>
       )}
 
-      {/* Input (fixed) */}
-      <div className="shrink-0 border-t border-border p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-input bg-background pl-2 pr-1.5 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            enterKeyHint="send"
-            placeholder="Ask Moonmind anything…"
-            className="mm-chat-input flex-1 self-center min-h-11 resize-none bg-transparent px-2 py-[9px] text-base leading-relaxed text-foreground focus:outline-hidden placeholder:text-muted-foreground"
-          />
-          <button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            aria-label="Send message"
-            className={cn(
-              "shrink-0 grid place-items-center size-11 rounded-xl",
-              "bg-primary text-primary-foreground",
-              "transition-transform duration-(--motion-fast) ease-moon-out",
-              "enabled:hover:-translate-y-px enabled:active:translate-y-0",
-              "disabled:opacity-40",
-            )}
-          >
-            <Send size={18} aria-hidden="true" />
-          </button>
-        </div>
-      </div>
+      <Composer inputRef={inputRef} loading={loading} onSend={send} />
     </div>
   );
 };
