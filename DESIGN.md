@@ -1341,6 +1341,47 @@ Presentation only: step data, order and live behaviour are unchanged
   `data-tab-hidden` too (`useOffscreenPause`), as the home page did. The
   panel unmounts when closed, so a closed chat runs nothing.
 
+### Part 5. Panel ↔ full page
+
+- **Scroll position** (`lib/moonmindView.js` `listMemory`, memory only):
+  the list's distance from its bottom is saved on every scroll and when a
+  view's chat unmounts, and restored in the new view's first layout effect,
+  before its first paint: within 80px of the bottom means "at the bottom" and
+  lands exactly there; otherwise the same distance from the bottom. No
+  animated scroll at all (the CSS smooth scrolling that caused the rewind is
+  gone, Part 1). Measured by sampling `scrollTop` every 30ms for 1.5s after
+  each switch: expand and minimize, desktop and 375px phone, **0 changes, one
+  value** each time (before: 15-18 distinct values sweeping from 0); reading
+  300px up in the panel → 300px up on the page.
+- **Transition:** `switchView` wraps the navigation in
+  `document.startViewTransition` where supported and motion is allowed. The
+  chat container is `view-transition-name: mm-chat` in both views (the panel
+  and the page's chat box), so the panel grows into the page and the page
+  shrinks back into the panel; the rest cross-fades; 280ms ease-out.
+  React Router commits navigation asynchronously, so the update callback
+  resolves when the new view's chat signals `viewReady()` (mounted, scroll
+  restored), with an 800ms fallback. Reduced motion or no API: an instant
+  switch, same end state. Router calls and `state: { from, internal: true }`
+  are unchanged.
+- **The panel itself doesn't animate when it comes back:** if it mounts
+  already open (returning from the page), there is no launcher morph and no
+  fade; the transition is the only motion. Opens from the page still morph.
+- **Minimize reopens the panel:** it sets the panel open in the Moonmind
+  context (which outlives the route) and then navigates as before:
+  `navigate(-1)` after an internal expand, else to `from` or `/`. A
+  `reopenChat` flag in history state was not used: `navigate(-1)` cannot
+  carry state, and the context already does the job. A direct visit to
+  `/moonmind` then Minimize now lands on `/` with the panel open and the
+  conversation in it (was: closed). Browser back and forward are unchanged:
+  back from the page shows the home page with the panel as it was, forward
+  renders the page; a direct visit's back still leaves.
+- **Keyboard:** on the full page, Escape minimizes, except while the
+  new-chat confirmation is open (Escape cancels that, as before) or during
+  an IME composition (`isComposing` / keyCode 229). The input keeps focus
+  after switching on desktop (autofocus on mount; phones in Part 7).
+- Checked with and without reduced motion: 1 view transition per switch
+  with motion, 0 without; same results otherwise.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

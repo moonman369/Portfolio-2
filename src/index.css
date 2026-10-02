@@ -1072,6 +1072,29 @@
     display: none;
 }
 
+/* Panel <-> full page (lib/moonmindView.js): the chat container carries the
+   same view-transition name in both views, so it grows into the page and
+   shrinks back; the rest cross-fades. 280ms ease-out. Reduced motion never
+   starts a transition. */
+.mm-view {
+    view-transition-name: mm-chat;
+}
+::view-transition-group(mm-chat) {
+    animation-duration: 280ms;
+    animation-timing-function: var(--motion-ease-out);
+}
+::view-transition-old(mm-chat),
+::view-transition-new(mm-chat) {
+    animation-duration: 280ms;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 280ms;
+}
+
 /* The launcher fades back in under the panel as it closes. */
 .mm-launcher {
     transition:

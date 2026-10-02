@@ -1,7 +1,10 @@
+import { useEffect, useRef } from "react";
 import { Minimize2, RotateCcw } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
+import { switchView } from "../lib/moonmindView";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
 import { useOffscreenPause } from "../hooks/useOffscreenPause";
@@ -16,7 +19,8 @@ import MoonMark from "../components/MoonMark";
 
 const MoonmindPage = () => {
   const { isDarkMode } = useTheme();
-  const { refreshChat, refreshPending } = useMoonmind();
+  const { open, refreshChat, refreshPending } = useMoonmind();
+  const reducedMotion = usePrefersReducedMotion();
   const navigate = useNavigate();
   const location = useLocation();
   // A hidden tab pauses every animation here too (the loader, the skeleton,
@@ -26,14 +30,39 @@ const MoonmindPage = () => {
   // Return to wherever the chat was expanded from (preserving scroll/section).
   // A direct load or a reload of /moonmind carries no internal state and has
   // no entry of ours to go back to, so it falls through to home rather than
-  // stepping out of the site.
-  const minimize = () => {
-    if (location.state?.internal) {
-      navigate(-1);
-      return;
-    }
-    navigate(location.state?.from || "/");
-  };
+  // stepping out of the site. Either way the floating panel is open when the
+  // page comes back, with the same conversation: that is what "minimize"
+  // promises. Its open state lives in the Moonmind context, which outlives
+  // the route, so it is set before navigating (a flag in the history state
+  // would be lost with navigate(-1)). The page shrinks into the panel with a
+  // view transition where supported.
+  const minimize = () =>
+    switchView(
+      () => {
+        open();
+        if (location.state?.internal) navigate(-1);
+        else navigate(location.state?.from || "/");
+      },
+      { reducedMotion },
+    );
+
+  // Escape minimizes, unless the new-chat confirmation is open (Escape
+  // cancels that) or an IME composition is in progress.
+  const minimizeRef = useRef(minimize);
+  const pendingRef = useRef(refreshPending);
+  useEffect(() => {
+    minimizeRef.current = minimize;
+    pendingRef.current = refreshPending;
+  });
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== "Escape" || e.isComposing || e.keyCode === 229) return;
+      if (e.defaultPrevented || pendingRef.current) return;
+      minimizeRef.current();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <div className="h-[100dvh] text-foreground relative flex flex-col overflow-hidden">
@@ -85,7 +114,7 @@ const MoonmindPage = () => {
         </div>
 
         {/* Chat container — only the messages scroll; header + input stay put */}
-        <div className="flex-1 min-h-0 mb-[max(1rem,env(safe-area-inset-bottom))] rounded-2xl overflow-hidden flex flex-col bg-background border border-border shadow-xl">
+        <div className="mm-view flex-1 min-h-0 mb-[max(1rem,env(safe-area-inset-bottom))] rounded-2xl overflow-hidden flex flex-col bg-background border border-border shadow-xl">
           <MoonmindChat className="flex-1 min-h-0" />
         </div>
       </div>

@@ -7,6 +7,7 @@ import { cn } from "../lib/utils";
 import { DURATION, EASE, SPRING } from "../lib/motion";
 import { headerActionClass } from "../lib/moonmindUi";
 import { MoonmindChatLazy, moonmindIntentProps } from "../lib/lazyChat";
+import { switchView } from "../lib/moonmindView";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useVisualViewportVars } from "../hooks/useVisualViewportVars";
 import {
@@ -54,15 +55,20 @@ const Moonmind = () => {
   const canMorph = desktop && !reducedMotion;
   const [exiting, setExiting] = useState(false);
   const [wasOpen, setWasOpen] = useState(isOpen);
+  // Already open when this mounts: the visitor is coming back from the full
+  // page, and the view transition (or an instant switch) shows the panel.
+  // No launcher morph and no fade for that, only for opens from here.
+  const [quiet, setQuiet] = useState(isOpen);
   if (wasOpen !== isOpen) {
     setWasOpen(isOpen);
     setExiting(!isOpen && canMorph);
+    if (!isOpen) setQuiet(false);
   }
   const showPanel = isOpen || exiting;
 
   useLayoutEffect(() => {
     const panel = panelRef.current;
-    if (!panel || !canMorph || (!isOpen && !exiting)) return undefined;
+    if (!panel || !canMorph || quiet || (!isOpen && !exiting)) return undefined;
 
     const { width, height } = panel.getBoundingClientRect();
     const collapsed = `scale(${LAUNCHER_PX / width}, ${LAUNCHER_PX / height})`;
@@ -101,12 +107,17 @@ const Moonmind = () => {
           }),
         ];
     return () => animations.forEach((animation) => animation.cancel());
-  }, [isOpen, exiting, canMorph]);
+  }, [isOpen, exiting, canMorph, quiet]);
 
+  // The panel grows into the full page (a view transition where supported).
   const expand = () =>
-    navigate("/moonmind", {
-      state: { from: `${location.pathname}${location.hash}`, internal: true },
-    });
+    switchView(
+      () =>
+        navigate("/moonmind", {
+          state: { from: `${location.pathname}${location.hash}`, internal: true },
+        }),
+      { reducedMotion },
+    );
 
   return (
     <>
@@ -140,8 +151,8 @@ const Moonmind = () => {
           inert={!isOpen}
           aria-hidden={!isOpen || undefined}
           className={cn(
-            "mm-panel fixed z-[60] flex flex-col overflow-hidden rounded-2xl",
-            canMorph ? "origin-bottom-right" : "animate-fade-in",
+            "mm-panel mm-view fixed z-[60] flex flex-col overflow-hidden rounded-2xl",
+            canMorph ? "origin-bottom-right" : !quiet && "animate-fade-in",
             "bg-background border border-border shadow-xl",
             "sm:inset-auto sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
             "sm:w-96 sm:h-[600px] sm:max-h-[80vh]",

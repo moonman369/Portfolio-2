@@ -22,6 +22,7 @@ import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { isMoonmindConfigured } from "../lib/moonmindApi";
 import { EASE } from "../lib/motion";
 import { messageTop, scrollListTo } from "../lib/moonmindScroll";
+import { listMemory, viewReady } from "../lib/moonmindView";
 import MoonmindSteps from "./MoonmindSteps";
 import MoonMark from "./MoonMark";
 
@@ -285,13 +286,33 @@ const MoonmindChat = ({ className }) => {
     });
   };
 
+  const fromBottom = (el) => el.scrollHeight - el.scrollTop - el.clientHeight;
+
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    stickyRef.current =
-      el.scrollHeight - el.scrollTop - el.clientHeight < STICKY_THRESHOLD_PX;
+    listMemory.fromBottom = fromBottom(el);
+    stickyRef.current = listMemory.fromBottom < STICKY_THRESHOLD_PX;
     if (stickyRef.current) setJumpTo(null);
   };
+
+  // Mounting in a view (panel or full page): put the reader back where they
+  // were in the other one, instantly and before the first paint. At the
+  // bottom stays at the bottom; higher up keeps the same distance from it.
+  // Then let a view transition capture this view (lib/moonmindView.js).
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const atBottom = listMemory.fromBottom < STICKY_THRESHOLD_PX;
+    el.scrollTop = atBottom
+      ? el.scrollHeight
+      : el.scrollHeight - el.clientHeight - listMemory.fromBottom;
+    stickyRef.current = atBottom;
+    viewReady();
+    return () => {
+      listMemory.fromBottom = fromBottom(el);
+    };
+  }, []);
 
   const scrollToMessage = (id) => {
     const list = scrollRef.current;
