@@ -1072,6 +1072,12 @@
     display: none;
 }
 
+/* The full page follows the visual viewport (keyboard up: shorter). */
+.mm-page {
+    top: var(--vv-top, 0px);
+    height: var(--vv-height, 100dvh);
+}
+
 /* Panel <-> full page (lib/moonmindView.js): the chat container carries the
    same view-transition name in both views, so it grows into the page and
    shrinks back; the rest cross-fades. 280ms ease-out. Reduced motion never

@@ -114,7 +114,7 @@ const MoonmindSources = ({ documents = [] }) => {
 
   return (
     <details className="mm-sources mt-3 text-xs">
-      <summary className="inline-flex min-h-8 items-center gap-2 rounded-full px-3 font-mono text-muted-foreground ring-1 ring-inset ring-border select-none hover:text-foreground">
+      <summary className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 font-mono text-muted-foreground ring-1 ring-inset ring-border select-none hover:text-foreground">
         Sources · {documents.length}
       </summary>
       {/* Chips stagger in when the disclosure opens (see .mm-sources). */}
@@ -390,8 +390,22 @@ const MoonmindChat = ({ className }) => {
     else if (!failed) announce(MOONMIND_STATUS_READY);
   }, [loading, failed]);
 
+  // Desktop: ready to type. Touch: no autofocus (the keyboard would cover
+  // the starter chips); the input focuses when tapped.
   useEffect(() => {
-    inputRef.current?.focus();
+    if (!coarsePointer()) inputRef.current?.focus();
+  }, []);
+
+  // When the list gets shorter (the on-screen keyboard opening, a resize),
+  // a reader at the bottom stays at the latest message.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(() => {
+      if (stickyRef.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -675,7 +689,7 @@ const MoonmindChat = ({ className }) => {
             rows={1}
             enterKeyHint="send"
             placeholder="Ask Moonmind anything…"
-            className="mm-chat-input flex-1 self-center resize-none bg-transparent px-2 py-1.5 text-base leading-relaxed text-foreground focus:outline-hidden placeholder:text-muted-foreground"
+            className="mm-chat-input flex-1 self-center min-h-11 resize-none bg-transparent px-2 py-[9px] text-base leading-relaxed text-foreground focus:outline-hidden placeholder:text-muted-foreground"
           />
           <button
             onClick={handleSend}

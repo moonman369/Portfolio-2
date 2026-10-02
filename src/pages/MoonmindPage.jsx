@@ -8,6 +8,7 @@ import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
 import { useOffscreenPause } from "../hooks/useOffscreenPause";
+import { useVisualViewportVars } from "../hooks/useVisualViewportVars";
 import {
   MOONMIND_SUBTITLE,
   MOONMIND_SUBTITLE_SHORT,
@@ -27,6 +28,8 @@ const MoonmindPage = () => {
   // A hidden tab pauses every animation here too (the loader, the skeleton,
   // the background), as on the home page.
   useOffscreenPause();
+  const pageRef = useRef(null);
+  useVisualViewportVars(pageRef);
 
   // Return to wherever the chat was expanded from (preserving scroll/section).
   // A direct load or a reload of /moonmind carries no internal state and has
@@ -66,11 +69,16 @@ const MoonmindPage = () => {
   }, []);
 
   return (
-    <div className="h-[100dvh] text-foreground relative flex flex-col overflow-hidden">
+    // Fixed to the visual viewport, so the composer stays above an on-screen
+    // keyboard and the list shrinks instead (useVisualViewportVars).
+    <div
+      ref={pageRef}
+      className="mm-page fixed inset-x-0 text-foreground flex flex-col overflow-hidden"
+    >
       {/* Same background as the site */}
       {isDarkMode ? <StarBackground /> : <LightModeBackground />}
 
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto px-[max(1rem,env(safe-area-inset-left))] pt-[env(safe-area-inset-top)]">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
         {/* Header (fixed) */}
         <div className="paper-scrim flex items-center gap-3 py-4 shrink-0 text-left">
           <span className="grid place-items-center size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">

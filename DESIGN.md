@@ -1419,6 +1419,50 @@ Presentation only: step data, order and live behaviour are unchanged
   load of `/moonmind` it is 38px before and after; it grows to the 128px cap
   and returns to 38px when emptied.
 
+### Part 7. Phones and accessibility
+
+- **No autofocus on touch** (`pointer: coarse`): opening the panel or
+  loading `/moonmind` never focuses the input (the keyboard would cover the
+  starters); the panel focuses the dialog itself (`tabindex="-1"`, no
+  visible ring) so screen readers land inside it. Desktop keeps focusing
+  the input. Measured at 375px: active element = the dialog (was the
+  textarea); on the full page, not the textarea.
+- **Modal under 640px** (`Moonmind.jsx`, `lib/inertOutside.js`):
+  `aria-modal="true"`; everything outside the panel is `inert` (walking up
+  from the panel and marking siblings; restored exactly on close); Tab and
+  Shift+Tab wrap inside the panel; the page is locked with
+  `overflow: hidden` plus `scrollbar-gutter: stable` (no jump; measured: a
+  wheel over the page leaves `scrollY` at 600). A dim backdrop
+  (`bg-background/70`, kept out of the inert set) sits behind the panel and
+  closes it on tap, which is also what tapping the (now covered) bottom-nav
+  button used to do.
+- **At every size:** Escape closes the panel (not while the new-chat
+  confirmation is open, which takes Escape itself, nor during IME
+  composition), and focus returns to the element that opened it if it is
+  still on screen (the navbar pill, the bottom-nav button, the hero
+  button), else the launcher, else the bottom-nav button. The brief asked
+  for the launcher at 640px+; returning to the actual opener is the usual
+  dialog pattern and covers the navbar pill, and the launcher is the
+  fallback. From 640px the panel stays non-modal (no `aria-modal`, nothing
+  inert, page scrolls).
+- **Keyboard on phones:** the panel already follows the visual viewport
+  (`useVisualViewportVars`); the full page now does too (fixed to
+  `--vv-top` / `--vv-height`). The list keeps a reader at the bottom when it
+  gets shorter (`ResizeObserver`). Simulated by shrinking the viewport to
+  480px: panel composer bottom 381px, page composer 441px, both inside the
+  480px; the list stays at the latest message.
+- **Both themes** (axe-core `color-contrast` + ARIA rules on the panel and
+  the page, with an answer, sources and the expanded trace, dark and
+  light, 320, 375 and 1280px): 0 violations. Panel and page are solid page
+  colour (no blur over scrolling content).
+- **Sizes:** smallest chat text 12px, input 16px, no horizontal scroll at
+  320 and 375px; every tap target in the chat is at least 44×44 (raised: the
+  steps header 36 → 44, Sources 32 → 44, the input 38 → 44; inline links
+  inside answers are text and exempt).
+- **Safe areas:** the full page's right padding used the left inset; it now
+  uses `safe-area-inset-right`. The panel already used the insets on every
+  side; the page header and composer keep the top and bottom ones.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

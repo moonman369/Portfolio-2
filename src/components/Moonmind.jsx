@@ -1,4 +1,4 @@
-import { Suspense, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Maximize2, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { waapi } from "animejs/waapi";
@@ -8,6 +8,7 @@ import { DURATION, EASE, SPRING } from "../lib/motion";
 import { headerActionClass } from "../lib/moonmindUi";
 import { MoonmindChatLazy, moonmindIntentProps } from "../lib/lazyChat";
 import { switchView } from "../lib/moonmindView";
+import { inertOutside, trapTab } from "../lib/inertOutside";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useVisualViewportVars } from "../hooks/useVisualViewportVars";
 import {
@@ -38,7 +39,7 @@ const ChatLoading = () => (
 );
 
 const Moonmind = () => {
-  const { isOpen, open, close } = useMoonmind();
+  const { isOpen, open, close, refreshPending } = useMoonmind();
   // The intro pop-up by the entry point, on every load (see MoonmindNudge).
   useMoonmindNudge({ isOpen });
   const navigate = useNavigate();
@@ -110,6 +111,76 @@ const Moonmind = () => {
     return () => animations.forEach((animation) => animation.cancel());
   }, [isOpen, exiting, canMorph, quiet]);
 
+  // ---- Dialog behaviour ----
+  // Under 640px the panel covers most of the screen, so it is modal: the page
+  // behind is inert and does not scroll, Tab stays inside, a tap on the dim
+  // backdrop closes it. From 640px it stays non-modal. At any size Escape
+  // closes it and focus goes back to what opened it (else the launcher, or
+  // the bottom-nav button). On touch screens nothing focuses the input (the
+  // keyboard would cover the starters); focus lands on the dialog instead.
+  const modal = !desktop;
+  const launcherRef = useRef(null);
+  const openerRef = useRef(null);
+  const closeRef = useRef(close);
+  const pendingRef = useRef(refreshPending);
+  useEffect(() => {
+    closeRef.current = close;
+    pendingRef.current = refreshPending;
+  });
+
+  const returnFocus = () => {
+    const target = [
+      openerRef.current,
+      launcherRef.current,
+      document.querySelector("[data-moonmind-anchor=bar]"),
+    ].find((el) => el?.isConnected && el.getClientRects().length > 0);
+    target?.focus({ preventScroll: true });
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) return undefined;
+    const active = document.activeElement;
+    openerRef.current = active && active !== document.body ? active : null;
+    if (window.matchMedia?.("(pointer: coarse)").matches) {
+      panelRef.current?.focus({ preventScroll: true });
+    }
+    // A frame after closing, once the launcher is back (it renders only
+    // while closed).
+    return () => requestAnimationFrame(returnFocus);
+  }, [isOpen]);
+
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (event.isComposing || event.keyCode === 229) return;
+      // The new-chat confirmation takes Escape for itself.
+      if (pendingRef.current) return;
+      closeRef.current();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!isOpen || !modal || !panel) return undefined;
+    const restoreInert = inertOutside(panel);
+    // Lock the page behind without a jump: keep the scrollbar's gutter.
+    const root = document.documentElement;
+    const previous = [root.style.overflow, root.style.scrollbarGutter];
+    root.style.scrollbarGutter = "stable";
+    root.style.overflow = "hidden";
+    const onKeyDown = (event) => trapTab(panel, event);
+    panel.addEventListener("keydown", onKeyDown);
+    return () => {
+      restoreInert();
+      [root.style.overflow, root.style.scrollbarGutter] = previous;
+      panel.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen, modal]);
+
   // The panel grows into the full page (a view transition where supported).
   const expand = () =>
     switchView(
@@ -125,6 +196,7 @@ const Moonmind = () => {
       {/* Floating bot button (desktop only) — shown when the chat is closed */}
       {!isOpen && (
         <button
+          ref={launcherRef}
           onClick={open}
           {...moonmindIntentProps}
           aria-label="Open Moonmind chat"
@@ -145,14 +217,29 @@ const Moonmind = () => {
       {/* Right after the launcher, so keyboard users meet it in order. */}
       <MoonmindNudge anchor="launcher" />
 
+      {/* Phones: the dim backdrop of the modal panel; a tap closes it. */}
+      {isOpen && modal && (
+        <div
+          aria-hidden="true"
+          data-modal-keep
+          onClick={close}
+          className={cn(
+            "mm-scrim fixed inset-0 z-[59] bg-background/70",
+            !quiet && "animate-fade-in",
+          )}
+        />
+      )}
+
       {/* Chat panel */}
       {showPanel && (
         <div
           ref={panelRef}
           inert={!isOpen}
           aria-hidden={!isOpen || undefined}
+          aria-modal={(isOpen && modal) || undefined}
+          tabIndex={-1}
           className={cn(
-            "mm-panel mm-view fixed z-[60] flex flex-col overflow-hidden rounded-2xl",
+            "mm-panel mm-view fixed z-[60] flex flex-col overflow-hidden rounded-2xl focus:outline-none",
             canMorph ? "origin-bottom-right" : !quiet && "animate-fade-in",
             "bg-background border border-border shadow-xl",
             "sm:inset-auto sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
