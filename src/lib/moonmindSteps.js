@@ -179,3 +179,23 @@ export const headerLabel = ({ rows = [], steps = [], isRunning = false }) => {
   const seconds = runDurationSeconds(steps);
   return seconds == null ? "Thought process" : `Thought for ${seconds}s`;
 };
+
+// ---- Presentation (the expanded trace and the pipeline) ----
+
+// Rows shorter than this fold into their parent: a 32ms "Preparing the
+// search" says nothing a visitor needs.
+export const MIN_ROW_MS = 300;
+
+// The rows worth showing: still running, of unknown length (tool steps), or
+// at least MIN_ROW_MS long. Order and data are untouched.
+export const visibleRows = (rows) =>
+  rows.filter(
+    (row) =>
+      row.state === "running" ||
+      row.durationMs == null ||
+      row.durationMs >= MIN_ROW_MS,
+  );
+
+// Durations in the trace: seconds, one decimal, never below 0.1s.
+export const formatStepSeconds = (ms) =>
+  Number.isFinite(ms) && ms >= 0 ? `${Math.max(0.1, ms / 1000).toFixed(1)}s` : "";

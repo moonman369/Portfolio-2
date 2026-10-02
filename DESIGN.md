@@ -1271,6 +1271,46 @@ checks re-run against the previous build with the mock:
 - The old `TypingDots` (the glowing orb for a running message with no live
   steps) is gone; the waiting area covers it.
 
+### Part 3. The steps panel (live event feed)
+
+Presentation only: step data, order and live behaviour are unchanged
+(`buildStepRows` is untouched; two presentation helpers were added to
+`moonmindSteps.js`, `visibleRows` and `formatStepSeconds`, with tests:
+17/17 pass).
+
+- **One line of truth while running:** the header is the status line, a
+  7px amber dot pulsing on transform/opacity and the current step's name,
+  once. The pipeline under it keeps finished top-level stages in grey with
+  their names; the current stage is a static amber dot without its name
+  (it is in the status line). The expanded list is rendered only while
+  open, so a closed panel never hides a second copy. Measured with the mock
+  at three points of a knowledge run: the status name appears exactly once
+  in the chat's DOM each time.
+- **No text smear:** the blurred amber sweep (`.mm-thinking`) and the
+  blurred orb (`.mm-orb`, also the old typing indicator) are gone, with
+  their keyframes and the `--mm-think` colour. No progress line either: the
+  chat already has its two continuous animations while running (this dot
+  and the skeleton's breath). The 300ms hold stays: the whole panel appears
+  only once a run has lasted 300ms.
+- **Expanded list:** top-level steps with their durations, right-aligned,
+  `tabular-nums`, in seconds with one decimal ("2.8s"). Sub-steps and tool
+  steps only under a "Details" disclosure (`MOONMIND_DETAILS_LABEL`, 44px,
+  `aria-expanded`), without durations, so parent and child times never sit
+  side by side. Any finished row under 300ms is dropped (it folds into its
+  parent): "Preparing the search" and "Collecting results" no longer show.
+  No duration is ever below 0.1s. Text is 12px (was 11px); top-level names
+  in the foreground colour, sub-steps in the muted one.
+- **Route chip in plain words** (`MOONMIND_ROUTE_LABELS`): knowledge "From
+  the portfolio", agent and its retired alias tech_web "Researched", stats
+  "Live stats", capabilities "About Moonmind", greeting "Greeting", refusal
+  "Out of scope". `action` (labelled "Preparing a response" as a step, with
+  no clear visitor-facing meaning) is not mapped and shows its raw name,
+  like any route not in the map. The raw route is always the chip's
+  `title`. The full list comes from `NODE_LABELS` in `moonmindSteps.js` and
+  the captured traces; the API code itself does not enumerate routes.
+- **Collapsed header after the run:** chevron, "Thought for 9s", the chip on
+  the right; 44px tall (was 36px); `aria-expanded` / `aria-controls` kept.
+
 ## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

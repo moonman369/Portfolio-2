@@ -901,100 +901,25 @@
     transform: rotate(90deg);
 }
 
-/* Thinking: a warm moon-glow. The steps header gets a soft light sweeping
-   across it behind the label, and an orb that breathes and ripples. Blurred
-   layers moving on transform/opacity only (compositor). */
-.mm-chat {
-    --mm-think: 47 100% 72%;
-}
-:root:not(.dark) .mm-chat {
-    --mm-think: 44 96% 56%;
-}
-/* The glow spreads softly; the steps card clips it to its rounded edge. */
-.mm-thinking {
-    position: relative;
-    isolation: isolate;
-}
-.mm-thinking::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    top: -60%;
-    left: 0;
-    width: 35%;
-    height: 220%;
-    border-radius: 9999px;
-    background: hsl(var(--mm-think) / 0.4);
-    filter: blur(14px);
-    opacity: 0;
-    animation: mm-sweep 2.2s ease-in-out infinite;
-}
-@keyframes mm-sweep {
-    0% {
-        transform: translateX(-110%);
-        opacity: 0;
-    }
-    20%,
-    80% {
-        opacity: 1;
-    }
-    100% {
-        transform: translateX(300%);
-        opacity: 0;
-    }
-}
-.mm-orb {
-    position: relative;
+/* Running status (MoonmindSteps): one small amber dot beside the current
+   step's name, pulsing on transform and opacity. No blur, no text effect.
+   The pipeline's current dot is plain amber (static). */
+.mm-status-dot {
     flex-shrink: 0;
     width: 7px;
     height: 7px;
     border-radius: 9999px;
-    background: hsl(var(--mm-think));
-    box-shadow: 0 0 6px hsl(var(--mm-think) / 0.9);
+    background: hsl(var(--earthshine));
+    animation: mm-status-pulse 1.6s ease-in-out infinite alternate;
 }
-.mm-orb-lg {
-    width: 10px;
-    height: 10px;
-}
-.mm-orb::before,
-.mm-orb::after {
-    content: "";
-    position: absolute;
-    border-radius: 9999px;
-    pointer-events: none;
-}
-/* The halo breathes. */
-.mm-orb::before {
-    inset: -5px;
-    background: hsl(var(--mm-think));
-    filter: blur(5px);
-    opacity: 0.45;
-    animation: mm-breathe 1.1s ease-in-out infinite alternate;
-}
-/* A ring ripples outwards. */
-.mm-orb::after {
-    inset: 0;
-    box-shadow: inset 0 0 0 1px hsl(var(--mm-think));
-    animation: mm-ripple 1.6s ease-out infinite;
-}
-@keyframes mm-breathe {
+@keyframes mm-status-pulse {
     from {
-        opacity: 0.2;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 0.6;
-        transform: scale(1.15);
-    }
-}
-@keyframes mm-ripple {
-    from {
-        opacity: 0.8;
+        opacity: 1;
         transform: scale(1);
     }
     to {
-        opacity: 0;
-        transform: scale(3.2);
+        opacity: 0.4;
+        transform: scale(0.7);
     }
 }
 
@@ -1031,14 +956,6 @@
 }
 .mm-dot[data-state="running"] {
     background: hsl(var(--earthshine));
-    box-shadow: 0 0 6px hsl(var(--earthshine) / 0.8);
-    animation: mm-pulse 900ms ease-in-out infinite alternate;
-}
-@keyframes mm-pulse {
-    to {
-        opacity: 0.35;
-        transform: scale(0.7);
-    }
 }
 
 /* Expanded steps (MoonmindSteps): the pipeline's connect-the-dots, run
@@ -1180,9 +1097,7 @@
     .mm-launcher {
         transition: none;
     }
-    .mm-thinking::before,
-    .mm-orb::before,
-    .mm-orb::after,
+    .mm-status-dot,
     .mm-collapse[data-open] .mm-trace-row,
     .mm-collapse[data-open] .mm-trace-row::before,
     .mm-collapse[data-open] .mm-trace-row[data-nested]::after,

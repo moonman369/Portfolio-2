@@ -413,3 +413,17 @@ export const MOONMIND_WAIT_SLOW = "Still working. Searching takes a few seconds.
 export const MOONMIND_WAIT_LONG = "This is taking longer than usual.";
 // Under a failed answer: resends the last question.
 export const MOONMIND_TRY_AGAIN = "Try again";
+// Route chip after a run: plain words for the backend's route names. A
+// route missing here shows its raw name (the raw name is always the chip's
+// title). `tech_web` is the retired alias of `agent`.
+export const MOONMIND_ROUTE_LABELS = {
+  knowledge: "From the portfolio",
+  agent: "Researched",
+  tech_web: "Researched",
+  stats: "Live stats",
+  capabilities: "About Moonmind",
+  greeting: "Greeting",
+  refusal: "Out of scope",
+};
+// The disclosure inside the expanded trace that shows the sub-steps.
+export const MOONMIND_DETAILS_LABEL = "Details";
