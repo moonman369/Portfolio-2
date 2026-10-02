@@ -368,3 +368,25 @@ export const MOONMIND_INTRO_TEXT =
   "Ask me anything about Ayan's projects, skills and experience.";
 // How long it stays before going by itself (paused while hovered/focused).
 export const MOONMIND_INTRO_MS = 7000;
+
+// ---- Phone hero (round 5) ----
+// Short moon captions for screens under 400px wide: the same states as
+// MOON_CAPTION_TODAY / MOON_CAPTION_VIEWING without their first word (and
+// "lit"), so they stay on one line beside the name.
+export const MOON_CAPTION_TODAY_SHORT = "{phase} · {lit}%";
+export const MOON_CAPTION_VIEWING_SHORT = "{phase}";
+// Short label for the résumé button when the two hero buttons share a row
+// on a phone; "Download Résumé" shows everywhere else.
+export const HERO_CTA_RESUME_SHORT = "Résumé";
+// Accessible name of the hero résumé button (contains either visible label).
+export const HERO_CTA_RESUME_ARIA_LABEL = "Download résumé";
+
+// ---- Shorter Projects list on phones (round 5) ----
+// Under 640px the Projects grid shows this many cards (in PROJECTS order)
+// and a button for the rest; from 640px every project shows.
+export const PROJECTS_MOBILE_INITIAL_COUNT = 6;
+// {count} is the number of hidden projects.
+export const PROJECTS_SHOW_MORE_LABEL = "Show {count} more projects";
+export const PROJECTS_SHOW_FEWER_LABEL = "Show fewer projects";
+// Announced (politely) when the hidden projects are shown.
+export const PROJECTS_SHOWN_ANNOUNCEMENT = "{count} more projects shown";
