@@ -4,12 +4,15 @@ import { createDrawable } from "animejs/svg";
 import { stagger } from "animejs/utils";
 import { waapi } from "animejs/waapi";
 import {
+  HERO_CTA_RESUME_ARIA_LABEL,
+  HERO_CTA_RESUME_SHORT,
   HERO_SECTION_FNAME,
   HERO_SECTION_HANDLE,
   HERO_SECTION_LNAME,
   HERO_SECTION_ROLES,
   HERO_SECTION_TAGLINE,
   HERO_MOONMIND_SUBLABEL,
+  MOONMIND_ASK_ARIA_LABEL,
   MOONMIND_ASK_LABEL,
   RESUME_URL,
 } from "../context/constants";
@@ -160,25 +163,38 @@ const HeroSection = () => {
           </p>
 
           {/* Straight after the tagline, so both buttons are on screen on
-              first load on phones. */}
-          <div className="mt-7 lg:mt-9 flex flex-wrap gap-3">
+              first load on phones. A matched pair: the same height
+              everywhere (48px minimum, stretched to the taller), and on
+              phones the same width too: two equal columns from 22.5em
+              (360px at the default text size; "Ask Moonmind" and its icon
+              need ~150px, more than half of a narrower row), one full-width
+              column below that or at large text sizes. From 640px they sit
+              side by side at their natural width, as before. */}
+          <div className="mt-7 lg:mt-9 grid grid-cols-1 min-[22.5em]:grid-cols-2 gap-3.5 sm:flex sm:flex-wrap sm:items-stretch sm:gap-3">
             <a
               href={RESUME_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary btn-glow-blue"
+              aria-label={HERO_CTA_RESUME_ARIA_LABEL}
+              className="btn-primary btn-glow-blue max-sm:px-2 min-[22.5em]:max-sm:whitespace-nowrap"
             >
               <BlueSheen />
-              <Download size={18} aria-hidden="true" /> Download Résumé
+              <Download size={18} aria-hidden="true" />
+              <span className="hidden min-[22.5em]:max-sm:inline">
+                {HERO_CTA_RESUME_SHORT}
+              </span>
+              <span className="min-[22.5em]:max-sm:hidden">Download Résumé</span>
             </a>
 
             <button
               onClick={openMoonmind}
               {...moonmindIntentProps}
-              className="btn-ghost btn-glow"
+              aria-label={MOONMIND_ASK_ARIA_LABEL}
+              className="btn-ghost btn-glow max-sm:px-2 min-[22.5em]:max-sm:whitespace-nowrap"
             >
               <GlowBeam />
               <MoonMark size={18} />
+              {/* The second line only from 640px, where there is room. */}
               <span className="flex flex-col items-start text-left leading-tight">
                 <span>{MOONMIND_ASK_LABEL}</span>
                 <span className="max-sm:hidden text-[0.6875rem] font-normal text-muted-foreground">

@@ -1028,6 +1028,57 @@ Before, measured at 375×812 (dark):
   414×896, 768×1024, 1024×768 and 1280×800 (none of which it covers). If the
   visitor has already scrolled past the hero, it shows as before.
 
+### Part B. The two hero buttons
+
+Before (375×812): a `flex flex-wrap gap-3` row; "Download Résumé" 203px
+and "Ask Moonmind / my AI assistant" 174px need 389px of a 335px row, so
+they wrapped onto two left-aligned rows of different widths.
+
+- **Phones, 22.5em (360px) to 639px:** `grid grid-cols-2`, 14px gap, the
+  row spans the content width; each button is half of it (153px at 360,
+  160.5 at 375, 168 at 390, 180 at 414, 292.5 at 639) and 48px tall.
+  Labels: the download icon + "Résumé" (`HERO_CTA_RESUME_SHORT`) and the
+  moon icon + "Ask Moonmind"; 16px, centred, 0.5rem side padding on both.
+- **Below 22.5em:** one full-width column, 14px gap, both 48px, with the full
+  "Download Résumé" label (280px wide at 320, 300px at 340).
+  **Deviation:** the brief asked for the grid from 340px. "Ask Moonmind"
+  (108px) with its 18px icon and 8px gap is 134px of content, and half of a
+  340px screen's 300px row less the gap is 143px, leaving 4px a side, so the
+  columns start at 22.5em instead, the smallest width where the label fits
+  with 8px padding (needs ~355px). In em, so at large text sizes the
+  buttons stack too.
+- **640px and up:** unchanged: side by side at natural width (203 and
+  174px), "my AI assistant" second line on the Moonmind button, both 48px
+  (`items-stretch`; the two-line label is 34px, inside the 48px minimum).
+- **Accessible names:** the résumé link has `aria-label="Download résumé"`
+  (`HERO_CTA_RESUME_ARIA_LABEL`; contains "Résumé" and "Download Résumé").
+  The hero Moonmind button had no `aria-label` (its name was its text, "Ask
+  Moonmind my AI assistant"); with the second line hidden on phones it now
+  carries the existing `MOONMIND_ASK_ARIA_LABEL` ("Ask Moonmind, AI
+  assistant"), the same name as the navbar and bottom-nav buttons.
+- **Glows:** unchanged styles. With the 14px gap the blue halo (18px) runs
+  under the dark button, which paints over it, and the dark button's own
+  blurred halo stays separate; nothing clips them (the row has no overflow
+  set; the hero's `overflow-x: clip` is 20px away). Checked in both themes
+  after ambient motion starts.
+- **Order and focus:** DOM order unchanged (moon, résumé, Moonmind, social
+  icons); both focus rings (2px, 3px offset) are complete in the grid, both
+  themes.
+- **First screen with the pair side by side:**
+
+  | Size | Buttons end | Social icons end | Bottom nav |
+  | --- | --- | --- | --- |
+  | 320×568 (stacked) | 506px | 574px (scroll) | 511px |
+  | 360×640 | 455px | 523px | 583px |
+  | 375×667 | 471px | 539px | 610px |
+  | 375×812 | 543px | 611px | 755px |
+  | 390×844 | 561px | 629px | 787px |
+  | 414×896 | 590px | 658px | 839px |
+
+  The shorter hero lets the Moonmind intro card fit again at 360×780 and
+  375×812 (it ends 23px above the card); it is still skipped at 360×640 and
+  375×667, where it would cover the buttons or icons.
+
 ## 12. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not

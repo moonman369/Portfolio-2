@@ -375,3 +375,8 @@ export const MOONMIND_INTRO_MS = 7000;
 // "lit"), so they stay on one line beside the name.
 export const MOON_CAPTION_TODAY_SHORT = "{phase} · {lit}%";
 export const MOON_CAPTION_VIEWING_SHORT = "{phase}";
+// Short label for the résumé button when the two hero buttons share a row
+// on a phone; "Download Résumé" shows everywhere else.
+export const HERO_CTA_RESUME_SHORT = "Résumé";
+// Accessible name of the hero résumé button (contains either visible label).
+export const HERO_CTA_RESUME_ARIA_LABEL = "Download résumé";
