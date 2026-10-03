@@ -6,8 +6,13 @@ import { createSpring } from "animejs/easings/spring";
 import { cn } from "../lib/utils";
 import { DURATION, EASE, SPRING } from "../lib/motion";
 import { headerActionClass } from "../lib/moonmindUi";
-import { MoonmindChatLazy, moonmindIntentProps } from "../lib/lazyChat";
-import { switchView } from "../lib/moonmindView";
+import {
+  loadMoonmindChat,
+  loadMoonmindPage,
+  MoonmindChatLazy,
+  moonmindIntentProps,
+} from "../lib/lazyChat";
+import { switchView, viewReady } from "../lib/moonmindView";
 import { useMoonmind } from "../context/MoonmindContext";
 import {
   useMediaQuery,
@@ -69,17 +74,27 @@ const Moonmind = () => {
   // chat (the bottom-nav button, the hero button, the intro card) goes
   // straight to /moonmind, before anything paints. The open state goes back
   // to closed, so the page's own Close returns here with no panel.
+  // The sheet starts once the page's code is here (usually already, warmed on
+  // touch), so the screen never freezes mid-transition waiting for it.
   useLayoutEffect(() => {
     if (!isOpen || desktop) return;
     close();
-    switchView(
-      () =>
-        navigate("/moonmind", {
-          state: { from: `${location.pathname}${location.hash}`, internal: true },
-        }),
-      { reducedMotion },
-    );
+    const go = () =>
+      switchView(
+        () =>
+          navigate("/moonmind", {
+            state: { from: `${location.pathname}${location.hash}`, internal: true },
+          }),
+        { reducedMotion, sheet: "open" },
+      );
+    Promise.all([loadMoonmindPage(), loadMoonmindChat()]).then(go, go);
   }, [isOpen, desktop, close, navigate, location.pathname, location.hash, reducedMotion]);
+
+  // Back on the home page: a view transition from the full page can capture
+  // it now. (On a phone there is no panel whose chat would say so.)
+  useLayoutEffect(() => {
+    viewReady();
+  }, []);
 
   useLayoutEffect(() => {
     const panel = panelRef.current;

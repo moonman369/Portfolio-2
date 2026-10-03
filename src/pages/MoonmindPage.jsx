@@ -54,7 +54,7 @@ const MoonmindPage = () => {
         if (location.state?.internal) navigate(-1);
         else navigate(location.state?.from || "/");
       },
-      { reducedMotion },
+      { reducedMotion, sheet: desktop ? undefined : "close" },
     );
 
   // Escape minimizes (closes on a phone), unless the new-chat confirmation is open (Escape

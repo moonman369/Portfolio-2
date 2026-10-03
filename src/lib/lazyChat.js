@@ -6,9 +6,20 @@ import { lazy } from "react";
 // panel usually opens with the code already there. Import is memoised by the
 // module system, so calling it repeatedly is free.
 export const loadMoonmindChat = () => import("../components/MoonmindChat");
+// The full page (/moonmind), which phones open directly. It is small; it is
+// warmed with the chat on intent so a phone's sheet can slide straight up.
+// Once loaded it is kept here and rendered directly (App.jsx): going through
+// React.lazy again would suspend for a render and hold the reveal ~300ms.
+let pageComponent = null;
+export const loadMoonmindPage = () =>
+  import("../pages/MoonmindPage").then((module) => {
+    pageComponent = module.default;
+    return module;
+  });
+export const loadedMoonmindPage = () => pageComponent;
 
 export const preloadMoonmindChat = () => {
-  loadMoonmindChat().catch(() => {
+  Promise.all([loadMoonmindChat(), loadMoonmindPage()]).catch(() => {
     /* offline or a stale deploy: the real open will retry and report */
   });
 };

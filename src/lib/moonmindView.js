@@ -15,8 +15,10 @@
 
 export const listMemory = { fromBottom: 0 };
 
-// The new view's chat calls `viewReady()` once it has mounted and restored
-// its scroll position; the transition captures its "after" state then.
+// The new view calls `viewReady()` once it is in place: the chat body once
+// it has mounted and restored its scroll position, and the home page's
+// Moonmind (for phones, which have no panel to wait for). The transition
+// captures its "after" state then.
 // Navigation commits asynchronously, so the update callback waits for that
 // signal (or gives up after a moment and shows whatever is there).
 let ready = null;
@@ -26,12 +28,19 @@ export const viewReady = () => {
 
 const READY_TIMEOUT_MS = 800;
 
-export const switchView = (update, { reducedMotion = false } = {}) => {
+// `sheet` ("open" | "close"): on phones the chat page is a bottom sheet over
+// the home page: it slides up to open and back down to close. The kind is
+// set as `mm-sheet-open` / `mm-sheet-close` on <html> while the transition
+// runs, and CSS (index.css, "Phones: the chat as a sheet") does the rest.
+export const switchView = (update, { reducedMotion = false, sheet } = {}) => {
   if (reducedMotion || typeof document.startViewTransition !== "function") {
     update();
     return;
   }
-  document.startViewTransition(
+  const root = document.documentElement;
+  const sheetClass = sheet ? `mm-sheet-${sheet}` : null;
+  if (sheetClass) root.classList.add(sheetClass);
+  const transition = document.startViewTransition(
     () =>
       new Promise((resolve) => {
         const timer = setTimeout(done, READY_TIMEOUT_MS);
@@ -44,4 +53,7 @@ export const switchView = (update, { reducedMotion = false } = {}) => {
         update();
       }),
   );
+  if (sheetClass) {
+    transition.finished.finally(() => root.classList.remove(sheetClass));
+  }
 };

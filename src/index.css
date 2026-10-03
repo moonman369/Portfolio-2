@@ -1097,6 +1097,47 @@
     display: none;
 }
 
+/* Phones: the chat as a sheet (lib/moonmindView.js, `sheet`). Opening, the
+   page slides up from the bottom over the home page, which dims a little;
+   closing, it slides back down and the home page brightens under it. The
+   whole page moves as one (no separate chat morph on phones). Transform and
+   opacity only; reduced motion never starts the transition. Larger screens
+   keep the panel <-> page morph below. */
+@media (max-width: 639px) {
+    /* :root raises it over the panel <-> page rule further down. */
+    :root .mm-view {
+        view-transition-name: none;
+    }
+    .mm-sheet-open::view-transition-old(root) {
+        animation: mm-sheet-dim calc(var(--motion-base) * 1.4) var(--motion-ease-out) both;
+    }
+    .mm-sheet-open::view-transition-new(root) {
+        animation: mm-sheet-up calc(var(--motion-base) * 1.4) var(--motion-ease-expo) both;
+    }
+    .mm-sheet-close::view-transition-old(root) {
+        z-index: 1;
+        animation: mm-sheet-down var(--motion-base) var(--motion-ease-inOut) both;
+    }
+    .mm-sheet-close::view-transition-new(root) {
+        animation: mm-sheet-dim var(--motion-base) var(--motion-ease-out) reverse both;
+    }
+}
+@keyframes mm-sheet-up {
+    from {
+        transform: translateY(100%);
+    }
+}
+@keyframes mm-sheet-down {
+    to {
+        transform: translateY(100%);
+    }
+}
+@keyframes mm-sheet-dim {
+    to {
+        opacity: 0.55;
+    }
+}
+
 /* The full page follows the visual viewport (keyboard up: shorter). */
 .mm-page {
     top: var(--vv-top, 0px);
