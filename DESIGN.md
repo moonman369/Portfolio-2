@@ -1577,7 +1577,20 @@ pixel-identical (full page, both themes, 640, 768, 1024, 1280px).
   320×568: 554px against the bar at 511px before this change, 524px after.
   A shorter tagline (or a shorter variant on narrow phones) would fix it.
 
-## 14. Suggestions (skipped because they would change behaviour)
+## 14. Moonmind intro card on phones: the overlap rule is gone
+
+The Round 5 rule that skipped the intro card when it would cover the hero's
+text, buttons or icons (§11, Part A) made it disappear on most real phones:
+it needs ~120px between the end of the hero and the bottom nav, which the
+deployed build had at 390×844 and 412×915 but not at 375×812 (120px) or
+412×780 (112px), and no phone has with the browser's toolbars showing. At
+the owner's request the rule is dropped: the card shows on every load on
+every size, as it did before Round 5, and on a short screen it may briefly
+cover the end of the hero until it goes (7s, close, Escape, a tap outside,
+or opening the chat). `data-nudge-avoid` and the hide-until-checked step are
+removed with it.
+
+## 15. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

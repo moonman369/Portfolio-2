@@ -37,11 +37,9 @@ import MoonMark from "./MoonMark";
 // drains over that time; hovering or focusing it pauses the countdown), or
 // on its close button, Escape, a tap outside it, or opening the chat.
 //
-// It never covers the hero: if, where it would sit, it overlaps any of the
-// hero's text, buttons or social icons on screen (the children of
-// elements marked `data-nudge-avoid`; on a phone it sits above the bottom
-// nav, over the end of the hero), it is skipped for this load. It stays hidden (visibility,
-// so it is not announced either) until that check has passed.
+// On a phone it sits above the bottom nav and may briefly cover the end of
+// the hero (its buttons or social icons on a short screen); it still shows,
+// on every load, and goes as above.
 //
 // Motion (anime.js, on WAAPI so it runs on the compositor): the card springs
 // out of its tail, its mark turns in and its lines rise one after another,
@@ -51,20 +49,6 @@ import MoonMark from "./MoonMark";
 
 const GAP_PX = 12;
 const TAIL_INSET_PX = 22; // keep the tail off the rounded corners
-
-// Would the card cover any part of the hero's text, buttons or icons that
-// is on screen?
-const coversAvoided = (rect) =>
-  [...document.querySelectorAll("[data-nudge-avoid] > *")].some((el) => {
-    const r = el.getBoundingClientRect();
-    return (
-      r.width > 0 &&
-      r.left < rect.right &&
-      rect.left < r.right &&
-      r.top < rect.bottom &&
-      rect.top < r.bottom
-    );
-  });
 
 const NudgeBubble = ({ anchor, leaving, onGone }) => {
   const { open } = useMoonmind();
@@ -93,22 +77,12 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
   }, [anchor]);
 
   // The tail points at the button: its x within the card, clamped clear of
-  // the corners. Also the scale origin. First, the card must not cover the
-  // hero's calls to action; if it would, it goes without being shown.
+  // the corners. Also the scale origin.
   const [tailX, setTailX] = useState(null);
-  const checkedRef = useRef(false);
   useLayoutEffect(() => {
     const bubble = bubbleRef.current;
     if (!bubble || !place) return;
-    const rect = bubble.getBoundingClientRect();
-    if (!checkedRef.current) {
-      checkedRef.current = true;
-      if (coversAvoided(rect)) {
-        hideNudge();
-        return;
-      }
-    }
-    const { left, width } = rect;
+    const { left, width } = bubble.getBoundingClientRect();
     setTailX(
       Math.min(width - TAIL_INSET_PX, Math.max(TAIL_INSET_PX, place.centreX - left)),
     );
@@ -262,7 +236,6 @@ const NudgeBubble = ({ anchor, leaving, onGone }) => {
           className="mm-nudge pointer-events-auto relative w-full max-w-[20rem] rounded-2xl bg-card text-left shadow-xl ring-1 ring-inset ring-primary/35"
           style={{
             opacity: 0,
-            visibility: tailX === null ? "hidden" : undefined,
             transformOrigin: tailX === null ? "50% 100%" : `${tailX}px 100%`,
           }}
         >

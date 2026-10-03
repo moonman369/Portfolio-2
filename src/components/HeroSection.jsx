@@ -116,10 +116,7 @@ const HeroSection = () => {
         <div className="hero-moon-slot pointer-events-none absolute z-20 right-[max(1.25rem,env(safe-area-inset-right))] top-[calc(var(--hero-moon-w)*-0.25)] w-(--hero-moon-w) sm:top-[calc(5.25rem+env(safe-area-inset-top))] sm:right-8 sm:w-[17rem] md:w-[21rem] lg:static lg:z-auto lg:order-2 lg:col-span-5 lg:w-full lg:max-w-[34rem] lg:justify-self-end">
           <HeroMoonControl />
         </div>
-
-        {/* data-nudge-avoid: the Moonmind intro card never covers the
-            hero's text or buttons (MoonmindNudge). */}
-        <div data-nudge-avoid className="paper-scrim relative z-10 flex flex-col lg:block lg:order-1 lg:col-span-7 text-left">
+        <div className="paper-scrim relative z-10 flex flex-col lg:block lg:order-1 lg:col-span-7 text-left">
           {/* The handle is the identity line: the moon glyph ties it to the
               hero moon and the site mark. */}
           <p
