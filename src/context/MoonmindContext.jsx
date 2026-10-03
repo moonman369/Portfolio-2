@@ -12,6 +12,26 @@ import { createRunGuard, executeRun } from "../lib/moonmindRun";
 const STORAGE_KEY = "portfolio_chat_messages";
 const SESSION_STORAGE_KEY = "portfolio_chat_session_id";
 
+// The conversation and its session id live in localStorage, so they outlast
+// the tab: closing it, or opening the site in a new one, picks the chat up
+// where it was. "New chat" clears both. Same keys and formats as before;
+// a chat still in sessionStorage (from before this change) is moved over the
+// first time it is read.
+const readStored = (key) => {
+  const local = localStorage.getItem(key);
+  if (local !== null) return local;
+  const legacy = sessionStorage.getItem(key);
+  if (legacy !== null) {
+    localStorage.setItem(key, legacy);
+    sessionStorage.removeItem(key);
+  }
+  return legacy;
+};
+const removeStored = (key) => {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
+};
+
 export const MOONMIND_WELCOME = {
   id: "welcome",
   role: "assistant",
@@ -36,7 +56,7 @@ const makeId = () =>
 
 const loadStoredMessages = () => {
   try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
+    const stored = readStored(STORAGE_KEY);
     if (!stored) return null;
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed) || !parsed.length) return null;
@@ -49,7 +69,7 @@ const loadStoredMessages = () => {
 };
 
 // Keep the stored conversation small: in-flight placeholders are useless after
-// a reload, and document bodies would blow the sessionStorage quota. `live`
+// a reload, and document bodies would blow the storage quota. `live`
 // marks a message produced by a run in this tab and is deliberately dropped,
 // so a restored message with no saved steps shows no steps panel.
 const toStoredMessage = (message) => {
@@ -78,7 +98,7 @@ export const MoonmindProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(() => {
     try {
-      const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+      const stored = readStored(SESSION_STORAGE_KEY);
       return isValidSessionId(stored) ? stored : null;
     } catch (storageError) {
       console.log(storageError);
@@ -106,8 +126,8 @@ export const MoonmindProvider = ({ children }) => {
       // state; keep storage empty rather than writing it back.
       const isFirstOpen =
         persistable.length <= 1 && persistable[0]?.id === MOONMIND_WELCOME.id;
-      if (isFirstOpen) sessionStorage.removeItem(STORAGE_KEY);
-      else sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+      if (isFirstOpen) removeStored(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
     } catch (storageError) {
       console.log(storageError);
     }
@@ -116,8 +136,8 @@ export const MoonmindProvider = ({ children }) => {
   useEffect(() => {
     sessionIdRef.current = sessionId;
     try {
-      if (sessionId) sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-      else sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      if (sessionId) localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+      else removeStored(SESSION_STORAGE_KEY);
     } catch (storageError) {
       console.log(storageError);
     }
@@ -307,8 +327,8 @@ export const MoonmindProvider = ({ children }) => {
 
     // Only MoonMind's own keys. Never clear(), never anyone else's.
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
-      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      removeStored(STORAGE_KEY);
+      removeStored(SESSION_STORAGE_KEY);
     } catch (storageError) {
       console.log(storageError);
     }

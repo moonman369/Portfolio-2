@@ -78,16 +78,18 @@ const MoonmindPage = () => {
       {/* Same background as the site */}
       {isDarkMode ? <StarBackground /> : <LightModeBackground />}
 
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
+      {/* Phones: no box. The chat runs edge to edge under a compact
+          header; from 640px it sits in its card as before. */}
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
         {/* Header (fixed) */}
-        <div className="paper-scrim flex items-center gap-3 py-4 shrink-0 text-left">
-          <span className="grid place-items-center size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
-            <MoonMark size={24} />
+        <div className="paper-scrim flex items-center gap-3 py-4 max-sm:py-1.5 max-sm:gap-2.5 max-sm:pl-[max(1rem,env(safe-area-inset-left))] max-sm:pr-[max(0.375rem,env(safe-area-inset-right))] shrink-0 text-left">
+          <span className="grid place-items-center size-8 sm:size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
+            <MoonMark size={24} className="max-sm:size-[18px]" />
           </span>
           {/* The subtitle is never cut off: the full line where it fits,
               the short one in a narrow header (container query). */}
           <div className="@container flex-1 min-w-0">
-            <h1 className="font-heading text-2xl font-semibold leading-tight text-foreground">
+            <h1 className="font-heading text-2xl max-sm:text-base font-semibold leading-tight text-foreground">
               Moonmind AI
             </h1>
             <p className="font-mono text-xs text-muted-foreground">
@@ -96,7 +98,7 @@ const MoonmindPage = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 max-sm:gap-0 shrink-0">
             <MoonmindNewChat />
             <button
               onClick={minimize}
@@ -115,7 +117,13 @@ const MoonmindPage = () => {
         </div>
 
         {/* Chat container — only the messages scroll; header + input stay put */}
-        <div className="mm-view flex-1 min-h-0 mb-[max(1rem,env(safe-area-inset-bottom))] rounded-2xl overflow-hidden flex flex-col bg-background border border-border shadow-xl">
+        <div
+          className={cn(
+            "mm-view flex-1 min-h-0 overflow-hidden flex flex-col bg-background",
+            "sm:mb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-2xl sm:border sm:border-border sm:shadow-xl",
+            "max-sm:border-t max-sm:border-border max-sm:pl-[env(safe-area-inset-left)] max-sm:pr-[env(safe-area-inset-right)] max-sm:pb-[env(safe-area-inset-bottom)]",
+          )}
+        >
           <MoonmindChat className="flex-1 min-h-0" />
         </div>
       </div>

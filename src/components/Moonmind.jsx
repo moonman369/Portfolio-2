@@ -253,8 +253,8 @@ const Moonmind = () => {
             data-morph-content
             className="flex items-center gap-3 pl-4 pr-1.5 py-1.5 border-b border-border bg-card"
           >
-            <span className="grid place-items-center size-9 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
-              <MoonMark size={20} />
+            <span className="grid place-items-center size-9 max-sm:size-8 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
+              <MoonMark size={20} className="max-sm:size-[18px]" />
             </span>
             {/* The subtitle is never cut off: the full line where it fits,
                 the short one in a narrow header (container query). */}

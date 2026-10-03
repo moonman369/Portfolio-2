@@ -1590,7 +1590,32 @@ cover the end of the hero until it goes (7s, close, Escape, a tap outside,
 or opening the chat). `data-nudge-avoid` and the hide-until-checked step are
 removed with it.
 
-## 15. Suggestions (skipped because they would change behaviour)
+## 15. Moonmind on phones: no box, a compact header, a chat that stays
+
+- **No box on phones (`/moonmind`, under 640px):** the chat runs edge to
+  edge under the header: no side margins, border, rounded corners or
+  shadow; a hairline under the header; the safe areas move onto the chat
+  itself (left, right, and the composer's bottom). From 640px it is the
+  card it was (desktop unchanged).
+- **Compact header on phones:** badge 44 → 30px with an 18px mark, title
+  22.5 → 15px, tighter padding; the header goes from 74-102px (it wrapped
+  the subtitle at 320) to 55px, buttons still 44px. The floating panel's
+  badge matches (32px, 18px mark). The badge is written `size-8
+  sm:size-11` so the phones' 44px tap-target floor (§13) does not catch it.
+- **Starter chips on one line:** with the full width, all four fit on one
+  line on the page from 360px up (the long one wrapped at 320-375px
+  before). At 320px the two longest still wrap: ~300px of 14px text in
+  ~254px; one line there would mean going under 14px.
+- **The chat survives the tab:** the conversation and the session id are in
+  `localStorage` instead of `sessionStorage` (same keys, same formats), so
+  closing the tab or opening the site in a new one picks it up again, with
+  the same backend session. A chat still in `sessionStorage` is moved over
+  the first time it is read. "New chat" clears both stores; Undo works as
+  before. Note: the conversation now stays on the device until "New chat",
+  and two tabs share it (the last write wins). A reload mid-run still does
+  not resume the run (§12).
+
+## 16. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
