@@ -1531,7 +1531,66 @@ and desktop): same results.
   237-689 during these runs (earlier rounds scored 90+ at ~1,400-1,600), so
   the ≥ 90 budget could not be confirmed here for either build.
 
-## 13. Suggestions (skipped because they would change behaviour)
+## 13. Phones: one step smaller
+
+Under 640px the whole site is ~6% smaller, set in one place (the "Phones:
+one step smaller" block at the end of `index.css`); tablet and desktop are
+pixel-identical (full page, both themes, 640, 768, 1024, 1280px).
+
+- **Root size:** `html { font-size: 93.75% }`, i.e. 15px at the browser's
+  default 16px. A percentage rather than `15px`, so a visitor's own browser
+  text size still applies. Everything in rem (text, padding, gaps,
+  components, the chat) follows. Media queries do not (they use the initial
+  size), so every breakpoint is where it was.
+- **Floors:** `--text-xs` ≥ 12px, `--text-sm` ≥ 14px (so paragraphs set in
+  `text-sm` keep their 14px), the eyebrow ≥ 12px (and the intro card's 11px
+  mono tag is 12px on phones), inputs and textareas ≥ 16px (no iOS zoom),
+  `min-h-11` / `min-w-11` / `size-11` / `icon-btn` ≥ 44px. Answers in the
+  chat are 14.06px.
+- **Set by hand** (they are in px or vw and would not follow): the hero name
+  `clamp(2.5rem, 10.6vw, 4rem)` (43.1 → 39.75px at 375, 40 → 37.5px at 320,
+  −6 to −8%); section headings `clamp(2.25rem, 1.35rem + 3.4vw, 4.25rem)`
+  (36 → 33.75px at 320-375, −6%; −8% at 414-639); the moon
+  `clamp(104px, 42vw − 40px, 162px)` (128.5 → 117.5px at 375, 112 → 104px
+  at 320, −7 to −9%).
+- **The navbars do not change:** the top bar's height, padding, brand text
+  and gap and the toggle icon, and the bottom nav's padding, width and icon
+  size are pinned with `--u` (one rem as it is everywhere else, 16px at the
+  default). Measured: identical geometry, icons included, at 320 and 375px.
+  The chat panel's phone position uses `--u` too, so it keeps its gaps to
+  both bars (top 72px, 19px above the bottom nav, as before).
+- **Header (the space above the hero content), ~25% shorter:** the hero
+  starts just under the top bar and puts its content 37% of the way down
+  the spare height (63% below) instead of in the middle, never closer than
+  24px to the bar. Navbar → top of the moon: 102 → 75px at 375×812 (−26%),
+  29 → 22px at 375×667 (−24%), 11 → 10px at 320×568 (already the minimum).
+- **Footer, ~22% shorter:** top padding 1.25rem, and ~13px between its last
+  line (the back-to-top button) and the bottom nav plus the safe area. The
+  part above the bottom nav: 140 → 108px at 375 (−23%), 156 → 124px at 320
+  (−21%); the whole block 197 → 165px.
+- Checked at 320, 360, 375, 390 and 414px, dark and light: no text under
+  12px, inputs 16px, no tap target under 44px, no horizontal scroll, the
+  moon's caption and "back to today" clear of the text at 100% and 200% text
+  size (closest gap 4.4px at 360px).
+- **Not fixed (copy):** with the longer hero tagline (commit `9b93ee8`, six
+  lines at 320px), the second hero button ends below the bottom nav at
+  320×568: 554px against the bar at 511px before this change, 524px after.
+  A shorter tagline (or a shorter variant on narrow phones) would fix it.
+
+## 14. Moonmind intro card on phones: the overlap rule is gone
+
+The Round 5 rule that skipped the intro card when it would cover the hero's
+text, buttons or icons (§11, Part A) made it disappear on most real phones:
+it needs ~120px between the end of the hero and the bottom nav, which the
+deployed build had at 390×844 and 412×915 but not at 375×812 (120px) or
+412×780 (112px), and no phone has with the browser's toolbars showing. At
+the owner's request the rule is dropped: the card shows on every load on
+every size, as it did before Round 5, and on a short screen it may briefly
+cover the end of the hero until it goes (7s, close, Escape, a tap outside,
+or opening the chat). `data-nudge-avoid` and the hide-until-checked step are
+removed with it.
+
+## 15. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
