@@ -1,10 +1,13 @@
 import { useEffect, useRef } from "react";
-import { Minimize2 } from "lucide-react";
+import { Minimize2, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
 import { switchView } from "../lib/moonmindView";
-import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import {
+  useMediaQuery,
+  usePrefersReducedMotion,
+} from "../hooks/usePrefersReducedMotion";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
 import { useOffscreenPause } from "../hooks/useOffscreenPause";
@@ -23,6 +26,9 @@ const MoonmindPage = () => {
   const { isDarkMode } = useTheme();
   const { open, refreshPending } = useMoonmind();
   const reducedMotion = usePrefersReducedMotion();
+  // Phones have no floating panel: the page is the chat, and it closes
+  // instead of minimizing (see Moonmind.jsx).
+  const desktop = useMediaQuery("(min-width: 640px)");
   const navigate = useNavigate();
   const location = useLocation();
   // A hidden tab pauses every animation here too (the loader, the skeleton,
@@ -39,18 +45,19 @@ const MoonmindPage = () => {
   // promises. Its open state lives in the Moonmind context, which outlives
   // the route, so it is set before navigating (a flag in the history state
   // would be lost with navigate(-1)). The page shrinks into the panel with a
-  // view transition where supported.
+  // view transition where supported. On a phone it closes instead: the same
+  // way back, with no panel to open.
   const minimize = () =>
     switchView(
       () => {
-        open();
+        if (desktop) open();
         if (location.state?.internal) navigate(-1);
         else navigate(location.state?.from || "/");
       },
       { reducedMotion },
     );
 
-  // Escape minimizes, unless the new-chat confirmation is open (Escape
+  // Escape minimizes (closes on a phone), unless the new-chat confirmation is open (Escape
   // cancels that) or an IME composition is in progress.
   const minimizeRef = useRef(minimize);
   const pendingRef = useRef(refreshPending);
@@ -100,19 +107,30 @@ const MoonmindPage = () => {
 
           <div className="flex items-center gap-2 max-sm:gap-0 shrink-0">
             <MoonmindNewChat />
-            <button
-              onClick={minimize}
-              aria-label="Minimize to portfolio"
-              title="Minimize"
-              className={cn(
-                headerActionClass,
-                "sm:w-auto sm:inline-flex sm:items-center sm:gap-2 sm:px-4 sm:rounded-full",
-                "sm:text-sm sm:font-medium sm:text-foreground sm:ring-1 sm:ring-inset sm:ring-input",
-              )}
-            >
-              <Minimize2 size={17} aria-hidden="true" />
-              <span className="max-sm:hidden">Minimize</span>
-            </button>
+{desktop ? (
+              <button
+                onClick={minimize}
+                aria-label="Minimize to portfolio"
+                title="Minimize"
+                className={cn(
+                  headerActionClass,
+                  "w-auto inline-flex items-center gap-2 px-4 rounded-full",
+                  "text-sm font-medium text-foreground ring-1 ring-inset ring-input",
+                )}
+              >
+                <Minimize2 size={17} aria-hidden="true" />
+                <span>Minimize</span>
+              </button>
+            ) : (
+              <button
+                onClick={minimize}
+                aria-label="Close Moonmind"
+                title="Close"
+                className={headerActionClass}
+              >
+                <X size={19} aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
 

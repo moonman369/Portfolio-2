@@ -1615,7 +1615,25 @@ removed with it.
   and two tabs share it (the last write wins). A reload mid-run still does
   not resume the run (§12).
 
-## 16. Suggestions (skipped because they would change behaviour)
+## 16. Phones: the chat is the page (no floating panel)
+
+Under 640px there is no in-between floating panel any more: every way of
+opening Moonmind (the bottom-nav button, the hero button, the intro card)
+goes straight to `/moonmind`, and the panel never renders (checked with a
+DOM observer at 320 and 375px: it never appears, not even for a frame). On
+the page, phones get a single Close (×, 44px, "Close Moonmind") next to New
+chat in place of Minimize; Close and Escape go back where the visitor came
+from (back after an internal open, else home) without opening a panel. The
+conversation and the list position carry over as before. From 640px
+(tablet, desktop) nothing changes: the floating panel, Expand, and Minimize
+reopening the panel.
+
+This replaces the phone half of §12 Part 7: the modal panel (backdrop,
+`inert` page, focus trap, scroll lock, `aria-modal`) and its phone CSS are
+removed, with `lib/inertOutside.js`. The panel's Escape and return-focus
+behaviour stay for 640px and up. Initial JS: 145.50 → 144.85 kB gzip.
+
+## 17. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
