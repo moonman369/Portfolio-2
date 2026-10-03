@@ -674,9 +674,13 @@
     }
 }
 
-/* Markdown rendering inside Moonmind assistant messages. */
+/* Markdown rendering inside Moonmind assistant messages: open layout (no
+   bubble), ~65ch lines, 1.6 line height, a clear gap between paragraphs,
+   lists and headings. */
 .chat-markdown {
     text-align: left;
+    line-height: 1.6;
+    text-wrap: pretty;
 }
 .chat-markdown > :first-child {
     margin-top: 0;
@@ -685,12 +689,11 @@
     margin-bottom: 0;
 }
 .chat-markdown p {
-    margin: 0.6em 0;
-    line-height: 1.6;
+    margin: 0.75em 0;
 }
 .chat-markdown ul,
 .chat-markdown ol {
-    margin: 0.5em 0;
+    margin: 0.75em 0;
     padding-left: 1.3em;
 }
 .chat-markdown ul {
@@ -700,7 +703,7 @@
     list-style: decimal;
 }
 .chat-markdown li {
-    margin: 0.2em 0;
+    margin: 0.3em 0;
 }
 .chat-markdown a {
     color: hsl(var(--primary));
@@ -717,8 +720,9 @@
 .chat-markdown h4 {
     font-family: var(--font-heading);
     font-weight: 600;
-    margin: 0.7em 0 0.35em;
+    margin: 1.1em 0 0.4em;
     line-height: 1.3;
+    text-wrap: balance;
 }
 .chat-markdown h1 {
     font-size: 1.15em;
@@ -798,9 +802,13 @@
     transform: none;
 }
 
-/* Smooth follow-scroll for the message list (reduced motion turns it off). */
+/* The message list. No CSS smooth scrolling: a remount would glide from the
+   top to the bottom; moves are instant or a short JS tween
+   (lib/moonmindScroll.js). Scrolling never chains to the page, and the
+   gutter is reserved so the thumb appearing cannot reflow the messages. */
 .mm-chat-scroll {
-    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 
     /* A slim scrollbar that stays out of the way until the pointer is over
        the transcript. The width is always reserved, so revealing the thumb
@@ -850,6 +858,67 @@
     background: transparent;
 }
 
+/* Waiting (MoonmindChat): fades in after the 300ms hold; the answer's space
+   as three soft lines that breathe once every 2s (opacity only, one
+   animation on the group). The answer replaces them in place. */
+.mm-waiting {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
+}
+.mm-skeleton > span {
+    background: hsl(var(--muted-foreground) / 0.16);
+}
+.mm-skeleton {
+    animation: mm-breath 2s ease-in-out infinite alternate;
+}
+@keyframes mm-breath {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.45;
+    }
+}
+
+/* A fresh answer comes in block by block: fade + 8px rise, 240ms, 40ms
+   apart, the last starting by 160ms (all done within 400ms). Transform and
+   opacity only; nothing with reduced motion. */
+.mm-enter > * {
+    animation: mm-enter 240ms var(--motion-ease-out) both;
+}
+.mm-enter > :nth-child(2) {
+    animation-delay: 40ms;
+}
+.mm-enter > :nth-child(3) {
+    animation-delay: 80ms;
+}
+.mm-enter > :nth-child(4) {
+    animation-delay: 120ms;
+}
+.mm-enter > :nth-child(n + 5) {
+    animation-delay: 160ms;
+}
+@keyframes mm-enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+/* The Copy action under an answer: always there (muted) on touch; on a mouse
+   or trackpad it fades in while its message is hovered or focused, and
+   stays while "Copied" shows. */
+@media (hover: hover) and (pointer: fine) {
+    .mm-actions {
+        opacity: 0;
+        transition: opacity var(--motion-fast) var(--motion-ease-out);
+    }
+    .mm-msg:hover .mm-actions,
+    .mm-actions:focus-within,
+    .mm-actions[data-active] {
+        opacity: 1;
+    }
+}
+
 .mm-chevron {
     transition: transform 200ms ease;
 }
@@ -857,101 +926,20 @@
     transform: rotate(90deg);
 }
 
-/* Thinking: a warm moon-glow. The steps header gets a soft light sweeping
-   across it behind the label, and an orb that breathes and ripples. Blurred
-   layers moving on transform/opacity only (compositor). */
-.mm-chat {
-    --mm-think: 47 100% 72%;
+/* Running status (MoonmindSteps): the moon loader (MoonLoader) beside the
+   current step's name. Its shadow slides on transform as stages finish;
+   the mark pulses gently on opacity, the chat's one running indicator (the
+   other continuous animation is the skeleton's breath). No blur, no text
+   effect. The panel fades in once after the 300ms hold. The pipeline's
+   current dot is plain amber (static). */
+.mm-steps-live {
+    animation: mm-stage-in var(--motion-base) var(--motion-ease-out) both;
 }
-:root:not(.dark) .mm-chat {
-    --mm-think: 44 96% 56%;
+.mm-loader-shadow {
+    transition: transform var(--motion-base) var(--motion-ease-out);
 }
-/* The glow spreads softly; the steps card clips it to its rounded edge. */
-.mm-thinking {
-    position: relative;
-    isolation: isolate;
-}
-.mm-thinking::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    top: -60%;
-    left: 0;
-    width: 35%;
-    height: 220%;
-    border-radius: 9999px;
-    background: hsl(var(--mm-think) / 0.4);
-    filter: blur(14px);
-    opacity: 0;
-    animation: mm-sweep 2.2s ease-in-out infinite;
-}
-@keyframes mm-sweep {
-    0% {
-        transform: translateX(-110%);
-        opacity: 0;
-    }
-    20%,
-    80% {
-        opacity: 1;
-    }
-    100% {
-        transform: translateX(300%);
-        opacity: 0;
-    }
-}
-.mm-orb {
-    position: relative;
-    flex-shrink: 0;
-    width: 7px;
-    height: 7px;
-    border-radius: 9999px;
-    background: hsl(var(--mm-think));
-    box-shadow: 0 0 6px hsl(var(--mm-think) / 0.9);
-}
-.mm-orb-lg {
-    width: 10px;
-    height: 10px;
-}
-.mm-orb::before,
-.mm-orb::after {
-    content: "";
-    position: absolute;
-    border-radius: 9999px;
-    pointer-events: none;
-}
-/* The halo breathes. */
-.mm-orb::before {
-    inset: -5px;
-    background: hsl(var(--mm-think));
-    filter: blur(5px);
-    opacity: 0.45;
-    animation: mm-breathe 1.1s ease-in-out infinite alternate;
-}
-/* A ring ripples outwards. */
-.mm-orb::after {
-    inset: 0;
-    box-shadow: inset 0 0 0 1px hsl(var(--mm-think));
-    animation: mm-ripple 1.6s ease-out infinite;
-}
-@keyframes mm-breathe {
-    from {
-        opacity: 0.2;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 0.6;
-        transform: scale(1.15);
-    }
-}
-@keyframes mm-ripple {
-    from {
-        opacity: 0.8;
-        transform: scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: scale(3.2);
-    }
+.mm-loader-pulse {
+    animation: mm-breath 1.6s ease-in-out infinite alternate;
 }
 
 /* Live pipeline (MoonmindSteps): each stage fades up and its connector
@@ -987,14 +975,6 @@
 }
 .mm-dot[data-state="running"] {
     background: hsl(var(--earthshine));
-    box-shadow: 0 0 6px hsl(var(--earthshine) / 0.8);
-    animation: mm-pulse 900ms ease-in-out infinite alternate;
-}
-@keyframes mm-pulse {
-    to {
-        opacity: 0.35;
-        transform: scale(0.7);
-    }
 }
 
 /* Expanded steps (MoonmindSteps): the pipeline's connect-the-dots, run
@@ -1117,6 +1097,35 @@
     display: none;
 }
 
+/* The full page follows the visual viewport (keyboard up: shorter). */
+.mm-page {
+    top: var(--vv-top, 0px);
+    height: var(--vv-height, 100dvh);
+}
+
+/* Panel <-> full page (lib/moonmindView.js): the chat container carries the
+   same view-transition name in both views, so it grows into the page and
+   shrinks back; the rest cross-fades. 280ms ease-out. Reduced motion never
+   starts a transition. */
+.mm-view {
+    view-transition-name: mm-chat;
+}
+::view-transition-group(mm-chat) {
+    animation-duration: 280ms;
+    animation-timing-function: var(--motion-ease-out);
+}
+::view-transition-old(mm-chat),
+::view-transition-new(mm-chat) {
+    animation-duration: 280ms;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 280ms;
+}
+
 /* The launcher fades back in under the panel as it closes. */
 .mm-launcher {
     transition:
@@ -1132,12 +1141,12 @@
     .mm-collapse,
     .mm-collapse > * > *,
     .mm-chevron,
+    .mm-actions,
     .mm-launcher {
         transition: none;
     }
-    .mm-thinking::before,
-    .mm-orb::before,
-    .mm-orb::after,
+    .mm-loader-pulse,
+    .mm-steps-live,
     .mm-collapse[data-open] .mm-trace-row,
     .mm-collapse[data-open] .mm-trace-row::before,
     .mm-collapse[data-open] .mm-trace-row[data-nested]::after,
@@ -1145,15 +1154,17 @@
     .mm-connector,
     .mm-dot,
     .mm-sources[open] .mm-chip,
-    .mm-starter {
+    .mm-starter,
+    .mm-waiting,
+    .mm-skeleton,
+    .mm-enter > * {
         animation: none;
     }
-    /* Scoped to the chat only — nothing else on the site is affected. */
-    .mm-chat .animate-spin,
-    .mm-chat .animate-bounce,
-    .mm-chat .animate-fade-in,
     .mm-launcher {
         animation: none;
+    }
+    .mm-loader-shadow {
+        transition: none;
     }
     .mm-chat-scroll,
     .mm-chat * {

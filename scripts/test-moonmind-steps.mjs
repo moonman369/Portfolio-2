@@ -10,6 +10,9 @@ import assert from "node:assert/strict";
 import {
   buildStepRows,
   formatRowDuration,
+  formatStepSeconds,
+  MIN_ROW_MS,
+  visibleRows,
   headerLabel,
   labelForNode,
   labelForTool,
@@ -284,6 +287,23 @@ test("an end without a start still produces a row", () => {
   assert.equal(rows[0].state, "done");
   assert.equal(rows[0].durationMs, null);
   assert.equal(formatRowDuration(null), "");
+});
+
+test("visibleRows: sub-300ms rows fold away, running and tool rows stay", () => {
+  const rows = visibleRows(buildStepRows(KNOWLEDGE, { finished: true }));
+  assert.deepEqual(rows.map((r) => r.node), ["router", "knowledge", "knowledge.prepare", "knowledge.retrieve", "generate"]);
+  assert.ok(rows.every((r) => r.durationMs == null || r.durationMs >= MIN_ROW_MS));
+  const live = visibleRows(buildStepRows(KNOWLEDGE.slice(0, 3)));
+  assert.equal(live[live.length - 1].state, "running", "a running row is never hidden");
+  const agent = visibleRows(buildStepRows(AGENT_WEB, { finished: true }));
+  assert.ok(agent.some((r) => r.kind === "tool"), "tool rows (no duration) stay");
+});
+
+test("formatStepSeconds: seconds, one decimal, never below 0.1s", () => {
+  assert.equal(formatStepSeconds(2850), "2.9s");
+  assert.equal(formatStepSeconds(300), "0.3s");
+  assert.equal(formatStepSeconds(12), "0.1s");
+  assert.equal(formatStepSeconds(null), "");
 });
 
 const failed = results.filter((r) => !r.ok);

@@ -1152,7 +1152,386 @@ they wrapped onto two left-aligned rows of different widths.
   be shown headless (no profile data; the autofill service does not run), so
   that check is for a real browser.
 
-## 12. Suggestions (skipped because they would change behaviour)
+## 12. Moonmind chat redesign: smooth, simple, clear
+
+Presentation only: the backend contract (`moonmindApi.js`, `moonmindRun.js`,
+endpoints, headers, payloads, polling, run/step/message shapes, storage keys
+and formats) is untouched, and so are Enter / Shift+Enter, the auto-growing
+input and its cap, sticky follow-scroll, the per-message steps toggle, the
+sources list and the starter chips' send path. Tested against a scripted
+mock of `POST /runs` and `GET /runs/:id` (Playwright request interception;
+the app's API code is not edited for tests).
+
+**Before**, as measured on the live site (desktop and 375px), plus the same
+checks re-run against the previous build with the mock:
+
+| | Before |
+| --- | --- |
+| Long answer (1,491 chars, 840px in a 516px list) | lands at the bottom; its start 340px above the view |
+| Screen readers | no `role="log"`, no live region: an answer is never announced |
+| Longest starter chip at 375px | two lines squeezed into a 44px pill |
+| Header subtitle in the panel | cut off ("Ayan's portfolio assist…") |
+| Per-message actions | none |
+| Knowledge run | ~12.0s click to answer; steps 3.0 + 3.0 (2.8 retrieving) + 3.4s; "Thought for 9s"; ~3s unaccounted |
+| Agent / capabilities / stats | ~10s / ~2s / ~4s |
+| Answer arrival | all at once (111 → 914 chars between two samples 250ms apart); empty until then |
+| While running | current step shown twice (header + last pipeline row); the mock check finds "Writing the answer" 3 times in the DOM (header, pipeline, the hidden list) |
+| Header shimmer | blurred amber smear behind the words |
+| Expanded steps | "Preparing the search 32ms", "Collecting results 34ms"; parent and child durations overlap |
+| Route chip | internal names (knowledge, agent, stats, capabilities) |
+| Step text | 11-12px mono |
+| First 300ms of a run | nothing |
+| Expand to full page | route swaps in ~11ms, no transition; the thread rewinds to the top and scrolls down for ~1s (0 → 993 → 1121); mock: 15 distinct `scrollTop` values in 1.5s desktop, 18 on a phone |
+| Minimize after a direct visit | goes to `/` with the panel closed |
+| "Refresh chat" (↻) | actually starts a new chat; "Clear" is the loudest button; focus drops to `<body>` after clearing |
+| Input on first load of `/moonmind` | once 128px tall for one line (not reproducible) |
+| Opening the panel on a phone | focuses the input (keyboard covers the starter chips) |
+| Panel on phones | `role="dialog"`, no `aria-modal`; the page behind scrolls and is reachable |
+| Chat chunk | 167.90 kB (51.64 kB gzip); page chunk 2.19 kB (0.97 kB) |
+
+### Part 1. Messages and composer
+
+- **Answer arrival** (`MoonmindChat`, layout effect): an assistant message
+  from a run is seen first without text and then with it. At that moment:
+  following along and the answer under 60% of the list's height, stay at
+  the bottom (as before); following along and longer, scroll so the message
+  starts 12px below the top of the list (250ms ease-out tween, instant with
+  reduced motion) and stop following the bottom; scrolled up, nothing moves
+  and a **"Jump to latest ↓"** pill (44px, centred above the composer) takes
+  them to the start of the newest answer; it hides once they reach the
+  bottom. Messages already complete when the list mounts never count, so
+  switching views or reopening moves nothing. Measured (mock, 1,491-char
+  answer): the answer's message starts 12px below the top in the desktop
+  panel (822px answer in a 458px list) and on a phone (522px list); the pill
+  lands it at 12px too.
+- **No CSS smooth scrolling** on the list any more (it caused the
+  rewind-and-glide on remount); programmatic moves are instant or the short
+  tween in `lib/moonmindScroll.js`, which the reader's wheel or touch
+  cancels. `overscroll-behavior: contain`, `scrollbar-gutter: stable`.
+- **Assistant text:** open layout, 65ch, line height 1.6, `text-wrap:
+  pretty`; 0.75em between paragraphs and lists, 1.1em above headings
+  (balanced). The "Moonmind" identity line stays once per group.
+- **User bubble:** one tint (`primary/12`), one radius (`rounded-2xl`), no
+  ring, right-aligned, 85% max.
+- **Copy:** under each finished answer (not the greeting, not errors), a
+  44px icon button "Copy answer" that copies the rendered text (no markdown
+  marks); its icon turns to a check and "Copied" shows for 1.5s, announced
+  through the chat's hidden status. Mouse/trackpad: fades in on hover or
+  focus of its message. Touch: always there, muted.
+- **Starter chips:** `min-height: 44px`, 10px block padding, `text-wrap:
+  balance`, a 1.5rem radius so two-line chips read as one pill (59px tall
+  at 375px for the longest).
+- **Header subtitle:** `MOONMIND_SUBTITLE` where it fits, else
+  `MOONMIND_SUBTITLE_SHORT` ("AI assistant"), chosen by a container query on
+  the title block, so it is never cut. The panel (both sizes) shows the
+  short one; the full page the full one.
+- **Accessibility:** the list is `role="log"`, `aria-live="polite"`,
+  `aria-relevant="additions"`, labelled "Conversation". The steps panel and
+  the actions row inside it are `aria-live="off"`, so step updates are not
+  read; a separate visually hidden `role="status"` says "Working…" when a run
+  starts and "Answer ready" when it ends (and "Copied").
+- **Composer:** `enterkeyhint="send"`; 16px; Send stays 44×44 and at 40%
+  opacity when empty.
+
+### Part 2. Waiting for the response
+
+- **Poll interval (reported, not changed):** `POLL_INTERVAL_MS = 900` in
+  `moonmindApi.js`, polls strictly sequential (the next request waits for
+  the previous one, then 900ms), backoff 1/2/4/8s on transient errors, a
+  130s deadline from the click. So an answer can land up to ~0.9s plus one
+  round trip after the backend finished; see Suggestions for the ~3s gap.
+- **Reserved space:** after the 300ms hold (so a quick run never flashes it),
+  three soft lines (90/75/55%) under the trace where the answer will go,
+  breathing once every 2s (opacity on the group: one animation). The answer
+  replaces them in place: measured 12.0px below the steps panel for both.
+  The steps panel keeps its bottom margin while running for that reason.
+- **Answer entrance:** in the same layout effect that detects the arrival
+  (before the first paint of the text), each block of the answer
+  (paragraph, list, heading) fades in and rises 8px, 240ms, 40ms apart,
+  delays capped at 160ms: every block done by 400ms (measured: 12 blocks,
+  last ends at 400ms). No typewriter. Reduced motion: none.
+- **Reassurance:** one line between the trace and the skeleton, only when
+  waiting is long: "Still working. Searching takes a few seconds." from 6s,
+  replaced by "This is taking longer than usual." from 20s
+  (`MOONMIND_WAIT_SLOW`, `MOONMIND_WAIT_LONG`); counted from when the run
+  was first seen (kept per message in module scope, so a view switch keeps
+  the real start). Gone when the answer arrives. Measured: none at 5s, the
+  first at 6.6s, the second at 21s, never both.
+- **Errors** (detection unchanged; tested with mocked responses): a failed
+  answer shows only its sentence and a "Try again" button
+  (`MOONMIND_TRY_AGAIN`, 44px) on the last message, which resends the
+  previous question through the existing send path. No trace, sources or
+  copy on a failure (a timed-out run used to say "Thought for 1s" above the
+  timeout sentence). Not offered when the chat is not configured at all.
+  Checked: a 500 on `POST /runs` ("Sorry, something went wrong…"), offline
+  (requests aborted as disconnected; same sentence; Try again works once
+  back online), and the 130s deadline with a fake clock ("That one is taking
+  longer than expected…"). "Answer ready" is not announced after a failure;
+  the log reads the sentence.
+- The old `TypingDots` (the glowing orb for a running message with no live
+  steps) is gone; the waiting area covers it.
+
+### Part 3. The steps panel (live event feed)
+
+Presentation only: step data, order and live behaviour are unchanged
+(`buildStepRows` is untouched; two presentation helpers were added to
+`moonmindSteps.js`, `visibleRows` and `formatStepSeconds`, with tests:
+17/17 pass).
+
+- **One line of truth while running:** the header is the status line, a
+  7px amber dot pulsing on transform/opacity and the current step's name,
+  once. The pipeline under it keeps finished top-level stages in grey with
+  their names; the current stage is a static amber dot without its name
+  (it is in the status line). The expanded list is rendered only while
+  open, so a closed panel never hides a second copy. Measured with the mock
+  at three points of a knowledge run: the status name appears exactly once
+  in the chat's DOM each time.
+- **No text smear:** the blurred amber sweep (`.mm-thinking`) and the
+  blurred orb (`.mm-orb`, also the old typing indicator) are gone, with
+  their keyframes and the `--mm-think` colour. No progress line either: the
+  chat already has its two continuous animations while running (this dot
+  and the skeleton's breath). The 300ms hold stays: the whole panel appears
+  only once a run has lasted 300ms.
+- **Expanded list:** top-level steps with their durations, right-aligned,
+  `tabular-nums`, in seconds with one decimal ("2.8s"). Sub-steps and tool
+  steps only under a "Details" disclosure (`MOONMIND_DETAILS_LABEL`, 44px,
+  `aria-expanded`), without durations, so parent and child times never sit
+  side by side. Any finished row under 300ms is dropped (it folds into its
+  parent): "Preparing the search" and "Collecting results" no longer show.
+  No duration is ever below 0.1s. Text is 12px (was 11px); top-level names
+  in the foreground colour, sub-steps in the muted one.
+- **Route chip in plain words** (`MOONMIND_ROUTE_LABELS`): knowledge "From
+  the portfolio", agent and its retired alias tech_web "Researched", stats
+  "Live stats", capabilities "About Moonmind", greeting "Greeting", refusal
+  "Out of scope". `action` (labelled "Preparing a response" as a step, with
+  no clear visitor-facing meaning) is not mapped and shows its raw name,
+  like any route not in the map. The raw route is always the chip's
+  `title`. The full list comes from `NODE_LABELS` in `moonmindSteps.js` and
+  the captured traces; the API code itself does not enumerate routes.
+- **Collapsed header after the run:** chevron, "Thought for 9s", the chip on
+  the right; 44px tall (was 36px); `aria-expanded` / `aria-controls` kept.
+
+### Part 4. One loader: the moon
+
+- **`MoonLoader`** (`components/MoonLoader.jsx`, 18px): the site's moon mark
+  (the navbar/header outline ring) with its lit disc masked by a shadow disc
+  that slides sideways on `transform: translateX` (300ms ease-out) as the
+  phase grows. SVG only: no path morphing, no `filter`, no `box-shadow`.
+- **Phase:** the API does not send how many steps a run will take, so the
+  "unknown total" rule applies: one phase per finished top-level stage
+  through 0.2 → 0.45 → 0.7 → 0.85, holding on the last until the answer
+  lands. Measured on a knowledge run: shadow offset 3.6 → 3.6 → 12.6 →
+  15.3px at 0.45s, 3.5s, 6.5s and 10.5s.
+- **Where:** it *is* the status line's indicator, in amber (earthshine),
+  left of the current step's name. It replaces the Part 3 dot rather than
+  sitting beside it (one idea per element); its gentle opacity pulse is the
+  "dot pulse". It is also the panel's placeholder while the chat chunk
+  loads (it replaced the three static dots).
+- **First 300ms:** nothing. Then the steps panel fades in once with
+  "Thinking…" and the moon at its first phase if no step has arrived, else
+  the current step.
+- **Removed:** the orb and sweep (Part 3), the three dots, and the dead
+  `.mm-chat .animate-spin/-bounce/-fade-in` reduced-motion rules (nothing in
+  the chat uses them). Every remaining `.mm-*` animation has its
+  reduced-motion rule.
+- **Cost:** while a run is going the chat runs exactly two continuous
+  animations (the loader's pulse and the skeleton's breath, both opacity);
+  none when idle or after the answer; none under reduced motion (static half
+  moon, no pulse, no slide). A hidden tab pauses them: `/moonmind` now sets
+  `data-tab-hidden` too (`useOffscreenPause`), as the home page did. The
+  panel unmounts when closed, so a closed chat runs nothing.
+
+### Part 5. Panel ↔ full page
+
+- **Scroll position** (`lib/moonmindView.js` `listMemory`, memory only):
+  the list's distance from its bottom is saved on every scroll and when a
+  view's chat unmounts, and restored in the new view's first layout effect,
+  before its first paint: within 80px of the bottom means "at the bottom" and
+  lands exactly there; otherwise the same distance from the bottom. No
+  animated scroll at all (the CSS smooth scrolling that caused the rewind is
+  gone, Part 1). Measured by sampling `scrollTop` every 30ms for 1.5s after
+  each switch: expand and minimize, desktop and 375px phone, **0 changes, one
+  value** each time (before: 15-18 distinct values sweeping from 0); reading
+  300px up in the panel → 300px up on the page.
+- **Transition:** `switchView` wraps the navigation in
+  `document.startViewTransition` where supported and motion is allowed. The
+  chat container is `view-transition-name: mm-chat` in both views (the panel
+  and the page's chat box), so the panel grows into the page and the page
+  shrinks back into the panel; the rest cross-fades; 280ms ease-out.
+  React Router commits navigation asynchronously, so the update callback
+  resolves when the new view's chat signals `viewReady()` (mounted, scroll
+  restored), with an 800ms fallback. Reduced motion or no API: an instant
+  switch, same end state. Router calls and `state: { from, internal: true }`
+  are unchanged.
+- **The panel itself doesn't animate when it comes back:** if it mounts
+  already open (returning from the page), there is no launcher morph and no
+  fade; the transition is the only motion. Opens from the page still morph.
+- **Minimize reopens the panel:** it sets the panel open in the Moonmind
+  context (which outlives the route) and then navigates as before:
+  `navigate(-1)` after an internal expand, else to `from` or `/`. A
+  `reopenChat` flag in history state was not used: `navigate(-1)` cannot
+  carry state, and the context already does the job. A direct visit to
+  `/moonmind` then Minimize now lands on `/` with the panel open and the
+  conversation in it (was: closed). Browser back and forward are unchanged:
+  back from the page shows the home page with the panel as it was, forward
+  renders the page; a direct visit's back still leaves.
+- **Keyboard:** on the full page, Escape minimizes, except while the
+  new-chat confirmation is open (Escape cancels that, as before) or during
+  an IME composition (`isComposing` / keyCode 229). The input keeps focus
+  after switching on desktop (autofocus on mount; phones in Part 7).
+- Checked with and without reduced motion: 1 view transition per switch
+  with motion, 0 without; same results otherwise.
+
+### Part 6. New chat, undo, reload
+
+- **"New chat"** (`MOONMIND_NEW_CHAT_LABEL`, `aria-label` and `title`) with
+  a compose icon (`SquarePen`) in both headers, one shared component
+  (`MoonmindNewChat`). With only the greeting it is dimmed (40%) and
+  `aria-disabled` (still focusable, does nothing, no confirmation); while
+  the confirmation is open it is `disabled`, as before.
+- **Confirmation:** the same inline bar and copy ("Start a new chat? This
+  clears the current conversation."), Escape cancels, focus starts on
+  Cancel. Buttons: "Cancel" (on the page colour with a visible ring, medium
+  weight) and "Start new chat" (`MOONMIND_START_NEW_CHAT`, a plain primary
+  button at normal weight; it was "Clear", the loudest thing in the bar).
+- **After clearing:** focus goes to the input on desktop; on touch
+  (`pointer: coarse`) to the greeting (`tabindex="-1"`), so the keyboard
+  stays down. "New chat started" is announced politely.
+- **Undo:** "Chat cleared. Undo" above the composer for 6s. Undo restores
+  the previous messages and session id exactly (checked: the stored JSON
+  and the session id are byte-identical afterwards), from values kept in
+  memory only (`undoRef` in the context). They are dropped after 6s, or as
+  soon as a new message is sent; nothing is written back after that
+  (storage checked at 6.4s and 7.4s: both keys absent). A reply still in
+  flight when the chat was cleared is not restored (its run was cancelled;
+  restoring its placeholder would leave it waiting forever). The next run
+  after a new chat sends no `sessionId`, as before.
+- **Reload mid-run (verified, not changed):** with a ~15s mocked run,
+  reloading at 5s does **not** resume it: no further polls are sent, and
+  the restored conversation ends with the question and no answer (the
+  in-flight placeholder is never stored, and there is no resume path).
+  The live-site observation was a fast run that had finished before the
+  reload. Reported under Suggestions; "Reconnecting…" is not shown
+  because nothing reconnects.
+- **Input height:** empty, the input has no measured height at all (its
+  natural one line); text is measured on change and again once
+  `document.fonts.ready` resolves. With the fonts delayed 1.5s on a first
+  load of `/moonmind` it is 38px before and after; it grows to the 128px cap
+  and returns to 38px when emptied.
+
+### Part 7. Phones and accessibility
+
+- **No autofocus on touch** (`pointer: coarse`): opening the panel or
+  loading `/moonmind` never focuses the input (the keyboard would cover the
+  starters); the panel focuses the dialog itself (`tabindex="-1"`, no
+  visible ring) so screen readers land inside it. Desktop keeps focusing
+  the input. Measured at 375px: active element = the dialog (was the
+  textarea); on the full page, not the textarea.
+- **Modal under 640px** (`Moonmind.jsx`, `lib/inertOutside.js`):
+  `aria-modal="true"`; everything outside the panel is `inert` (walking up
+  from the panel and marking siblings; restored exactly on close); Tab and
+  Shift+Tab wrap inside the panel; the page is locked with
+  `overflow: hidden` plus `scrollbar-gutter: stable` (no jump; measured: a
+  wheel over the page leaves `scrollY` at 600). A dim backdrop
+  (`bg-background/70`, kept out of the inert set) sits behind the panel and
+  closes it on tap, which is also what tapping the (now covered) bottom-nav
+  button used to do.
+- **At every size:** Escape closes the panel (not while the new-chat
+  confirmation is open, which takes Escape itself, nor during IME
+  composition), and focus returns to the element that opened it if it is
+  still on screen (the navbar pill, the bottom-nav button, the hero
+  button), else the launcher, else the bottom-nav button. The brief asked
+  for the launcher at 640px+; returning to the actual opener is the usual
+  dialog pattern and covers the navbar pill, and the launcher is the
+  fallback. From 640px the panel stays non-modal (no `aria-modal`, nothing
+  inert, page scrolls).
+- **Keyboard on phones:** the panel already follows the visual viewport
+  (`useVisualViewportVars`); the full page now does too (fixed to
+  `--vv-top` / `--vv-height`). The list keeps a reader at the bottom when it
+  gets shorter (`ResizeObserver`). Simulated by shrinking the viewport to
+  480px: panel composer bottom 381px, page composer 441px, both inside the
+  480px; the list stays at the latest message.
+- **Both themes** (axe-core `color-contrast` + ARIA rules on the panel and
+  the page, with an answer, sources and the expanded trace, dark and
+  light, 320, 375 and 1280px): 0 violations. Panel and page are solid page
+  colour (no blur over scrolling content).
+- **Sizes:** smallest chat text 12px, input 16px, no horizontal scroll at
+  320 and 375px; every tap target in the chat is at least 44×44 (raised: the
+  steps header 36 → 44, Sources 32 → 44, the input 38 → 44; inline links
+  inside answers are text and exempt).
+- **Safe areas:** the full page's right padding used the left inset; it now
+  uses `safe-area-inset-right`. The panel already used the insets on every
+  side; the page header and composer keep the top and bottom ones.
+
+### Verification fixes (after the seven parts)
+
+Recording one full question and answer at 4x CPU showed the chat
+re-rendering, and re-parsing the markdown of every answer, on every poll
+(~1s), every keystroke and every status change (this was already so before
+the redesign; the new statuses made it more frequent). Three changes,
+behaviour unchanged:
+
+- **Markdown parsed once per answer** (`Markdown`, `memo` on the content):
+  polls no longer produce long tasks at all (before: 50-200ms each at 4x).
+- **The composer owns its text** (`Composer`): a keystroke re-renders the
+  input, not the conversation. Enter / Shift+Enter, the auto-grow and its
+  cap, and the fonts-ready measuring move with it unchanged.
+- **The answer's entrance is CSS** (`.mm-enter`: the same fade + 8px rise,
+  40ms apart, done within 400ms), and the arrival is measured and scrolled
+  in the next frame instead of inside React's commit. Measuring in the
+  commit had forced the new answer's layout into the same task (one
+  ~0.65-0.72s task at 4x instead of two ~0.3s ones). The follow-scroll
+  waits for that decision, so the list still never moves twice; the
+  entrance is marked done after 400ms so a re-render cannot cut it short,
+  and is remembered per answer (module scope) so a remount never replays
+  it.
+
+All part checks were re-run after this (panel and page, both themes, phone
+and desktop): same results.
+
+### After: measured against the mock (desktop 1280×800 and phone 375×812)
+
+| Check | Before | After |
+| --- | --- | --- |
+| Long answer, its message's top vs the top of the list | ~340px above the view | 12px below the top (panel, phone, page); the pill lands it at 12px |
+| `scrollTop` sampled every 30ms for 1.5s after expand / minimize | 15-18 distinct values sweeping from 0 | 1 value, 0 changes (both ways, desktop and phone); 300px up stays 300px up |
+| Current step name in the DOM while running | up to 3 times | once (checked at three points of a run) |
+| Trace rows under 300ms / durations under 0.1s | "12ms", "32ms" rows | none |
+| Smallest chat text / input | 11px / 16px | 12px / 16px |
+| Tap targets under 44px in the chat | steps header 36px, Sources 32px, input 38px | none (320, 375, 1280px; panel and page; both themes) |
+| Horizontal scroll at 320 / 375px | none | none |
+| Input focused when the panel opens on touch | yes | no (the dialog is focused) |
+| Continuous animations while running / idle | sweep, orb (3 layers), pipeline dot | 2 (loader pulse, skeleton breath) / 0; none with reduced motion; paused in a hidden tab |
+| axe-core contrast + ARIA (panel and page, both themes) | not measured | 0 violations |
+| Chat chunk (lazy) | 167.90 kB, 51.64 kB gzip | 175.47 kB, 54.26 kB gzip (+2.62 kB) |
+| `/moonmind` page chunk | 2.19 kB, 0.97 kB gzip | 2.60 kB, 1.18 kB gzip |
+| Initial JS | 423.00 kB, 143.73 kB gzip | 427.65 kB, 145.55 kB gzip (+1.82 kB: the panel's dialog logic, the loader, the new constants); budget 170 kB |
+| CSS | 73.85 kB, 14.93 kB gzip | 75.22 kB, 15.15 kB gzip |
+
+- **Behaviour checks** (all with the mock): send by typing + Enter,
+  Shift+Enter (newline, nothing sent), the Send button and a starter chip;
+  500, offline and timeout with Try again; New chat (empty: no confirm;
+  confirm bar, Escape, Start new chat, focus, Undo, expiry, new message);
+  expand → minimize → panel with the conversation, direct visit → minimize,
+  back and forward; Copy; Jump to latest; reduced motion (no CSS or JS
+  animation in the chat, no view transition, instant jumps; everything
+  still works). Reload mid-run: does not resume (see Suggestions).
+- **Long tasks, one full question and answer at 4x CPU** (5 alternating
+  runs; this machine's load drifts a lot, so only medians): before, the
+  longest task 190ms (phone) / 137ms (desktop); after 237 / 326ms; total
+  blocking 420 / 302ms before, 370 / 513ms after. Both builds are far from
+  "no task over 50ms". What remains after the fixes above: sending (~110-130ms
+  at 4x, was 150-210) and the answer itself: rendering a 1,500-character
+  markdown answer (~70-300ms) and its first layout and paint (~140-380ms,
+  mostly text layout; `text-wrap: pretty` and layout containment were
+  measured and make no difference). See Suggestions.
+- **Lighthouse mobile** (home page; the chat is lazy), 3 runs alternating
+  with the previous build: Performance 62 / 73 / 66 before, 62 / 75 / 64
+  after; Accessibility 100 both; CLS 0 both. The machine benchmarked
+  237-689 during these runs (earlier rounds scored 90+ at ~1,400-1,600), so
+  the ≥ 90 budget could not be confirmed here for either build.
+
+## 13. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.
@@ -1173,3 +1552,21 @@ they wrapped onto two left-aligned rows of different widths.
   `theme` per site theme would change the request URL, so it is left alone.
 - `ScrollToTop` sets state from a raw scroll listener; it could share the
   navbar's single animation frame.
+- **Moonmind answers arrive ~3s after the trace ends** (live knowledge run:
+  ~12.0s waited, "Thought for 9s"). The client polls every 900ms after each
+  response, so up to ~1s of that is polling; the rest is between the last
+  step and the answer being available. A shorter interval, long-polling or
+  streaming the answer would shorten it. That is a backend/API decision, so
+  the interval is unchanged.
+- **Moonmind runs do not survive a reload.** The running placeholder (with
+  its `runId`) is filtered out before the conversation is saved, so a reload
+  mid-run leaves the question unanswered and stops polling, although the run
+  finishes on the server. Storing the in-flight `runId` and polling it again
+  on load (then showing "Reconnecting…" while it does) would fix it; that
+  changes what is stored and the run lifecycle, so it was left out.
+- **A long Moonmind answer still costs one long render and one long layout**
+  (~0.1-0.4s each at 4x CPU, about the same as before). Parsing markdown
+  in a worker (the answer arrives whole, so it can be parsed off the main
+  thread before it is shown) or rendering it a few blocks per frame would
+  bring both under 50ms; either is a structural change to how answers are
+  rendered, so it was left out.

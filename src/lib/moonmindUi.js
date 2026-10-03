@@ -7,4 +7,5 @@ export const headerActionClass = cn(
   "icon-btn text-muted-foreground",
   "hover:text-foreground",
   "disabled:opacity-40 disabled:hover:text-muted-foreground disabled:after:hidden",
+  "aria-disabled:opacity-40 aria-disabled:cursor-default aria-disabled:hover:text-muted-foreground aria-disabled:after:hidden",
 );

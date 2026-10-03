@@ -16,7 +16,7 @@ export const MOONMIND_WELCOME = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! I'm Moonmind 🌙 — Ayan's AI portfolio assistant. Ask me anything about his skills, projects, or experience.",
+    "Hi! I'm Moonmind, Ayan's AI portfolio assistant. Ask me anything about his skills, projects, experience or hobbies!",
 };
 
 const NOT_CONFIGURED_TEXT =
@@ -26,6 +26,8 @@ const GENERIC_ERROR_TEXT =
 const TIMEOUT_TEXT =
   "That one is taking longer than expected. Please try asking again.";
 const EMPTY_ANSWER_TEXT = "I could not generate a response just now.";
+// How long "Chat cleared. Undo" stays after a new chat.
+const UNDO_MS = 6000;
 
 const makeId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -131,6 +133,8 @@ export const MoonmindProvider = ({ children }) => {
   const sendMessage = async (rawText) => {
     const text = (rawText ?? "").trim();
     if (!text || loading) return;
+    // A new message ends the chance to undo a cleared conversation.
+    dropUndo();
 
     // Everything below belongs to this run. If the chat is refreshed while it
     // is in flight, the token moves on and every late result is discarded.
@@ -236,6 +240,30 @@ export const MoonmindProvider = ({ children }) => {
     }
   };
 
+  // ---- Undo a new chat ----
+  const undoRef = useRef(null);
+  const undoTimerRef = useRef(0);
+  const [canUndo, setCanUndo] = useState(false);
+
+  function dropUndo() {
+    clearTimeout(undoTimerRef.current);
+    undoRef.current = null;
+    setCanUndo(false);
+  }
+
+  const undoRefresh = () => {
+    const saved = undoRef.current;
+    dropUndo();
+    if (!saved) return;
+    // Exactly as before: the same messages and the same session id (the
+    // storage effects write them back).
+    setMessages(saved.messages);
+    sessionIdRef.current = saved.sessionId;
+    setSessionId(saved.sessionId);
+  };
+
+  useEffect(() => () => clearTimeout(undoTimerRef.current), []);
+
   // ---- Refresh chat ----
   // `refreshChat` is what both headers call. It only opens the inline
   // confirmation; `confirmRefresh` does the actual clearing.
@@ -249,6 +277,19 @@ export const MoonmindProvider = ({ children }) => {
   const cancelRefresh = () => setRefreshPending(false);
 
   const confirmRefresh = () => {
+    // Undo: the conversation and session id as they were, in memory only,
+    // for UNDO_MS or until the next message. Never written back to storage
+    // unless Undo is pressed in time. A reply that was still in flight is
+    // left out (its run is cancelled below; restoring it would leave a
+    // placeholder waiting forever).
+    clearTimeout(undoTimerRef.current);
+    undoRef.current = {
+      messages: messages.filter((m) => m.status !== "running"),
+      sessionId: sessionIdRef.current,
+    };
+    setCanUndo(true);
+    undoTimerRef.current = setTimeout(dropUndo, UNDO_MS);
+
     // Orphan any run in flight: the token moves, then the request is aborted
     // so the poll loop and its backoff timer stop immediately.
     guardRef.current.invalidate();
@@ -287,6 +328,8 @@ export const MoonmindProvider = ({ children }) => {
         confirmRefresh,
         cancelRefresh,
         refreshPending,
+        canUndo,
+        undoRefresh,
       }}
     >
       {children}

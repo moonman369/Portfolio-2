@@ -359,7 +359,7 @@ export const MOONMIND_NUDGE_CLOSE_LABEL = "Dismiss Moonmind suggestion";
 // above; the full detail lives in About). Keep it to about two lines on a
 // phone so both hero buttons stay above the fold.
 export const HERO_SECTION_TAGLINE =
-  "Senior Software Engineer at EY GDS, building agentic AI systems with Microsoft Agent Framework and Azure AI Foundry.";
+  "Senior Software Engineer at EY GDS | AI/GenAI & Agentic Systems | Python, LangChain, Microsoft Agent Framework, Azure AI Foundry, LLMs & RAG | Microservices, .NET, Java & Azure Cloud Platform";
 
 // ---- Moonmind intro pop-up (shown on every load by the Moonmind button) ----
 export const MOONMIND_INTRO_TITLE = "Moonmind AI";
@@ -390,3 +390,47 @@ export const PROJECTS_SHOW_MORE_LABEL = "Show {count} more projects";
 export const PROJECTS_SHOW_FEWER_LABEL = "Show fewer projects";
 // Announced (politely) when the hidden projects are shown.
 export const PROJECTS_SHOWN_ANNOUNCEMENT = "{count} more projects shown";
+
+// ---- Moonmind chat redesign ----
+// Header subtitle: the full line where it fits, the short one where it would
+// otherwise be cut off (narrow headers).
+export const MOONMIND_SUBTITLE = "Ayan's portfolio assistant";
+export const MOONMIND_SUBTITLE_SHORT = "AI assistant";
+// The message list (role="log") and its pill for answers that arrived while
+// the reader was scrolled up.
+export const MOONMIND_LOG_LABEL = "Conversation";
+export const MOONMIND_JUMP_LATEST = "Jump to latest";
+// Per-answer copy action.
+export const MOONMIND_COPY_LABEL = "Copy answer";
+export const MOONMIND_COPIED = "Copied";
+// Visually hidden status: what a screen reader hears while a run is going,
+// instead of every step update.
+export const MOONMIND_STATUS_WORKING = "Working…";
+export const MOONMIND_STATUS_READY = "Answer ready";
+// Shown under the trace only when a run is slow: the first after 6s, replaced
+// by the second after 20s.
+export const MOONMIND_WAIT_SLOW = "Still working. Searching takes a few seconds.";
+export const MOONMIND_WAIT_LONG = "This is taking longer than usual.";
+// Under a failed answer: resends the last question.
+export const MOONMIND_TRY_AGAIN = "Try again";
+// Route chip after a run: plain words for the backend's route names. A
+// route missing here shows its raw name (the raw name is always the chip's
+// title). `tech_web` is the retired alias of `agent`.
+export const MOONMIND_ROUTE_LABELS = {
+  knowledge: "From the portfolio",
+  agent: "Researched",
+  tech_web: "Researched",
+  stats: "Live stats",
+  capabilities: "About Moonmind",
+  greeting: "Greeting",
+  refusal: "Out of scope",
+};
+// The disclosure inside the expanded trace that shows the sub-steps.
+export const MOONMIND_DETAILS_LABEL = "Details";
+// "New chat" (was "Refresh chat"): the header action, its confirmation and
+// what follows it.
+export const MOONMIND_NEW_CHAT_LABEL = "New chat";
+export const MOONMIND_START_NEW_CHAT = "Start new chat";
+export const MOONMIND_NEW_CHAT_STARTED = "New chat started";
+export const MOONMIND_CHAT_CLEARED = "Chat cleared.";
+export const MOONMIND_UNDO = "Undo";
