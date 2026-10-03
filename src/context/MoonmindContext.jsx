@@ -16,7 +16,7 @@ export const MOONMIND_WELCOME = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! I'm Moonmind 🌙 — Ayan's AI portfolio assistant. Ask me anything about his skills, projects, or experience.",
+    "Hi! I'm Moonmind, Ayan's AI portfolio assistant. Ask me anything about his skills, projects, experience or hobbies!",
 };
 
 const NOT_CONFIGURED_TEXT =

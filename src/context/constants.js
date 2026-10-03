@@ -359,7 +359,7 @@ export const MOONMIND_NUDGE_CLOSE_LABEL = "Dismiss Moonmind suggestion";
 // above; the full detail lives in About). Keep it to about two lines on a
 // phone so both hero buttons stay above the fold.
 export const HERO_SECTION_TAGLINE =
-  "Senior Software Engineer at EY GDS, building agentic AI systems with Microsoft Agent Framework and Azure AI Foundry.";
+  "Senior Software Engineer at EY GDS | AI/GenAI & Agentic Systems | Python, LangChain, Microsoft Agent Framework, Azure AI Foundry, LLMs & RAG | Microservices, .NET, Java & Azure Cloud Platform";
 
 // ---- Moonmind intro pop-up (shown on every load by the Moonmind button) ----
 export const MOONMIND_INTRO_TITLE = "Moonmind AI";
