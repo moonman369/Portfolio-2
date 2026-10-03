@@ -1097,6 +1097,47 @@
     display: none;
 }
 
+/* Phones: the chat as a sheet (lib/moonmindView.js, `sheet`). Opening, the
+   page slides up from the bottom over the home page, which dims a little;
+   closing, it slides back down and the home page brightens under it. The
+   whole page moves as one (no separate chat morph on phones). Transform and
+   opacity only; reduced motion never starts the transition. Larger screens
+   keep the panel <-> page morph below. */
+@media (max-width: 639px) {
+    /* :root raises it over the panel <-> page rule further down. */
+    :root .mm-view {
+        view-transition-name: none;
+    }
+    .mm-sheet-open::view-transition-old(root) {
+        animation: mm-sheet-dim calc(var(--motion-base) * 1.4) var(--motion-ease-out) both;
+    }
+    .mm-sheet-open::view-transition-new(root) {
+        animation: mm-sheet-up calc(var(--motion-base) * 1.4) var(--motion-ease-expo) both;
+    }
+    .mm-sheet-close::view-transition-old(root) {
+        z-index: 1;
+        animation: mm-sheet-down var(--motion-base) var(--motion-ease-inOut) both;
+    }
+    .mm-sheet-close::view-transition-new(root) {
+        animation: mm-sheet-dim var(--motion-base) var(--motion-ease-out) reverse both;
+    }
+}
+@keyframes mm-sheet-up {
+    from {
+        transform: translateY(100%);
+    }
+}
+@keyframes mm-sheet-down {
+    to {
+        transform: translateY(100%);
+    }
+}
+@keyframes mm-sheet-dim {
+    to {
+        opacity: 0.55;
+    }
+}
+
 /* The full page follows the visual viewport (keyboard up: shorter). */
 .mm-page {
     top: var(--vv-top, 0px);
@@ -1227,24 +1268,6 @@
    Sized from the visual viewport (useVisualViewportVars), so when the
    on-screen keyboard opens the panel shrinks with it and the input stays
    visible. Clears the top bar and the docked bottom nav when it is closed. */
-@media (max-width: 639px) {
-    .mm-panel {
-        left: max(0.75rem, env(safe-area-inset-left));
-        right: max(0.75rem, env(safe-area-inset-right));
-        /* Clear the two bars, which keep their size on phones (--u, see
-           "Phones: one step smaller"). */
-        top: calc(var(--vv-top, 0px) + env(safe-area-inset-top) + 4.5 * var(--u, 1rem));
-        height: calc(
-            var(--vv-height, 100dvh) - env(safe-area-inset-top) - 4.5 * var(--u, 1rem) -
-                env(safe-area-inset-bottom) - 4.75 * var(--u, 1rem)
-        );
-    }
-    /* Keyboard up: the bars are out of the way, use the whole visible area. */
-    .mm-panel[data-keyboard="open"] {
-        top: calc(var(--vv-top, 0px) + 0.5rem);
-        height: calc(var(--vv-height, 100dvh) - 1rem);
-    }
-}
 
 /* Hero entrance hold: the moon stays hidden from the first paint until
    HeroSection sets its start states (one frame later). Only present when

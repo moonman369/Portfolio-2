@@ -1590,7 +1590,70 @@ cover the end of the hero until it goes (7s, close, Escape, a tap outside,
 or opening the chat). `data-nudge-avoid` and the hide-until-checked step are
 removed with it.
 
-## 15. Suggestions (skipped because they would change behaviour)
+## 15. Moonmind on phones: no box, a compact header, a chat that stays
+
+- **No box on phones (`/moonmind`, under 640px):** the chat runs edge to
+  edge under the header: no side margins, border, rounded corners or
+  shadow; a hairline under the header; the safe areas move onto the chat
+  itself (left, right, and the composer's bottom). From 640px it is the
+  card it was (desktop unchanged).
+- **Compact header on phones:** badge 44 → 30px with an 18px mark, title
+  22.5 → 15px, tighter padding; the header goes from 74-102px (it wrapped
+  the subtitle at 320) to 55px, buttons still 44px. The floating panel's
+  badge matches (32px, 18px mark). The badge is written `size-8
+  sm:size-11` so the phones' 44px tap-target floor (§13) does not catch it.
+- **Starter chips on one line:** with the full width, all four fit on one
+  line on the page from 360px up (the long one wrapped at 320-375px
+  before). At 320px the two longest still wrap: ~300px of 14px text in
+  ~254px; one line there would mean going under 14px.
+- **The chat survives the tab:** the conversation and the session id are in
+  `localStorage` instead of `sessionStorage` (same keys, same formats), so
+  closing the tab or opening the site in a new one picks it up again, with
+  the same backend session. A chat still in `sessionStorage` is moved over
+  the first time it is read. "New chat" clears both stores; Undo works as
+  before. Note: the conversation now stays on the device until "New chat",
+  and two tabs share it (the last write wins). A reload mid-run still does
+  not resume the run (§12).
+
+## 16. Phones: the chat is the page (no floating panel)
+
+Under 640px there is no in-between floating panel any more: every way of
+opening Moonmind (the bottom-nav button, the hero button, the intro card)
+goes straight to `/moonmind`, and the panel never renders (checked with a
+DOM observer at 320 and 375px: it never appears, not even for a frame). On
+the page, phones get a single Close (×, 44px, "Close Moonmind") next to New
+chat in place of Minimize; Close and Escape go back where the visitor came
+from (back after an internal open, else home) without opening a panel. The
+conversation and the list position carry over as before. From 640px
+(tablet, desktop) nothing changes: the floating panel, Expand, and Minimize
+reopening the panel.
+
+This replaces the phone half of §12 Part 7: the modal panel (backdrop,
+`inert` page, focus trap, scroll lock, `aria-modal`) and its phone CSS are
+removed, with `lib/inertOutside.js`. The panel's Escape and return-focus
+behaviour stay for 640px and up. Initial JS: 145.50 → 144.85 kB gzip.
+
+## 17. Phones: the chat opens and closes as a sheet
+
+- **Opening** (any entry point, under 640px): the whole `/moonmind` page
+  slides up from the bottom over the home page (420ms, the expo ease-out),
+  while the home page dims to 55%. **Closing** (× or Escape): it slides back
+  down (300ms, ease-in-out) and the home page brightens under it. A View
+  Transition with a `sheet` kind (`switchView(…, { sheet })`, which puts
+  `mm-sheet-open` / `mm-sheet-close` on `<html>` for its length); on phones
+  the chat container has no view-transition name, so the page moves as one.
+  Transform and opacity only. Reduced motion, or a browser without View
+  Transitions: the same switch, instantly. Tablet and desktop keep the
+  panel ↔ page morph.
+- **No frozen screen:** the transition only starts once the page's code is
+  loaded (it is warmed with the chat's on touch, hover or focus), and a
+  loaded page is rendered directly rather than through `React.lazy` again,
+  which suspended for a render and held the reveal for ~300ms. Tap → slide
+  start: 414 → ~150-250ms. Closing used to wait out the 800ms ready
+  fallback (there is no chat on the home page to signal it); the home
+  page's Moonmind now signals it: ~100ms.
+
+## 18. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

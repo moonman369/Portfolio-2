@@ -1,10 +1,13 @@
 import { useEffect, useRef } from "react";
-import { Minimize2 } from "lucide-react";
+import { Minimize2, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { headerActionClass } from "../lib/moonmindUi";
 import { switchView } from "../lib/moonmindView";
-import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import {
+  useMediaQuery,
+  usePrefersReducedMotion,
+} from "../hooks/usePrefersReducedMotion";
 import { useMoonmind } from "../context/MoonmindContext";
 import { useTheme } from "../context/ThemeContext";
 import { useOffscreenPause } from "../hooks/useOffscreenPause";
@@ -23,6 +26,9 @@ const MoonmindPage = () => {
   const { isDarkMode } = useTheme();
   const { open, refreshPending } = useMoonmind();
   const reducedMotion = usePrefersReducedMotion();
+  // Phones have no floating panel: the page is the chat, and it closes
+  // instead of minimizing (see Moonmind.jsx).
+  const desktop = useMediaQuery("(min-width: 640px)");
   const navigate = useNavigate();
   const location = useLocation();
   // A hidden tab pauses every animation here too (the loader, the skeleton,
@@ -39,18 +45,19 @@ const MoonmindPage = () => {
   // promises. Its open state lives in the Moonmind context, which outlives
   // the route, so it is set before navigating (a flag in the history state
   // would be lost with navigate(-1)). The page shrinks into the panel with a
-  // view transition where supported.
+  // view transition where supported. On a phone it closes instead: the same
+  // way back, with no panel to open.
   const minimize = () =>
     switchView(
       () => {
-        open();
+        if (desktop) open();
         if (location.state?.internal) navigate(-1);
         else navigate(location.state?.from || "/");
       },
-      { reducedMotion },
+      { reducedMotion, sheet: desktop ? undefined : "close" },
     );
 
-  // Escape minimizes, unless the new-chat confirmation is open (Escape
+  // Escape minimizes (closes on a phone), unless the new-chat confirmation is open (Escape
   // cancels that) or an IME composition is in progress.
   const minimizeRef = useRef(minimize);
   const pendingRef = useRef(refreshPending);
@@ -78,16 +85,18 @@ const MoonmindPage = () => {
       {/* Same background as the site */}
       {isDarkMode ? <StarBackground /> : <LightModeBackground />}
 
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
+      {/* Phones: no box. The chat runs edge to edge under a compact
+          header; from 640px it sits in its card as before. */}
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col w-full max-w-3xl mx-auto sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
         {/* Header (fixed) */}
-        <div className="paper-scrim flex items-center gap-3 py-4 shrink-0 text-left">
-          <span className="grid place-items-center size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
-            <MoonMark size={24} />
+        <div className="paper-scrim flex items-center gap-3 py-4 max-sm:py-1.5 max-sm:gap-2.5 max-sm:pl-[max(1rem,env(safe-area-inset-left))] max-sm:pr-[max(0.375rem,env(safe-area-inset-right))] shrink-0 text-left">
+          <span className="grid place-items-center size-8 sm:size-11 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
+            <MoonMark size={24} className="max-sm:size-[18px]" />
           </span>
           {/* The subtitle is never cut off: the full line where it fits,
               the short one in a narrow header (container query). */}
           <div className="@container flex-1 min-w-0">
-            <h1 className="font-heading text-2xl font-semibold leading-tight text-foreground">
+            <h1 className="font-heading text-2xl max-sm:text-base font-semibold leading-tight text-foreground">
               Moonmind AI
             </h1>
             <p className="font-mono text-xs text-muted-foreground">
@@ -96,26 +105,43 @@ const MoonmindPage = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 max-sm:gap-0 shrink-0">
             <MoonmindNewChat />
-            <button
-              onClick={minimize}
-              aria-label="Minimize to portfolio"
-              title="Minimize"
-              className={cn(
-                headerActionClass,
-                "sm:w-auto sm:inline-flex sm:items-center sm:gap-2 sm:px-4 sm:rounded-full",
-                "sm:text-sm sm:font-medium sm:text-foreground sm:ring-1 sm:ring-inset sm:ring-input",
-              )}
-            >
-              <Minimize2 size={17} aria-hidden="true" />
-              <span className="max-sm:hidden">Minimize</span>
-            </button>
+{desktop ? (
+              <button
+                onClick={minimize}
+                aria-label="Minimize to portfolio"
+                title="Minimize"
+                className={cn(
+                  headerActionClass,
+                  "w-auto inline-flex items-center gap-2 px-4 rounded-full",
+                  "text-sm font-medium text-foreground ring-1 ring-inset ring-input",
+                )}
+              >
+                <Minimize2 size={17} aria-hidden="true" />
+                <span>Minimize</span>
+              </button>
+            ) : (
+              <button
+                onClick={minimize}
+                aria-label="Close Moonmind"
+                title="Close"
+                className={headerActionClass}
+              >
+                <X size={19} aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Chat container — only the messages scroll; header + input stay put */}
-        <div className="mm-view flex-1 min-h-0 mb-[max(1rem,env(safe-area-inset-bottom))] rounded-2xl overflow-hidden flex flex-col bg-background border border-border shadow-xl">
+        <div
+          className={cn(
+            "mm-view flex-1 min-h-0 overflow-hidden flex flex-col bg-background",
+            "sm:mb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-2xl sm:border sm:border-border sm:shadow-xl",
+            "max-sm:border-t max-sm:border-border max-sm:pl-[env(safe-area-inset-left)] max-sm:pr-[env(safe-area-inset-right)] max-sm:pb-[env(safe-area-inset-bottom)]",
+          )}
+        >
           <MoonmindChat className="flex-1 min-h-0" />
         </div>
       </div>

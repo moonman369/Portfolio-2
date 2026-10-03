@@ -6,11 +6,14 @@ import { createSpring } from "animejs/easings/spring";
 import { cn } from "../lib/utils";
 import { DURATION, EASE, SPRING } from "../lib/motion";
 import { headerActionClass } from "../lib/moonmindUi";
-import { MoonmindChatLazy, moonmindIntentProps } from "../lib/lazyChat";
-import { switchView } from "../lib/moonmindView";
-import { inertOutside, trapTab } from "../lib/inertOutside";
+import {
+  loadMoonmindChat,
+  loadMoonmindPage,
+  MoonmindChatLazy,
+  moonmindIntentProps,
+} from "../lib/lazyChat";
+import { switchView, viewReady } from "../lib/moonmindView";
 import { useMoonmind } from "../context/MoonmindContext";
-import { useVisualViewportVars } from "../hooks/useVisualViewportVars";
 import {
   useMediaQuery,
   usePrefersReducedMotion,
@@ -44,14 +47,11 @@ const Moonmind = () => {
   useMoonmindNudge({ isOpen });
   const navigate = useNavigate();
   const location = useLocation();
-  // Keeps the mobile panel (and its input) inside the visible area when the
-  // on-screen keyboard opens.
   const panelRef = useRef(null);
-  useVisualViewportVars(panelRef, isOpen);
 
-  // Launcher -> panel morph (desktop, motion allowed). On close the panel
-  // stays rendered, inert and hidden from assistive tech, only while it
-  // shrinks back into the launcher. Phones keep the plain fade.
+  // Launcher -> panel morph (motion allowed). On close the panel stays
+  // rendered, inert and hidden from assistive tech, only while it shrinks
+  // back into the launcher.
   const reducedMotion = usePrefersReducedMotion();
   const desktop = useMediaQuery("(min-width: 640px)");
   const canMorph = desktop && !reducedMotion;
@@ -66,7 +66,35 @@ const Moonmind = () => {
     setExiting(!isOpen && canMorph);
     if (!isOpen) setQuiet(false);
   }
-  const showPanel = isOpen || exiting;
+  // Phones have no floating panel (below).
+  const showPanel = desktop && (isOpen || exiting);
+
+  // ---- Phones (under 640px): the chat is the full page ----
+  // There is no in-between panel on a small screen: any way of opening the
+  // chat (the bottom-nav button, the hero button, the intro card) goes
+  // straight to /moonmind, before anything paints. The open state goes back
+  // to closed, so the page's own Close returns here with no panel.
+  // The sheet starts once the page's code is here (usually already, warmed on
+  // touch), so the screen never freezes mid-transition waiting for it.
+  useLayoutEffect(() => {
+    if (!isOpen || desktop) return;
+    close();
+    const go = () =>
+      switchView(
+        () =>
+          navigate("/moonmind", {
+            state: { from: `${location.pathname}${location.hash}`, internal: true },
+          }),
+        { reducedMotion, sheet: "open" },
+      );
+    Promise.all([loadMoonmindPage(), loadMoonmindChat()]).then(go, go);
+  }, [isOpen, desktop, close, navigate, location.pathname, location.hash, reducedMotion]);
+
+  // Back on the home page: a view transition from the full page can capture
+  // it now. (On a phone there is no panel whose chat would say so.)
+  useLayoutEffect(() => {
+    viewReady();
+  }, []);
 
   useLayoutEffect(() => {
     const panel = panelRef.current;
@@ -111,14 +139,10 @@ const Moonmind = () => {
     return () => animations.forEach((animation) => animation.cancel());
   }, [isOpen, exiting, canMorph, quiet]);
 
-  // ---- Dialog behaviour ----
-  // Under 640px the panel covers most of the screen, so it is modal: the page
-  // behind is inert and does not scroll, Tab stays inside, a tap on the dim
-  // backdrop closes it. From 640px it stays non-modal. At any size Escape
-  // closes it and focus goes back to what opened it (else the launcher, or
-  // the bottom-nav button). On touch screens nothing focuses the input (the
-  // keyboard would cover the starters); focus lands on the dialog instead.
-  const modal = !desktop;
+  // ---- Dialog behaviour (640px and up) ----
+  // Non-modal. Escape closes it and focus goes back to what opened it (else
+  // the launcher). On touch screens (tablets) nothing focuses the input;
+  // focus lands on the dialog instead.
   const launcherRef = useRef(null);
   const openerRef = useRef(null);
   const closeRef = useRef(close);
@@ -129,16 +153,14 @@ const Moonmind = () => {
   });
 
   const returnFocus = () => {
-    const target = [
-      openerRef.current,
-      launcherRef.current,
-      document.querySelector("[data-moonmind-anchor=bar]"),
-    ].find((el) => el?.isConnected && el.getClientRects().length > 0);
+    const target = [openerRef.current, launcherRef.current].find(
+      (el) => el?.isConnected && el.getClientRects().length > 0,
+    );
     target?.focus({ preventScroll: true });
   };
 
   useLayoutEffect(() => {
-    if (!isOpen) return undefined;
+    if (!isOpen || !desktop) return undefined;
     const active = document.activeElement;
     openerRef.current = active && active !== document.body ? active : null;
     if (window.matchMedia?.("(pointer: coarse)").matches) {
@@ -147,11 +169,10 @@ const Moonmind = () => {
     // A frame after closing, once the launcher is back (it renders only
     // while closed).
     return () => requestAnimationFrame(returnFocus);
-  }, [isOpen]);
-
+  }, [isOpen, desktop]);
 
   useEffect(() => {
-    if (!isOpen) return undefined;
+    if (!isOpen || !desktop) return undefined;
     const onKeyDown = (event) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       if (event.isComposing || event.keyCode === 229) return;
@@ -161,25 +182,7 @@ const Moonmind = () => {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen]);
-
-  useEffect(() => {
-    const panel = panelRef.current;
-    if (!isOpen || !modal || !panel) return undefined;
-    const restoreInert = inertOutside(panel);
-    // Lock the page behind without a jump: keep the scrollbar's gutter.
-    const root = document.documentElement;
-    const previous = [root.style.overflow, root.style.scrollbarGutter];
-    root.style.scrollbarGutter = "stable";
-    root.style.overflow = "hidden";
-    const onKeyDown = (event) => trapTab(panel, event);
-    panel.addEventListener("keydown", onKeyDown);
-    return () => {
-      restoreInert();
-      [root.style.overflow, root.style.scrollbarGutter] = previous;
-      panel.removeEventListener("keydown", onKeyDown);
-    };
-  }, [isOpen, modal]);
+  }, [isOpen, desktop]);
 
   // The panel grows into the full page (a view transition where supported).
   const expand = () =>
@@ -217,33 +220,19 @@ const Moonmind = () => {
       {/* Right after the launcher, so keyboard users meet it in order. */}
       <MoonmindNudge anchor="launcher" />
 
-      {/* Phones: the dim backdrop of the modal panel; a tap closes it. */}
-      {isOpen && modal && (
-        <div
-          aria-hidden="true"
-          data-modal-keep
-          onClick={close}
-          className={cn(
-            "mm-scrim fixed inset-0 z-[59] bg-background/70",
-            !quiet && "animate-fade-in",
-          )}
-        />
-      )}
-
       {/* Chat panel */}
       {showPanel && (
         <div
           ref={panelRef}
           inert={!isOpen}
           aria-hidden={!isOpen || undefined}
-          aria-modal={(isOpen && modal) || undefined}
           tabIndex={-1}
           className={cn(
             "mm-panel mm-view fixed z-[60] flex flex-col overflow-hidden rounded-2xl focus:outline-none",
             canMorph ? "origin-bottom-right" : !quiet && "animate-fade-in",
             "bg-background border border-border shadow-xl",
-            "sm:inset-auto sm:right-[max(1.5rem,env(safe-area-inset-right))] sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
-            "sm:w-96 sm:h-[600px] sm:max-h-[80vh]",
+            "right-[max(1.5rem,env(safe-area-inset-right))] bottom-[calc(5.5rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+            "w-96 h-[600px] max-h-[80vh]",
           )}
           role="dialog"
           aria-label="Moonmind AI assistant"
@@ -253,8 +242,8 @@ const Moonmind = () => {
             data-morph-content
             className="flex items-center gap-3 pl-4 pr-1.5 py-1.5 border-b border-border bg-card"
           >
-            <span className="grid place-items-center size-9 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
-              <MoonMark size={20} />
+            <span className="grid place-items-center size-9 max-sm:size-8 shrink-0 rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/30">
+              <MoonMark size={20} className="max-sm:size-[18px]" />
             </span>
             {/* The subtitle is never cut off: the full line where it fits,
                 the short one in a narrow header (container query). */}
