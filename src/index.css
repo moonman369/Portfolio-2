@@ -1231,10 +1231,12 @@
     .mm-panel {
         left: max(0.75rem, env(safe-area-inset-left));
         right: max(0.75rem, env(safe-area-inset-right));
-        top: calc(var(--vv-top, 0px) + env(safe-area-inset-top) + 4.5rem);
+        /* Clear the two bars, which keep their size on phones (--u, see
+           "Phones: one step smaller"). */
+        top: calc(var(--vv-top, 0px) + env(safe-area-inset-top) + 4.5 * var(--u, 1rem));
         height: calc(
-            var(--vv-height, 100dvh) - env(safe-area-inset-top) - 4.5rem -
-                env(safe-area-inset-bottom) - 4.75rem
+            var(--vv-height, 100dvh) - env(safe-area-inset-top) - 4.5 * var(--u, 1rem) -
+                env(safe-area-inset-bottom) - 4.75 * var(--u, 1rem)
         );
     }
     /* Keyboard up: the bars are out of the way, use the whole visible area. */
@@ -1732,4 +1734,112 @@
 :root[data-idle] .glow-beam::before,
 :root[data-idle] :is(.lunar-drift, .lunar-sun, .twinkle) {
     animation-play-state: paused;
+}
+
+/* ---- Phones: one step smaller (under 640px) ----
+   The root size drops from 16px to 15px (93.75%, so a visitor's own browser
+   text size still applies), and everything sized in rem (text, padding,
+   gaps, components, the chat) shrinks with it by ~6%. Media queries are
+   unaffected (they use the browser's initial size). Tablet and desktop do
+   not change at all. The few things that do not follow, or must not, are
+   set here:
+     - floors: small text 12px, paragraph text (text-sm) 14px, inputs 16px
+       (iOS zooms on anything smaller), tap targets 44px
+     - px and vw sizes, one step smaller by hand: the hero name and moon
+     - the top navbar and the bottom nav keep their exact size: --u is one
+       rem as it is everywhere else (16px at the default)
+     - the hero's top space and the footer, ~20-25% shorter */
+@media (max-width: 639px) {
+    html {
+        font-size: 93.75%;
+    }
+    :root {
+        --u: calc(1rem / 0.9375);
+        --text-xs: max(0.75rem, 12px);
+        --text-sm: max(0.875rem, 14px);
+        --text-name: clamp(2.5rem, 10.6vw, 4rem);
+        /* Section headings: ~6% (375px) to ~8% (414-639px) smaller. */
+        --text-h2: clamp(2.25rem, 1.35rem + 3.4vw, 4.25rem);
+    }
+
+    /* Floors. */
+    .eyebrow {
+        font-size: max(0.75rem, 12px);
+    }
+    .mm-nudge .font-mono {
+        font-size: 12px;
+    }
+    input,
+    textarea,
+    select {
+        font-size: max(1rem, 16px);
+    }
+    .min-h-11 {
+        min-height: max(2.75rem, 44px);
+    }
+    .min-w-11 {
+        min-width: max(2.75rem, 44px);
+    }
+    .size-11,
+    .icon-btn {
+        width: max(2.75rem, 44px);
+        height: max(2.75rem, 44px);
+    }
+
+    /* The hero's top space, ~20-25% shorter: the content no longer sits in
+       the middle of the spare height but 37% of the way down it (63% goes
+       below), from just under the top bar; never less than 24px between the
+       bar and the content block, so short phones still clear it. */
+    #hero {
+        flex-direction: column;
+        padding-top: calc(4 * var(--u) + env(safe-area-inset-top));
+    }
+    #hero::before,
+    #hero::after {
+        content: "";
+    }
+    #hero::before {
+        flex: 37 1 0;
+        min-height: 1.5rem;
+    }
+    #hero::after {
+        flex: 63 1 0;
+    }
+
+    /* The footer, ~20% shorter: less padding above, and ~13px between its
+       last line and the bottom nav (57px, kept) plus the safe area. */
+    footer {
+        padding-top: 1.25rem;
+        padding-bottom: calc(3.5625 * var(--u) + 0.875rem + env(safe-area-inset-bottom));
+    }
+
+    /* The hero moon is sized in px (it must not grow with text size): one
+       step smaller by hand, ~8% (117.5px at 375, 104px at the smallest). */
+    #hero {
+        --hero-moon-w: clamp(104px, 42vw - 40px, 162px);
+    }
+
+    /* The top navbar: unchanged (height, padding, brand, toggle icon). */
+    nav:has(> .nav-surface) > .container {
+        height: calc(4 * var(--u));
+        gap: var(--u);
+        padding-left: max(calc(1.25 * var(--u)), env(safe-area-inset-left));
+        padding-right: max(calc(1.25 * var(--u)), env(safe-area-inset-right));
+    }
+    nav:has(> .nav-surface) > .container > a {
+        gap: calc(0.625 * var(--u));
+        font-size: calc(1.0625 * var(--u));
+    }
+    nav:has(> .nav-surface) .icon-btn > svg {
+        width: calc(1.25 * var(--u));
+        height: calc(1.25 * var(--u));
+    }
+    /* The bottom nav: unchanged (padding, width, icon size). */
+    .nav-bar > div {
+        max-width: calc(28 * var(--u));
+        padding: calc(0.375 * var(--u));
+    }
+    .nav-bar .nav-link {
+        font-size: calc(1.3 * var(--u));
+    }
 }
