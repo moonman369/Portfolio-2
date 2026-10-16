@@ -2,17 +2,18 @@ import { cn } from "../lib/utils";
 
 // Editorial section header: a mono eyebrow ("02 / Skills") on a hairline,
 // then the heading, then an optional intro. Each line takes part in the
-// section's scroll entrance.
-const SectionHeading = ({ index, label, children, intro, className }) => (
+// section's scroll entrance, unless the section animates its own heading
+// (About passes `reveal={false}`; lib/aboutMotion.js).
+const SectionHeading = ({ index, label, children, intro, className, reveal = true }) => (
   <header className={cn("mb-12 md:mb-16", className)}>
-    <div data-reveal className="flex items-center gap-4">
+    <div data-reveal={reveal || undefined} className="flex items-center gap-4">
       <p className="eyebrow text-ink shrink-0">
         {index} / {label}
       </p>
       <span aria-hidden="true" className="h-px flex-1 bg-border" />
     </div>
     <h2
-      data-reveal
+      data-reveal={reveal || undefined}
       className="mt-6 font-heading text-h2 font-semibold text-foreground"
     >
       {children}

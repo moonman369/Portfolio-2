@@ -1,11 +1,15 @@
+import { useEffect } from "react";
 import { Briefcase, Code, Cpu } from "lucide-react";
 import {
+  ABOUT_HIGHLIGHTS,
   ABOUT_SECTION_HEADING,
   ABOUT_SECTION_PARAGRAPHS,
   ABOUT_SECTION_CARDS,
   RESUME_URL,
 } from "../context/constants";
 import { useReveal } from "../hooks/useReveal";
+import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
+import { whenAmbient } from "../lib/motion";
 import BlueSheen from "./BlueSheen";
 import GlowBeam from "./GlowBeam";
 import SectionHeading from "./SectionHeading";
@@ -16,8 +20,76 @@ const ICONS = {
   briefcase: Briefcase,
 };
 
+// A paragraph with its key phrases (ABOUT_HIGHLIGHTS, first occurrence each)
+// wrapped for a soft accent marker band behind them. The text is unchanged;
+// the band is a decorative child, shown in its final state until the About
+// animation (if it loads) sweeps it in. A phrase that is not there is simply
+// not found.
+const withHighlights = (text) => {
+  const parts = [text];
+  ABOUT_HIGHLIGHTS.forEach((phrase) => {
+    const at = parts.findIndex((part) => typeof part === "string" && part.includes(phrase));
+    if (at < 0) return;
+    const [before, ...rest] = parts[at].split(phrase);
+    parts.splice(
+      at,
+      1,
+      before,
+      <span key={phrase} className="about-hl">
+        {phrase}
+        <span aria-hidden="true" className="about-hl-mark" />
+      </span>,
+      rest.join(phrase),
+    );
+  });
+  return parts;
+};
+
+// The About animation (lib/aboutMotion.js) lives in its own chunk, fetched
+// once the section is within about a screen of the viewport, and never with
+// reduced motion. Watching starts only once the page has loaded and settled
+// (ambient motion), so the chunk never competes with the first load; About
+// sits right under the hero. Until it runs, and if it never does,
+// everything is in its final state.
+const useAboutMotion = (ref, reducedMotion) => {
+  useEffect(() => {
+    const section = ref.current;
+    if (!section || reducedMotion || typeof IntersectionObserver === "undefined") {
+      return undefined;
+    }
+    let stop = null;
+    let cancelled = false;
+    let near = null;
+    const cancelAmbient = whenAmbient(() => {
+    near = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        near.disconnect();
+        import("../lib/aboutMotion")
+          .then(({ startAboutMotion }) => {
+            if (!cancelled) stop = startAboutMotion(section);
+          })
+          .catch(() => {
+            /* offline or a stale deploy: About simply stays still */
+          });
+      },
+      { rootMargin: "100% 0px" },
+    );
+    near.observe(section);
+    });
+    return () => {
+      cancelled = true;
+      cancelAmbient();
+      near?.disconnect();
+      stop?.();
+    };
+  }, [ref, reducedMotion]);
+};
+
 const AboutSection = () => {
   const { ref, pending } = useReveal();
+  const reducedMotion = usePrefersReducedMotion();
+  useAboutMotion(ref, reducedMotion);
 
   return (
     <section
@@ -27,7 +99,7 @@ const AboutSection = () => {
       className="section-pad relative text-left"
     >
       <div className="container max-w-6xl">
-        <SectionHeading index="01" label="About">
+        <SectionHeading index="01" label="About" reveal={false}>
           About Me
         </SectionHeading>
 
@@ -35,7 +107,6 @@ const AboutSection = () => {
           {/* left col*/}
           <div className="lg:col-span-7 space-y-6">
             <h3
-              data-reveal
               className="font-heading text-h3 font-semibold text-foreground"
             >
               {ABOUT_SECTION_HEADING}
@@ -47,7 +118,7 @@ const AboutSection = () => {
                 data-reveal
                 className="text-base md:text-lg leading-relaxed text-muted-foreground"
               >
-                {paragraph}
+                {withHighlights(paragraph)}
               </p>
             ))}
 
@@ -84,8 +155,8 @@ const AboutSection = () => {
                   </span>
                   <div>
                     <h4 className="flex items-center gap-2.5 font-heading text-lg font-semibold text-foreground">
-                      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                      {card.title}
+                      <Icon className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+                      <span className="about-row-title">{card.title}</span>
                     </h4>
                     <p className="mt-2 text-muted-foreground leading-relaxed">
                       {card.description}

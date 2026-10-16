@@ -1217,6 +1217,55 @@
     }
 }
 
+/* ---- About (AboutSection, lib/aboutMotion.js) ----
+   Key phrases: the text lifts to the foreground colour, with a soft accent
+   marker band behind its lower half (like a fine highlighter). Shown by
+   default (its final state), so it is there with no script or reduced
+   motion; the About animation sweeps the band in from the left. The phrase
+   never wraps, so the band is one piece, and it sits behind the text in its
+   own stacking context. Decorative, transform and opacity only. */
+/* Typing (hover or tap on a row): each split character appears once, at its
+   delay (set inline from anime.js's stagger), like a key press. A discrete
+   step on `visibility`, not an opacity fade: an animated opacity gives each
+   of a row's ~120 characters its own compositing layer (~40ms of style and
+   layer work at 4x CPU per hover); visibility needs neither, and a hidden
+   character still keeps its place, so nothing reflows. No script per frame;
+   lib/aboutMotion.js adds and removes the class. */
+.about-typing .about-char {
+    animation: about-type 1ms step-end both;
+}
+@keyframes about-type {
+    from {
+        visibility: hidden;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .about-typing .about-char {
+        animation: none;
+    }
+}
+.about-hl {
+    position: relative;
+    isolation: isolate;
+    white-space: nowrap;
+    color: hsl(var(--foreground));
+}
+.about-hl-mark {
+    position: absolute;
+    z-index: -1;
+    left: -0.12em;
+    right: -0.12em;
+    bottom: 0.06em;
+    height: 0.45em;
+    border-radius: 0.2em;
+    background: hsl(var(--primary) / 0.32);
+    transform-origin: left center;
+    pointer-events: none;
+}
+:root:not(.dark) .about-hl-mark {
+    background: hsl(var(--primary) / 0.22);
+}
+
 /* ---- Animated stats (scoped: .stats-*) ---- */
 
 /* The ring's dash offset and the bars' scaleX are written by the count
