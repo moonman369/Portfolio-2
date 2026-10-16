@@ -440,8 +440,8 @@ export const MOONMIND_UNDO = "Undo";
 // one after another once the paragraph is in view. Matched exactly (first
 // occurrence); a phrase that is not found is skipped.
 export const ABOUT_HIGHLIGHTS = [
-  "agentic orchestration",
-  "Azure AI Foundry",
-  "RAG pipelines",
-  "agentic systems",
+  // "agentic orchestration",
+  // "Azure AI Foundry",
+  // "RAG pipelines",
+  // "agentic systems",
 ];
