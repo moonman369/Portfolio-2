@@ -1653,7 +1653,72 @@ behaviour stay for 640px and up. Initial JS: 145.50 → 144.85 kB gzip.
   fallback (there is no chat on the home page to signal it); the home
   page's Moonmind now signals it: ~100ms.
 
-## 18. Suggestions (skipped because they would change behaviour)
+## 18. About: a quiet entrance, highlighted phrases, rows that type
+
+Only `#about` changes (`AboutSection.jsx`, `lib/aboutMotion.js`, and a
+`reveal` prop on the shared `SectionHeading`, which About sets to false; the
+other sections render as before). anime.js v4, per-module imports.
+
+- **Entrance** (once per part, when it is a quarter in view, from one
+  IntersectionObserver that disconnects when all has played; parts arriving
+  together start one task apart): the hairline next to "01 / About" draws
+  from the left as the eyebrow fades in; "About Me" and the h3 rise word by
+  word (anime.js `splitText`, 60ms apart, 36ms on phones; reverted to plain
+  text afterwards); each paragraph keeps its fade-up, then its key phrases'
+  marker bands sweep in from the left, 300ms apart (220ms on phones); each
+  row's icon draws itself (WAAPI `stroke-dashoffset` over `pathLength="1"`)
+  and springs up from 60% (`spring`), rows 120ms apart (80ms on phones). The
+  row numbers come in with the row's own fade-up. Every part is done within
+  ~1.4s.
+- **Highlighted phrases** (`ABOUT_HIGHLIGHTS`: "agentic orchestration",
+  "Azure AI Foundry", "RAG pipelines", "agentic systems", first occurrence
+  each, skipped if absent): the phrase lifts to the foreground colour over a
+  soft accent marker band on its lower ~45% (32% accent in dark, 22% in
+  light). Rendered by React in its final state, so it shows with no script,
+  a blocked chunk or reduced motion. Body text only, never a heading. It
+  replaced a 1.5px underline (the brief asked for something sleeker).
+- **Rows:** icons 20 → 24px. Hover (mouse or pen, 640px and up) or tap
+  (touch): the icon redraws while the title and then the description type
+  themselves in, character by character (title 28ms, description 7ms per
+  character from halfway through the title; ~1s). Each character appears
+  where it already is, so the row never reflows (height measured constant);
+  a screen reader reads one copy (a visually hidden original next to the
+  `aria-hidden` characters), and the text is plain text again afterwards.
+  New hovers are ignored until a run has finished; every hover after that
+  types again. The slide-right and a bottom sweep line were removed (the
+  sweep as one effect too many, per the design guidance's restraint).
+- **Why typing is built this way** (measured at 4x CPU):
+  - anime.js `splitText` with characters cost ~40-60ms of script per hover:
+    a small purpose-built splitter does the same in ~9ms.
+  - ~110 WAAPI animations through anime.js cost one forced style
+    recalculation per character as each finished (its composition registry
+    commits styles; 130-280ms per hover): the characters use one CSS
+    keyframe instead, their delays from anime.js `stagger`.
+  - An animated opacity gives each of ~120 characters its own compositing
+    layer (~40ms of style and layer work): the keyframe steps `visibility`
+    instead (no layout, no layers). This is the one place outside the
+    transform/opacity rule; it is a discrete property and moves nothing.
+  - Finished animations are stopped through the native `Animation.cancel()`,
+    not anime.js's `cancel()`, which first commits every final value inline.
+  Result: most hovers produce no long task; a few reach 53-59ms (one 87ms)
+  at 4x CPU. The entrance produces none, as in the previous build.
+- **Never hidden by default:** a hidden "before" state is set only once the
+  chunk has loaded, and only on parts still off screen; a part already in
+  view stays as it is. Reduced motion: the chunk is never loaded and
+  everything is final. Blocked chunk: same. CLS 0.
+- **Loading:** `lib/aboutMotion.js` is its own chunk (11.14 kB, 4.73 kB
+  gzip), fetched once the page has settled (ambient motion) and About is
+  within about a screen; on a normal load that is ~1.3s after `load`.
+  Initial JS 145.01 → 145.40 kB gzip (+0.39 kB: the loader and the
+  highlight markup; the animation code is all in the chunk). CSS 15.61 →
+  15.75 kB gzip.
+- **Checked** at 375, 768 and 1440px, dark and light, plus reduced motion:
+  headings plain afterwards, no inline styles left, no replay on scrolling
+  back, no horizontal scroll, selected text intact, accessible names read
+  once (during and after splits), `getAnimations()` past About 10 (same as
+  before), axe colour contrast 0 violations in both themes.
+
+## 19. Suggestions (skipped because they would change behaviour)
 
 - Mobile nav menu (Escape to close, return focus, outside tap, scroll lock): not
   applicable today because the mobile nav is a permanent bottom bar, not a menu.

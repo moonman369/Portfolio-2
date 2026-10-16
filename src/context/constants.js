@@ -434,3 +434,14 @@ export const MOONMIND_START_NEW_CHAT = "Start new chat";
 export const MOONMIND_NEW_CHAT_STARTED = "New chat started";
 export const MOONMIND_CHAT_CLEARED = "Chat cleared.";
 export const MOONMIND_UNDO = "Undo";
+
+// ---- About: highlighted phrases ----
+// Phrases in ABOUT_SECTION_PARAGRAPHS that get a thin accent underline, drawn
+// one after another once the paragraph is in view. Matched exactly (first
+// occurrence); a phrase that is not found is skipped.
+export const ABOUT_HIGHLIGHTS = [
+  // "agentic orchestration",
+  // "Azure AI Foundry",
+  // "RAG pipelines",
+  // "agentic systems",
+];
