@@ -55,76 +55,72 @@ export const ABOUT_SECTION_CARDS = [
   },
 ];
 
+// level: "newbie" | "rookie" | "intermediate" | "expert" | "master"
 export const SKILLS_SECTION_PROP = [
-  { category: "gen-ai-ml", name: "Prompt Engineering", level: "95.6" },
+  { category: "gen-ai-ml", name: "Prompt Engineering", level: "master" },
   {
     category: "gen-ai-ml",
     name: "RAG (Retrieval-Augmented Generation)",
-    level: "80.3",
+    level: "expert",
   },
   {
     category: "gen-ai-ml",
     name: "Microsoft Agent Framework",
-    level: "79.98",
+    level: "intermediate",
   },
   {
     // Renamed from Azure AI Foundry — both names kept so it stays findable.
     category: "gen-ai-ml",
     name: "Microsoft Foundry (Azure AI Foundry)",
-    level: "87.32",
-  },
-  {
-    category: "gen-ai-ml",
-    name: "LangGraph",
-    level: "82.4",
+    level: "expert",
   },
   {
     category: "gen-ai-ml",
     name: "Agentic Orchestration",
-    level: "85.6",
+    level: "expert",
   },
   {
     category: "gen-ai-ml",
     name: "Agentic Graph Workflows",
-    level: "88.28",
+    level: "expert",
   },
   {
     category: "gen-ai-ml",
     name: "Vector DB (Qdrant, Weaviate)",
-    level: "80.4",
+    level: "expert",
   },
-  { category: "gen-ai-ml", name: "LangChain", level: "60.5" },
-  { category: "gen-ai-ml", name: "OpenAI / LLM APIs", level: "95.7" },
+  { category: "gen-ai-ml", name: "LangChain", level: "expert" },
+  { category: "gen-ai-ml", name: "OpenAI / LLM APIs", level: "master" },
   {
     category: "gen-ai-ml",
     name: "MCP (Model Context Protocol)",
-    level: "80.4",
+    level: "intermediate",
   },
-  { category: "backend", name: "Java", level: "98.9" },
-  { category: "backend", name: "SpringBoot", level: "98.4" },
-  { category: "backend", name: "Python", level: "97.6" },
-  { category: "backend", name: "NodeJS", level: "98.5" },
-  { category: "backend", name: "SQL", level: "68.4" },
-  { category: "backend", name: "MongoDB", level: "88.8" },
-  { category: "backend", name: "ExpressJS", level: "96.4" },
-  { category: "backend", name: "Mulesoft", level: "60.2" },
-  { category: "backend", name: ".NET", level: "98.9" },
-  { category: "frontend", name: "HTML5", level: "85.5" },
-  { category: "frontend", name: "CSS3", level: "76" },
-  { category: "frontend", name: "JavaScript", level: "95.6" },
-  { category: "frontend", name: "TypeScript", level: "90.2" },
-  { category: "frontend", name: "ReactJS", level: "95.4" },
-  { category: "frontend", name: "NextJS", level: "93.8" },
-  { category: "frontend", name: "Vite", level: "91.3" },
-  { category: "frontend", name: "TailwindCSS", level: "90.5" },
-  { category: "frontend", name: "Redux", level: "80.4" },
-  { category: "cloud-web3", name: "Azure Integration Services", level: "97.3" },
-  { category: "cloud-web3", name: "Azure Functions", level: "98" },
-  { category: "cloud-web3", name: "Azure Kubernetes Service", level: "80" },
-  { category: "cloud-web3", name: "Docker", level: "95.3" },
-  { category: "cloud-web3", name: "Solidity", level: "82" },
-  { category: "cloud-web3", name: "EVM Blockchains", level: "60" },
-  { category: "cloud-web3", name: "Chainlink", level: "60" },
+  { category: "backend", name: "Java", level: "master" },
+  { category: "backend", name: "SpringBoot", level: "master" },
+  { category: "backend", name: "Python", level: "master" },
+  { category: "backend", name: "NodeJS", level: "expert" },
+  { category: "backend", name: "SQL", level: "intermediate" },
+  { category: "backend", name: "MongoDB", level: "expert" },
+  { category: "backend", name: "ExpressJS", level: "expert" },
+  { category: "backend", name: "Mulesoft", level: "intermediate" },
+  { category: "backend", name: ".NET", level: "master" },
+  { category: "frontend", name: "HTML5", level: "expert" },
+  { category: "frontend", name: "CSS3", level: "expert" },
+  { category: "frontend", name: "JavaScript", level: "expert" },
+  { category: "frontend", name: "TypeScript", level: "expert" },
+  { category: "frontend", name: "ReactJS", level: "expert" },
+  { category: "frontend", name: "NextJS", level: "expert" },
+  { category: "frontend", name: "Vite", level: "expert" },
+  { category: "frontend", name: "TailwindCSS", level: "intermediate" },
+  { category: "frontend", name: "Redux", level: "intermediate" },
+  { category: "cloud-web3", name: "Azure Integration Services", level: "expert" },
+  { category: "cloud-web3", name: "Azure Functions", level: "master" },
+  { category: "cloud-web3", name: "Azure Kubernetes Service", level: "expert" },
+  { category: "cloud-web3", name: "Docker", level: "expert" },
+  { category: "cloud-web3", name: "Solidity", level: "intermediate" },
+  { category: "cloud-web3", name: "EVM Blockchains", level: "intermediate" },
+  { category: "cloud-web3", name: "Chainlink", level: "intermediate" },
 ];
 
 // Human-friendly labels for the skill category filter.
@@ -134,6 +130,24 @@ export const SKILL_CATEGORY_LABELS = {
   backend: "Backend",
   frontend: "Frontend",
   "cloud-web3": "Cloud / Web3",
+};
+
+// The proficiency ladder, lowest first. A skill at step N fills N bars.
+export const SKILL_LEVELS = [
+  "newbie",
+  "rookie",
+  "intermediate",
+  "expert",
+  "master",
+];
+
+// Human-friendly labels for the skill levels.
+export const SKILL_LEVEL_LABELS = {
+  newbie: "Newbie",
+  rookie: "Rookie",
+  intermediate: "Intermediate",
+  expert: "Expert",
+  master: "Master",
 };
 
 export const PROJECTS = [
@@ -440,8 +454,5 @@ export const MOONMIND_UNDO = "Undo";
 // one after another once the paragraph is in view. Matched exactly (first
 // occurrence); a phrase that is not found is skipped.
 export const ABOUT_HIGHLIGHTS = [
-  // "agentic orchestration",
-  // "Azure AI Foundry",
-  // "RAG pipelines",
-  // "agentic systems",
+  // "agentic orcdo you
 ];

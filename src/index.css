@@ -180,9 +180,18 @@
         /* The solid blue buttons' own halo (btn-glow-blue). */
         --glow-blue: 212 95% 52%;
 
-        /* Small blue text (eyebrows, active and hover links, skill levels):
+        /* Small blue text (eyebrows, active and hover links, skill level names):
            deeper than the buttons' fill so it keeps AA on glass. */
         --ink: 212 92% 32%;
+
+        /* Skill level bars, Newbie to Master: one cyan-to-magenta gradient
+           (no red, orange or yellow; amber means "live"). Each keeps >= 3:1
+           on the card, over the stone too, and on the grey unfilled bar. */
+        --level-1: 188 92% 30%;
+        --level-2: 217 85% 48%;
+        --level-3: 248 75% 56%;
+        --level-4: 278 70% 50%;
+        --level-5: 318 80% 46%;
 
         /* Light glass (see "Light glass" below). The stone shows through a
            thin page wash; text columns sit in a feathered haze; cards are
@@ -237,6 +246,12 @@
         --glow-blue: 204 100% 66%;
 
         --ink: 204 100% 76%;
+
+        --level-1: 188 85% 55%;
+        --level-2: 217 90% 63%;
+        --level-3: 248 85% 70%;
+        --level-4: 278 80% 68%;
+        --level-5: 318 85% 64%;
     }
 
     * {

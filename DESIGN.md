@@ -39,7 +39,7 @@ branch.
 | --- | --- | --- |
 | `HeroSection.jsx` `#hero` | "Hi, I'm" + typewriter over `HERO_SECTION_ROLES` (one round, ends on "Ayan Maiti"), description, Download Résumé (`RESUME_URL`, new tab), Moonmind AI button (`open()`), SocialLinks | Both buttons and their actions |
 | `AboutSection.jsx` `#about` | "About Me", heading, two paragraphs, Get In Touch (`#contact`), Download Résumé, three cards (Backend, AI, Cloud) | Links |
-| `SkillsSection.jsx` `#skills` | Category filter (All, GenAI/ML, Backend, Frontend, Cloud/Web3) and 36 skills with % bars. On mobile the list scrolls inside `max-h-[60vh]` | Filter state (`activeCategory`); every skill shown |
+| `SkillsSection.jsx` `#skills` | Category filter (All, GenAI/ML, Backend, Frontend, Cloud/Web3) and 36 skills, each with a level name and five level bars (Newbie to Master; see §20). On mobile the list scrolls inside `max-h-[60vh]` | Filter state (`activeCategory`); every skill shown |
 | `StatsSection.jsx` `#stats` | LeetCode card (ring %, solved, rank, Easy/Medium/Hard bars), GitHub card (repos, commits, PRs, stars + language card image), Certificates list (9 links) | Fetches (LeetCode, GitHub, geolocation) and env vars; localStorage `leetcodeCache` / `githubCache` (30-day expiry); falls back to cache or zeros; count-ups start when in view **and** data has loaded; reduced motion shows final values; screen-reader labels; whole cards link to the profiles |
 | `ProjectSection.jsx` `#projects` | 12 project cards: image, title, Live Demo, Code. "Check My GitHub" | `/moonmind` demo uses `<Link state={{ internal: true }}>`; others open in new tabs |
 | `ContactSection.jsx` `#contact` | Email, location, socials; form (name, email, message, honeypot) | Web3Forms POST; "Email not configured" toast when the key is unset; success/error toasts; `form.reset()` on success; `isSubmitting` disables the button and shows "Sending..." |
@@ -96,7 +96,7 @@ HSL triplets. The variable names are unchanged; the values are remapped.
 | `--muted-foreground` | `215 20% 72%` #a9b5c6 | `218 20% 32%` #414d62 (was `218 18% 36%`) | Secondary text, placeholders |
 | `--primary` | `204 100% 76%` #85ceff | `212 88% 42%` #0d65c9 | Accent: links, focus, moon line |
 | `--primary-foreground` | = background | = background | Text on accent |
-| `--ink` (new, Round 4) | = primary | `212 92% 32%` #074d9d | Small blue text: eyebrows, active/hover links, skill levels (`text-ink`) |
+| `--ink` (new, Round 4) | = primary | `212 92% 32%` #074d9d | Small blue text: eyebrows, active/hover links, skill level names (`text-ink`) |
 | `--earthshine` (new) | `38 100% 64%` #ffbc47 | `28 95% 33%` | Live states only (e.g. "Sending...") |
 | `--glow` (new) | `204 100% 70%` lunar blue | `45 96% 60%` buttery moon yellow | Button halos and travelling rims, card hover glow |
 | `--glow-hi` (new) | `49 100% 82%` butter | `50 100% 86%` pale butter | The bright core of a button's travelling light |
@@ -316,6 +316,7 @@ two disagree:
 - **Skills keep percentage bars**, now with counters: each bar fills and its
   number counts 0 → exact level when first seen, on hover (that card) and on
   every tab switch. The list scrolls in its own region with no scrollbar.
+  *(Replaced by §20: five proficiency levels, no percentages or counters.)*
 
 These loops are the one sanctioned exception to "nothing decorative loops".
 
@@ -1757,3 +1758,99 @@ other sections render as before). anime.js v4, per-module imports.
   thread before it is shown) or rendering it a few blocks per frame would
   bring both under 50ms; either is a structural change to how answers are
   rendered, so it was left out.
+
+## 20. Skills: five proficiency levels
+
+Only `#skills` changes (`SkillsSection.jsx`, the skills data in
+`context/constants.js`, five colour tokens in `index.css`). The filter, the
+scrolling list, the card layout, the section reveal, replay on hover and
+replay on tab switch are as before.
+
+- **Why:** the site owner asked for named levels instead of percentages. A
+  self-rating like "79.98%" suggests a precision it does not have; five named
+  steps read at a glance and are edited by name, not by number.
+- **The levels**, lowest first: Newbie, Rookie, Intermediate, Expert, Master
+  (`SKILL_LEVELS`, with display names in `SKILL_LEVEL_LABELS`). Each covered
+  a fifth of the old scale. **Rule used for the conversion:** round up to the
+  next level, level = `ceil(old / 20)`, minimum 1; a value exactly on a
+  boundary stays in the lower level (60 is Intermediate, just above 60 is
+  Expert; 80 is Expert, just above 80 is Master). The old values are only in
+  git history.
+- **Editing a skill:** in `SKILLS_SECTION_PROP`, set `level` to one of
+  `"newbie"`, `"rookie"`, `"intermediate"`, `"expert"`, `"master"` (the comment
+  above the array lists them). Never a number. An unknown value shows as
+  Newbie; in development the console warns once with the skill's name.
+- **The look:** five separate bars in one row (`flex`, 6px gap, each 6px high,
+  fully rounded, equal widths filling the card). A skill at level N fills
+  bars 1 to N; the rest stay `bg-muted`, as the unfilled bar was. Each bar has
+  its own stage colour, the same on every card, so a Master card shows the
+  whole ladder. The level name sits where the number was (right of the name,
+  `font-mono text-sm text-ink`, never wraps). Bars went from 4px to 6px and the
+  gap above them from 16px to 14px, so card heights are unchanged: 79-100px
+  on phones, 84-106px from 768px (measured before and after at 320, 375, 768
+  and 1440px); section heights 806/903/1025px, unchanged.
+- **Colour tokens** (HSL triplets, one line each, light in `:root`, dark in
+  `.dark`). One smooth gradient, cyan to magenta (Newbie to Master), so the
+  bars read left to right as "more skilled". No red, orange or yellow.
+  The red-orange-yellow-green-blue rainbow tried before was dropped: it has no
+  clear order, and its red, orange and yellow clash with the "amber means
+  live" rule (`--earthshine`).
+  Contrast is WCAG 1.4.11 (3:1 for non-text), against the card and against the
+  grey unfilled bar (`--muted`, opaque). "Computed" uses the plain colours
+  (light card: the lightest possible glass, #fcfcfd; dark card: the card at
+  85% over the page, #151920; unfilled: #e3e7ed light, #20242c dark).
+  "Measured" is the lowest seen in screen pixels: every visible card at 320,
+  375, 768 and 1440px, plus a sweep at 375 and 1440px through three page
+  offsets and the whole list (about 2,400 bar samples), so light cards sit over
+  the grey craters too. The darkest light card seen was #dfe1e4.
+
+  Light mode:
+
+  | Token | Level | Value | vs card (computed / measured) | vs unfilled (computed / measured) |
+  | --- | --- | --- | --- | --- |
+  | `--level-1` | Newbie (cyan) | `188 92% 30%` #068093 | 4.53 / 3.62 | 3.74 / 3.75 |
+  | `--level-2` | Rookie (blue) | `217 85% 48%` #1262e2 | 5.28 / 4.34 | 4.36 / 4.37 |
+  | `--level-3` | Intermediate (indigo) | `248 75% 56%` #513be3 | 6.65 / 5.20 | 5.50 / 5.30 |
+  | `--level-4` | Expert (violet) | `278 70% 50%` #9726d9 | 5.69 / 4.51 | 4.70 / 4.71 |
+  | `--level-5` | Master (magenta) | `318 80% 46%` #d3179b | 4.68 / 3.66 | 3.87 / 3.88 |
+
+  Dark mode:
+
+  | Token | Level | Value | vs card (computed / measured) | vs unfilled (computed / measured) |
+  | --- | --- | --- | --- | --- |
+  | `--level-1` | Newbie (cyan) | `188 85% 55%` #2bd4ee | 9.84 / 9.85 | 8.66 / 8.71 |
+  | `--level-2` | Rookie (blue) | `217 90% 63%` #4c8df6 | 5.40 / 5.41 | 4.75 / 4.78 |
+  | `--level-3` | Intermediate (indigo) | `248 85% 70%` #8371f4 | 4.74 / 4.63 | 4.17 / 4.09 |
+  | `--level-4` | Expert (violet) | `278 80% 68%` #bf6cef | 5.54 / 5.54 | 4.88 / 4.89 |
+  | `--level-5` | Master (magenta) | `318 85% 64%` #f155c2 | 5.74 / 5.72 | 5.05 / 5.05 |
+
+  All pass as given; no value was adjusted. The tightest are light-mode
+  Newbie (3.62 on a card over the craters) and dark-mode Intermediate (4.09
+  against the unfilled bar).
+  The level name is the visible text signal, so colour is never the only one.
+- **Motion** (WAAPI through anime.js v4 `waapi.animate` + `stagger`,
+  transform only): the filled bars grow from the left, `scaleX` 0 → 1,
+  350ms each, 70ms apart, `EASE.out`; a Master card is done in 630ms. Plays
+  the first time the card is 60% inside the list's visible area, on hover
+  (hovers during a run are ignored) and on every tab switch. When a run ends
+  anime.js keeps the final transform inline and drops the animation, so
+  nothing stays on the compositor (`getAnimations()` on a card is empty
+  afterwards). Reduced motion: final bars, no inline transform, no
+  animations. The number counter (`animate` on an object, `COUNT_MS`) is gone.
+- **Accessibility:** the bar row is `role="img"` with
+  `aria-label="Master, level 5 of 5"`; each bar and the visible level name are
+  `aria-hidden`, so the level is read once. Nothing in the section mentions a
+  percentage. axe (WCAG 2.2 A/AA) on `#skills`: 0 violations at 320, 375, 768
+  and 1440px in both themes.
+- **Result:** 28 Master, 6 Expert (Microsoft Agent Framework, LangChain, SQL,
+  Mulesoft, CSS3, Azure Kubernetes Service), 2 Intermediate (EVM Blockchains,
+  Chainlink), 0 Rookie, 0 Newbie; 36 skills.
+- **Bundle:** initial JS 145.38 → 145.33 kB gzip (427.25 → 427.40 kB raw),
+  CSS 15.75 → 15.81 kB gzip (77.92 → 78.09 kB raw; the ten colour values).
+  The bar colours are set inline from the tokens (`hsl(var(--level-N))`)
+  rather than through five `bg-level-*` utilities, which would have added
+  another 0.07 kB gzip of CSS.
+- **Checked** at 320, 375, 768 and 1440px, dark and light, plus reduced
+  motion: no horizontal scroll; "Intermediate" never wraps; the two longest
+  names wrap to two lines as before; filter tabs, the scrolling list and hover
+  replay work.
