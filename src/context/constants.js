@@ -66,7 +66,7 @@ export const SKILLS_SECTION_PROP = [
   {
     category: "gen-ai-ml",
     name: "Microsoft Agent Framework",
-    level: "intermediate",
+    level: "rookie",
   },
   {
     // Renamed from Azure AI Foundry — both names kept so it stays findable.
@@ -78,6 +78,16 @@ export const SKILLS_SECTION_PROP = [
     category: "gen-ai-ml",
     name: "Agentic Orchestration",
     level: "expert",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "Agent Harnesses",
+    level: "newbie",
+  },
+  {
+    category: "gen-ai-ml",
+    name: "GraphRAG",
+    level: "newbie",
   },
   {
     category: "gen-ai-ml",
@@ -149,6 +159,23 @@ export const SKILL_LEVEL_LABELS = {
   expert: "Expert",
   master: "Master",
 };
+
+// Skills controls: the level chips (key and filter), the sort and the result
+// line. `{shown}`, `{total}`, `{level}` and `{count}` are filled in.
+export const SKILL_LEVEL_FILTER_LABEL = "Level";
+export const SKILL_LEVEL_FILTER_GROUP_LABEL = "Filter by level";
+export const SKILL_SORT_LABEL = "Sort";
+export const SKILL_SORT_OPTIONS = {
+  default: "Default order",
+  "level-desc": "Level, high to low",
+  "level-asc": "Level, low to high",
+  name: "Name, A to Z",
+};
+export const SKILL_RESULT_SUMMARY = "Showing {shown} of {total} skills";
+export const SKILL_GROUP_HEADING = "{level} · {count}";
+export const SKILL_EMPTY_TEXT = "No skills match these filters";
+export const SKILL_RESET_LABEL = "Reset";
+export const SKILL_FILTERS_ACTIVE = "{count} active";
 
 export const PROJECTS = [
   {
