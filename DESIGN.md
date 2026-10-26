@@ -39,7 +39,7 @@ branch.
 | --- | --- | --- |
 | `HeroSection.jsx` `#hero` | "Hi, I'm" + typewriter over `HERO_SECTION_ROLES` (one round, ends on "Ayan Maiti"), description, Download Résumé (`RESUME_URL`, new tab), Moonmind AI button (`open()`), SocialLinks | Both buttons and their actions |
 | `AboutSection.jsx` `#about` | "About Me", heading, two paragraphs, Get In Touch (`#contact`), Download Résumé, three cards (Backend, AI, Cloud) | Links |
-| `SkillsSection.jsx` `#skills` | Category filter (All, GenAI/ML, Backend, Frontend, Cloud/Web3) and 36 skills, each with a level name and five level bars (Newbie to Master; see §20). On mobile the list scrolls inside `max-h-[60vh]` | Filter state (`activeCategory`); every skill shown |
+| `SkillsSection.jsx` `#skills` | Category filter (All, GenAI/ML, Backend, Frontend, Cloud/Web3); a row of five level chips (Newbie to Master) that is both the key to the bar colours and a multi-select level filter, with counts per category; a result line ("Showing 7 of 37 skills"), a Sort select (default, level high-low or low-high grouped by level, name) and Reset (§21). 37 skills, each with a level name and five level bars (§20). The list scrolls in its own area (`max-h-[28rem]`, `md:max-h-[31rem]`). Under 640px the category chips and the level chips each stay on one row that swipes sideways, and the sort opens from a "Sort" button | Filter state (`activeCategory`, selected levels, sort; in memory only) |
 | `StatsSection.jsx` `#stats` | LeetCode card (ring %, solved, rank, Easy/Medium/Hard bars), GitHub card (repos, commits, PRs, stars + language card image), Certificates list (9 links) | Fetches (LeetCode, GitHub, geolocation) and env vars; localStorage `leetcodeCache` / `githubCache` (30-day expiry); falls back to cache or zeros; count-ups start when in view **and** data has loaded; reduced motion shows final values; screen-reader labels; whole cards link to the profiles |
 | `ProjectSection.jsx` `#projects` | 12 project cards: image, title, Live Demo, Code. "Check My GitHub" | `/moonmind` demo uses `<Link state={{ internal: true }}>`; others open in new tabs |
 | `ContactSection.jsx` `#contact` | Email, location, socials; form (name, email, message, honeypot) | Web3Forms POST; "Email not configured" toast when the key is unset; success/error toasts; `form.reset()` on success; `isSubmitting` disables the button and shows "Sending..." |
@@ -1854,3 +1854,117 @@ replay on tab switch are as before.
   motion: no horizontal scroll; "Intermediate" never wraps; the two longest
   names wrap to two lines as before; filter tabs, the scrolling list and hover
   replay work.
+
+## 21. Skills: level key, level filter and sort
+
+Only `#skills` changes (`SkillsSection.jsx`, new strings in
+`context/constants.js`, two rules in `index.css`). The category chips (apart
+from their phone row, below), the
+scrolling list (height, fade mask, `role="region"`, `tabIndex={0}`), the
+reveal, the first-sight fill, hover replay and the card markup are as before.
+
+- **One control is both the key and the filter.** A row of five level chips
+  under the category chips: each shows its level's bar colour as a small
+  swatch (`--level-1` to `--level-5`, the same as the card bars), the level
+  name and how many skills in the current category are at that level
+  ("Master 7"). Reading the row explains the bar colours; pressing a chip
+  filters by it. Two separate rows (a legend and a filter) would repeat the
+  same five names.
+- **Filter rules:**
+  - Levels are multi-select (`aria-pressed`, in a `role="group"` named
+    "Filter by level"); a skill shows if it is at any selected level. None
+    selected shows every level.
+  - Levels combine with the category: category AND levels.
+  - The counts follow the category only, never the other level chips.
+  - A chip at 0 is dimmed and disabled, unless it is selected (then it stays
+    clickable, so it can be turned off). With the current data each level
+    has skills under All, so all five chips can be on together.
+  - Selected: a 2px ring and a 13% tint in the chip's own colour
+    (`.level-chip[aria-pressed="true"]`); the text stays the normal text
+    colour.
+  - Reset clears the levels and the sort and keeps the category. It shows
+    only while a level is selected or the sort is not the default (it keeps
+    its space while hidden, so nothing next to it moves). Afterwards focus moves
+    to the result line (`tabIndex={-1}`).
+  - Nothing is stored: no localStorage, no URL parameters. A reload starts
+    from All, no levels, default order.
+- **Sort** (a native `<select>`, 16px, 44px tall, with its own chevron 12px
+  from the right edge: `appearance-none` and a lucide `ChevronDown`, since
+  browsers pin the native arrow to the edge and ignore padding): Default order (the config
+  order), Level high to low, Level low to high, Name A to Z. All are stable,
+  so ties keep the config order. The two level sorts show the list grouped by
+  level: an `h3` per group ("Master · 7", with the swatch), empty groups
+  hidden, one `<ul>` per group in the same scroll area, and the card names
+  become `h4` there (`h3` in the other sorts, as before).
+- **Result line:** "Showing 7 of 37 skills" (`SKILL_RESULT_SUMMARY`; the total
+  is every skill), a `role="status"` live region, at least 44px high so a
+  change of text never moves the list.
+- **Empty result** (for example Frontend + Master): one line, "No skills match
+  these filters", and a Reset button in place of the list.
+- **Behaviour:**
+  - Any change of category, level or sort scrolls the list back to the top.
+  - A category change remounts the cards and refills the bars, as before.
+  - A level or sort change keeps the cards that stay visible: within the same
+    layout React keeps them (same key, same list), so nothing refills.
+    Switching between the flat list and the grouped lists moves cards into
+    other `<ul>`s, which React can only do by remounting them. A small
+    "already shown" set (`seenRef`, keyed per category) remembers which
+    cards have filled and are still shown, so those mount again with full
+    bars. Cards that newly appear, including ones that come back after being
+    filtered out, play the first-sight fill.
+  - Level and sort changes fade the list in (opacity, 150ms); with reduced
+    motion there is no fade and the bars are final.
+  - Tab order: category chips, level chips (disabled ones are skipped), the
+    select, Reset, then the list. Chips toggle with Space and Enter. The
+    global focus ring shows on all of them.
+- **Phones (under 640px).** The category chips and the level chips each stay
+  on **one row that swipes sideways** (`.chip-scroller`), at their normal size
+  (44px tall). Fitting all five on screen was measured first and does not work:
+  the category chips need 339px at the smallest readable size (283px is free at
+  320px), the level chips about 504px. Each row reaches the screen edges, has
+  no scrollbar, and the chips slide under a 1.25rem fade there, so the
+  cut-off chip at the edge is the hint that it scrolls; the padding keeps the
+  first and last chip clear of the fade, and 6px above and below keeps room
+  for the focus ring. `overscroll-behavior-x: contain` stops a swipe from
+  pulling the page. Tab scrolls a chip into view. Under them, one row: the
+  result line, a "Sort" button (`aria-expanded`, `aria-controls`; a "1"
+  badge, read as "1 active", while the sort is not the default) and Reset,
+  which stays in that row so it is reachable without opening the sort. The
+  sort row opens below. Controls (category row to result row, sort closed):
+  **161px at 320 and 375px**, 216px with the sort open (budget 260px). An
+  earlier version folded the level chips and the sort behind a "Level & sort"
+  button (151px); the site owner chose the two swipe rows instead.
+  640px and up: as before, the "Level" label, the chips on one row (two rows
+  at 768px), then the result line with the sort and Reset on its right; 156px
+  at 1440px, 208px at 768px.
+- **Measured** (Playwright, 148/148 checks): each level chip alone, two
+  together, all five on, none on; every category with every level, with the
+  chip counts matching the cards shown (chips at 0 checked as disabled);
+  Frontend + Master empty, and Reset brings
+  back Frontend's 9; each sort, with ties in config order; scroll to top
+  after every change; category switch replays the bars; staying cards do not
+  refill after level and sort changes; keyboard order, Space and Enter, and
+  focus after Reset; the accessibility tree (group names, pressed states,
+  status text, headings `h3` "Master · 7" above `h4` cards); reduced
+  motion. axe (WCAG 2.2 A/AA) on `#skills`: 0 violations at 375 and 1440px in
+  both themes, in the empty, all-selected and grouped states. No page
+  horizontal scroll at 320, 375, 768 and 1440px; no chip wraps. Phones (320
+  and 375px): each chip row is one line, scrolls, and reaches the screen
+  edges; a touch swipe (raw touch events) scrolls the row and not the page;
+  scrolling to the end shows the last chip whole; Tab brings the last
+  category into view with room for the ring; Reset shows after picking a
+  level without opening the sort; "Sort" opens the select and shows its badge.
+- **Section height** (All, nothing selected): 806 → 846px at 375px (+40px:
+  the result row; the category chips now take one row instead of two, the
+  level chips the other), 1025 → 1117px at 1440px (+92px, the chips row and the
+  result row). CLS 0 before and after (load and scroll through Skills, both
+  themes, 375 and 1440px).
+- **Bundle:** initial JS 145.34 → 147.38 kB gzip (+2.04 kB: the controls,
+  sort and grouping; the two lucide icons are about 0.2 kB of it), CSS 15.81 →
+  16.18 kB gzip.
+- **Left out on purpose:** saved filters (localStorage) and URL parameters
+  (the filters reset on reload); FLIP or layout animation of the reordering;
+  a separate legend row.
+- **Data note:** the counts here (37 skills: 7 Master, 19 Expert, 8
+  Intermediate, 1 Rookie, 2 Newbie) are the data after the site owner's edits
+  following `537e5c4`; §20's "Result" line describes the first conversion.

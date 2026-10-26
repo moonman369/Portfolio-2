@@ -1557,6 +1557,46 @@
     opacity: 1;
 }
 
+/* Skills level chips (the key and the level filter). Selected: a ring and a
+   light tint in the chip's own level colour (--chip, set inline to one of
+   --level-1 to --level-5); the text keeps the normal colour. */
+.level-chip[aria-pressed="true"] {
+    background-color: hsl(var(--chip) / 0.13);
+    box-shadow: inset 0 0 0 2px hsl(var(--chip));
+}
+
+/* Phones: the Skills category and level chips each stay on one row that
+   scrolls sideways (no scrollbar). The row reaches the screen edges, so chips
+   slide under a soft fade there; the padding keeps the first and last chip
+   clear of it, and room above and below for the focus ring. */
+@media (width < 640px) {
+    .chip-scroller {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        margin-inline: calc(-1 * max(1.25rem, env(safe-area-inset-left)))
+            calc(-1 * max(1.25rem, env(safe-area-inset-right)));
+        padding-inline: max(1.25rem, env(safe-area-inset-left))
+            max(1.25rem, env(safe-area-inset-right));
+        margin-block: -6px;
+        padding-block: 6px;
+        mask-image: linear-gradient(
+            to right,
+            transparent,
+            #000 1.25rem,
+            #000 calc(100% - 1.25rem),
+            transparent
+        );
+    }
+    .chip-scroller::-webkit-scrollbar {
+        display: none;
+    }
+    .chip-scroller > * {
+        flex-shrink: 0;
+    }
+}
+
 /* Skills: their own scroll area, no scrollbar, soft edges. Wheel, touch and
    keyboard (it is focusable) all scroll it; once it reaches an end the page
    takes over. */
